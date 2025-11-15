@@ -1,0 +1,28 @@
+# Environment variables
+backend/.env
+*.env
+
+# Go
+backend/vendor/
+backend/*.exe
+backend/*.exe~
+backend/*.dll
+backend/*.so
+backend/*.dylib
+
+# Test binary
+backend/*.test
+
+# Output of the go coverage tool
+backend/*.out
+
+# Dependencies
+backend/go.sum
+
+# Frontend
+frontend/node_modules/
+frontend/.svelte-kit/
+frontend/build/
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
