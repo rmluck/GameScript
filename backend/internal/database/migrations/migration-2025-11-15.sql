@@ -1,0 +1,1 @@
+ALTER TABLE games ADD COLUMN network VARCHAR(64);

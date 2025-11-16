@@ -21,6 +21,7 @@ CREATE TABLE teams (
     id SERIAL PRIMARY KEY,
     sport_id INTEGER NOT NULL REFERENCES sports(id) ON DELETE CASCADE,
     season_id INTEGER NOT NULL REFERENCES seasons(id) ON DELETE CASCADE,
+    espn_id VARCHAR(16),
     abbreviation VARCHAR(10) NOT NULL,
     city VARCHAR(100) NOT NULL,
     name VARCHAR(100) NOT NULL,
@@ -29,13 +30,15 @@ CREATE TABLE teams (
     primary_color VARCHAR(20),
     secondary_color VARCHAR(20),
     logo_url VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(sport_id, espn_id)
 );
 
 -- GAMES
 CREATE TABLE games (
     id SERIAL PRIMARY KEY,
     season_id INTEGER NOT NULL REFERENCES seasons(id) ON DELETE CASCADE,
+    espn_id VARCHAR(32),
     home_team_id INTEGER NOT NULL REFERENCES teams(id),
     away_team_id INTEGER NOT NULL REFERENCES teams(id),
     start_time TIMESTAMP NOT NULL,
@@ -43,11 +46,13 @@ CREATE TABLE games (
     week INTEGER,
     location VARCHAR(100),
     primetime VARCHAR(100),
+    network VARCHAR(100),
     home_score INTEGER,
     away_score INTEGER,
     status VARCHAR(50) DEFAULT 'upcoming',
     is_postseason BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(season_id, espn_id)
 );
 
 -- USERS
