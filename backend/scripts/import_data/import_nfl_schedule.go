@@ -82,8 +82,8 @@ func insertGames(db *database.DB, games []models.Game) error {
             week, location, primetime, network, home_score, away_score, status, is_postseason
         ) VALUES (
             $1, $2,
-            (SELECT id FROM teams WHERE sport_id = 1 AND espn_id = $3),
-            (SELECT id FROM teams WHERE sport_id = 1 AND espn_id = $4),
+            (SELECT id FROM teams WHERE season_id = $1 AND espn_id = $3),
+            (SELECT id FROM teams WHERE season_id = $1 AND espn_id = $4),
             $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
         )
         ON CONFLICT (season_id, espn_id) DO UPDATE SET

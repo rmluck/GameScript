@@ -7,7 +7,7 @@ import (
 	"time"
 	"strings"
 
-	"os"
+	// "os"
 
 	"gamescript/internal/models"
 )
@@ -28,10 +28,10 @@ func (c *Client) FetchNFLSchedule(year int, week int) ([]models.Game, error) {
 	}
 
 	// Throw raw response into file for further inspection
-	err = os.WriteFile("nfl_full_schedule_response.json", body, 0644)
-	if err != nil {
-		return nil, fmt.Errorf("failed to write response to file: %w", err)
-	}
+	// err = os.WriteFile("nfl_full_schedule_response.json", body, 0644)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to write response to file: %w", err)
+	// }
 
 	// Load Pacific timezone
 	pst, err := time.LoadLocation("America/Los_Angeles")

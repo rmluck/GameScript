@@ -31,7 +31,7 @@ CREATE TABLE teams (
     secondary_color VARCHAR(20),
     logo_url VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(sport_id, espn_id)
+    UNIQUE(season_id, espn_id)
 );
 
 -- GAMES
@@ -70,13 +70,14 @@ CREATE TABLE users (
 -- SCENARIOS
 CREATE TABLE scenarios (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     sport_id INTEGER NOT NULL REFERENCES sports(id) ON DELETE CASCADE,
     season_id INTEGER NOT NULL REFERENCES seasons(id) ON DELETE CASCADE,
     is_public BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    session_token VARCHAR(255)
 );
 
 -- PICKS
@@ -99,3 +100,4 @@ CREATE INDEX idx_teams_sport ON teams(sport_id);
 CREATE INDEX idx_scenarios_user_id ON scenarios(user_id);
 CREATE INDEX idx_picks_scenario ON picks(scenario_id);
 CREATE INDEX idx_picks_game ON picks(game_id);
+CREATE INDEX idx_scenarios_session_token ON scenarios(session_token);

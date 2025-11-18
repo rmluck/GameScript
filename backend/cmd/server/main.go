@@ -3,9 +3,12 @@ package main
 import (
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"gamescript/internal/database"
 	"gamescript/internal/handlers"
+	"gamescript/internal/scheduler"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -26,6 +29,11 @@ func main() {
 	}
 	defer db.Close()
 
+	// Start background scheduler
+	scheduler := scheduler.NewScheduler(db)
+	scheduler.Start()
+	defer scheduler.Stop()
+
 	// Create Fiber app
 	app := fiber.New(fiber.Config{
 		AppName: "GameScript API",
@@ -40,13 +48,24 @@ func main() {
 	}))
 
 	// Setup routes
-	handlers.SetupRoutes(app, db)
+	handlers.SetupRoutes(app, db, scheduler)
 
 	// Get port from environment
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
+
+	// Graceful shutdown on interrupt signal
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		<-c
+		log.Println("Shutting down server...")
+		scheduler.Stop()
+		_ = app.Shutdown()
+	}()
 
 	log.Printf("Server starting on http://localhost:%s", port)
 	log.Fatal(app.Listen(":" + port))
