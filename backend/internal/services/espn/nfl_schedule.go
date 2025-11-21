@@ -231,8 +231,8 @@ func parseBroadcast(broadcast []string) string {
     }
 
     network := ""
-    priorities := []string{"NBC", "Prime Video", "ESPN", "ABC", "NFL Net", "CBS", "FOX", "Peacock"}
-    
+    priorities := []string{"NBC", "Prime Video", "ESPN", "ABC", "NFL Net", "Netflix", "CBS", "FOX", "Peacock"}
+
     for _, priority := range priorities {
         if contains(broadcast, priority) {
             network = priority
