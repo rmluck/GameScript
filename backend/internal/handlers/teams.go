@@ -72,7 +72,7 @@ func getTeam(db *database.DB) fiber.Handler {
 				team.id, team.sport_id, team.season_id, team.espn_id,
 				team.abbreviation, team.city, team.name, 
 				team.conference, team.division,
-				team.primary_color, team.secondary_color, team.logo_url,
+				team.primary_color, team.secondary_color, team.logo_url
 			FROM teams team
 			WHERE team.id = $1
 		`

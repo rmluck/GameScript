@@ -10,14 +10,14 @@ import (
 	"gamescript/internal/standings"
 )
 
-func calculateStandings(db *database.DB) fiber.Handler {
+func getStandings(db *database.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		scenarioID := c.Params("scenario_id")
 
 		// Convert scenarioID to int
 		sID, err := strconv.Atoi(scenarioID)
 		if err != nil {
-			return c.Status(400).JSON(fiber.Map{"error": "Invalid scenarioID"})
+			return c.Status(400).JSON(fiber.Map{"error": "Invalid scenario ID"})
 		}
 
 		// Get scenario to find season
@@ -43,6 +43,40 @@ func calculateStandings(db *database.DB) fiber.Handler {
 		return c.JSON(response)
 	}
 }
+
+// func calculateStandings(db *database.DB) fiber.Handler {
+// 	return func(c *fiber.Ctx) error {
+// 		scenarioID := c.Params("scenario_id")
+
+// 		// Convert scenarioID to int
+// 		sID, err := strconv.Atoi(scenarioID)
+// 		if err != nil {
+// 			return c.Status(400).JSON(fiber.Map{"error": "Invalid scenarioID"})
+// 		}
+
+// 		// Get scenario to find season
+// 		var seasonID int
+// 		var sportID int
+// 		query := `SELECT season_id, sport_id FROM scenarios WHERE id = $1`
+// 		err = db.Conn.QueryRow(query, sID).Scan(&seasonID, &sportID)
+// 		if err != nil {
+// 			return c.Status(404).JSON(fiber.Map{"error": "Scenario not found"})
+// 		}
+
+// 		// Calculate standings based on sport
+// 		var response map[string]interface{}
+// 		if sportID == 1 {
+// 			nflStandings, err := standings.CalculateNFLStandings(db, sID, seasonID)
+// 			if err != nil {
+// 				return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+// 			}
+
+// 			response = formatNFLStandings(nflStandings)
+// 		}
+
+// 		return c.JSON(response)
+// 	}
+// }
 
 func formatNFLStandings(standings *standings.NFLStandings) map[string]interface{} {
 	return map[string]interface{}{

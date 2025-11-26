@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"time"
+	"crypto/rand"
+	"encoding/hex"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -10,17 +12,30 @@ import (
 
 func getScenarios(db *database.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		isAuthenticated := c.Locals("is_authenticated").(bool)
+		isAuthenticated := false
+		if val, ok := c.Locals("is_authenticated").(bool); ok {
+			isAuthenticated = val
+		}
 
+		userID := 0
+		if val, ok := c.Locals("user_id").(int); ok {
+			userID = val
+		}
+
+		sessionToken := ""
+		if val, ok := c.Locals("session_token").(string); ok {
+			sessionToken = val
+		}
+
+		var scenarios []map[string]interface{}
 		var query string
 		var args []interface{}
 
-		if isAuthenticated {
-			userID := c.Locals("user_id").(int)
+		if isAuthenticated && userID > 0 {
 			query = `
 				SELECT
-					scenario.id, scenario.user_id, scenario.name, scenario.sport_id, scenario.season_id, scenario.is_public, scenario.created_at, scenario.updated_at,
-					sport.short_name as sport_short_name, season.start_year, season.end_year
+					scenario.id, scenario.name, scenario.sport_id, scenario.season_id, scenario.is_public, scenario.created_at, scenario.updated_at,
+					sport.short_name as sport_short_name, season.start_year AS season_start_year, season.end_year AS season_end_year
 				FROM
 					scenarios scenario
 					JOIN sports sport ON scenario.sport_id = sport.id
@@ -31,12 +46,11 @@ func getScenarios(db *database.DB) fiber.Handler {
 					scenario.created_at DESC
 				`
 				args = []interface{}{userID}
-		} else {
-			sessionToken := c.Locals("session_token").(string)
+		} else if sessionToken != "" {
 			query = `
 				SELECT
-					scenario.id, scenario.session_token, scenario.name, scenario.sport_id, scenario.season_id, scenario.is_public, scenario.created_at, scenario.updated_at,
-					sport.short_name as sport_short_name, season.start_year, season.end_year
+					scenario.id, scenario.name, scenario.sport_id, scenario.season_id, scenario.is_public, scenario.created_at, scenario.updated_at,
+					sport.short_name as sport_short_name, season.start_year AS season_start_year, season.end_year AS season_end_year
 				FROM
 					scenarios scenario
 					JOIN sports sport ON scenario.sport_id = sport.id
@@ -47,6 +61,8 @@ func getScenarios(db *database.DB) fiber.Handler {
 					scenario.updated_at DESC
 			`
 			args = []interface{}{sessionToken}
+		} else {
+			return c.JSON([]map[string]interface{}{})
 		}
 
 		rows, err := db.Query(query, args...)
@@ -55,26 +71,20 @@ func getScenarios(db *database.DB) fiber.Handler {
 		}
 		defer rows.Close()
 
-		var scenarios []map[string]interface{}
 		for rows.Next() {
+			var scenario map[string]interface{}
 			var id, sportID, seasonID, startYear int
-			var userID, endYear *int
-			var sessionToken *string
+			var endYear *int
 			var name, sportShortName string
 			var isPublic bool
 			var createdAt, updatedAt time.Time
 
-			if isAuthenticated {
-				err = rows.Scan(&id, &userID, &name, &sportID, &seasonID, &isPublic, &createdAt, &updatedAt, &sportShortName, &startYear, &endYear)
-			} else {
-				err = rows.Scan(&id, &sessionToken, &name, &sportID, &seasonID, &isPublic, &createdAt, &updatedAt, &sportShortName, &startYear, &endYear)
-			}
-
+			err := rows.Scan(&id, &name, &sportID, &seasonID, &isPublic, &createdAt, &updatedAt, &sportShortName, &startYear, &endYear)
 			if err != nil {
 				continue
 			}
 
-			scenarios = append(scenarios, map[string]interface{}{
+			scenario = map[string]interface{}{
 				"id": id,
 				"name": name,
 				"sport_id": sportID,
@@ -85,7 +95,12 @@ func getScenarios(db *database.DB) fiber.Handler {
 				"created_at": createdAt,
 				"updated_at": updatedAt,
 				"sport_short_name": sportShortName,
-			})
+			}
+			scenarios = append(scenarios, scenario)
+		}
+
+		if scenarios == nil {
+			scenarios = []map[string]interface{}{}
 		}
 
 		return c.JSON(scenarios)
@@ -95,12 +110,26 @@ func getScenarios(db *database.DB) fiber.Handler {
 func getScenario(db *database.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		scenarioID := c.Params("scenario_id")
-		isAuthenticated := c.Locals("is_authenticated").(bool)
+
+		isAuthenticated := false
+		if val, ok := c.Locals("is_authenticated").(bool); ok {
+			isAuthenticated = val
+		}
+
+		userID := 0
+		if val, ok := c.Locals("user_id").(int); ok {
+			userID = val
+		}
+
+		sessionToken := ""
+		if val, ok := c.Locals("session_token").(string); ok {
+			sessionToken = val
+		}
 
 		query := `
 			SELECT
 				scenario.id, scenario.user_id, scenario.session_token, scenario.name, scenario.sport_id, scenario.season_id, scenario.is_public, scenario.created_at, scenario.updated_at,
-				sport.short_name as sport_short_name, season.start_year, season.end_year
+				sport.short_name as sport_short_name, season.start_year AS season_start_year, season.end_year AS season_end_year
 			FROM
 				scenarios scenario
 				JOIN sports sport ON scenario.sport_id = sport.id
@@ -110,14 +139,14 @@ func getScenario(db *database.DB) fiber.Handler {
 		`
 
 		var id, sportID, seasonID, startYear int
-		var userID, endYear *int
-		var sessionToken *string
+		var ownerUserID, endYear *int
+		var ownerSessionToken *string
 		var name, sportShortName string
 		var isPublic bool
 		var createdAt, updatedAt time.Time
 
 		err := db.Conn.QueryRow(query, scenarioID).Scan(
-			&id, &userID, &sessionToken, &name, &sportID, &seasonID, &isPublic, &createdAt, &updatedAt,
+			&id, &ownerUserID, &ownerSessionToken, &name, &sportID, &seasonID, &isPublic, &createdAt, &updatedAt,
 			&sportShortName, &startYear, &endYear,
 		)
 		if err != nil {
@@ -125,16 +154,17 @@ func getScenario(db *database.DB) fiber.Handler {
 		}
 
 		// Verify ownership
-		if isAuthenticated {
-			currentUserID := c.Locals("user_id").(int)
-			if userID == nil || *userID != currentUserID {
+		if isAuthenticated && userID > 0 {
+			if ownerUserID == nil || *ownerUserID != userID {
+				return c.Status(403).JSON(fiber.Map{"error": "Unauthorized"})
+			}
+		} else if sessionToken != "" {
+			currentSessionToken := c.Locals("session_token").(string)
+			if ownerSessionToken == nil || *ownerSessionToken != currentSessionToken {
 				return c.Status(403).JSON(fiber.Map{"error": "Unauthorized"})
 			}
 		} else {
-			currentSessionToken := c.Locals("session_token").(string)
-			if sessionToken == nil || *sessionToken != currentSessionToken {
-				return c.Status(403).JSON(fiber.Map{"error": "Unauthorized"})
-			}
+			return c.Status(403).JSON(fiber.Map{"error": "Unauthorized"})
 		}
 
 		return c.JSON(map[string]interface{}{
@@ -171,7 +201,10 @@ func createScenario(db *database.DB) fiber.Handler {
 			return c.Status(400).JSON(fiber.Map{"error": "Missing required fields"})
 		}
 
-		isAuthenticated := c.Locals("is_authenticated").(bool)
+		isAuthenticated := false
+		if val, ok := c.Locals("is_authenticated").(bool); ok {
+			isAuthenticated = val
+		}
 
 		var query string
 		var args []interface{}
@@ -185,7 +218,20 @@ func createScenario(db *database.DB) fiber.Handler {
 			`
 			args = []interface{}{userID, req.Name, req.SportID, req.SeasonID, req.IsPublic}
 		} else {
-			sessionToken := c.Locals("session_token").(string)
+			// Generate session token for guest
+			sessionToken := c.Cookies("session_token")
+			if sessionToken == "" {
+				sessionToken = generateSessionToken()
+				c.Cookie(&fiber.Cookie{
+					Name:     "session_token",
+					Value:    sessionToken,
+					MaxAge:  7 * 24 * 60 * 60, // 7 days
+					HTTPOnly: true,
+					SameSite: "Lax",
+				})
+			}
+			c.Locals("session_token", sessionToken)
+
 			query = `
 				INSERT INTO scenarios (session_token, name, sport_id, season_id, is_public)
 				VALUES ($1, $2, $3, $4, $5)
@@ -227,6 +273,12 @@ func createScenario(db *database.DB) fiber.Handler {
 			"updated_at": updatedAt,
 		})
 	}
+}
+
+func generateSessionToken() string {
+	b := make([]byte, 32)
+	rand.Read(b)
+	return hex.EncodeToString(b)
 }
 
 func updateScenario(db *database.DB) fiber.Handler {

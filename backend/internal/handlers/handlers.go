@@ -40,9 +40,9 @@ func SetupRoutes(app *fiber.App, db *database.DB, scheduler *scheduler.Scheduler
 	auth := api.Group("/auth")
 	auth.Post("/register", registerUser(db))
 	auth.Post("/login", loginUser(db))
-	auth.Get("/me", middleware.RequireAuth, getCurrentUser(db))
+	auth.Get("/me", middleware.AuthMiddleware, getCurrentUser(db))
 
-	// Scenarios (protected)
+	// Scenarios (optional auth - guest or user)
 	scenarios := api.Group("/scenarios")
 	scenarios.Use(middleware.OptionalAuth)
 	scenarios.Get("/", getScenarios(db))
@@ -50,19 +50,17 @@ func SetupRoutes(app *fiber.App, db *database.DB, scheduler *scheduler.Scheduler
 	scenarios.Get("/:scenario_id", getScenario(db))
 	scenarios.Put("/:scenario_id", updateScenario(db))
 	scenarios.Delete("/:scenario_id", deleteScenario(db))
-	scenarios.Post("/:scenario_id/claim", middleware.RequireAuth, claimScenario(db))
+	scenarios.Post("/:scenario_id/claim", middleware.AuthMiddleware, claimScenario(db))
+	scenarios.Get("/:scenario_id/standings", getStandings(db))
 
-	// Picks (protected)
+	// Picks (optional auth - guest or user)
 	picks := api.Group("/picks")
 	picks.Use(middleware.OptionalAuth)
 	picks.Get("/scenarios/:scenario_id", getPicksByScenario(db))
 	picks.Get("/scenarios/:scenario_id/games/:game_id", getPick(db))
-	picks.Post("/scenario/:scenario_id/games/:game_id", createPick(db))
-	picks.Put("/scenario/:scenario_id/games/:game_id", updatePick(db))
-	picks.Delete("/scenario/:scenario_id/games/:game_id", deletePick(db))
-
-	// Standings
-	api.Get("/scenarios/:scenario_id/standings", calculateStandings(db))
+	picks.Post("/scenarios/:scenario_id/games/:game_id", createPick(db))
+	picks.Put("/scenarios/:scenario_id/games/:game_id", updatePick(db))
+	picks.Delete("/scenarios/:scenario_id/games/:game_id", deletePick(db))
 
 	// Admin routes
 	admin := api.Group("/admin")

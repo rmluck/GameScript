@@ -16,7 +16,6 @@ func getGamesBySeason(db *database.DB) fiber.Handler {
 				game.start_time, game.day_of_week, game.week,
 				game.location, game.primetime, game.network,
 				game.home_score, game.away_score, game.status, game.is_postseason,
-				game.created_at,
 				ht.id as home_id, ht.abbreviation as home_abbr, ht.city as home_city, ht.name as home_name, ht.conference as home_conference, ht.division as home_division, ht.primary_color as home_primary_color, ht.secondary_color as home_secondary_color, ht.logo_url as home_logo_url,
 				at.id as away_id, at.abbreviation as away_abbr, at.city as away_city, at.name as away_name, at.conference as away_conference, at.division as away_division, at.primary_color as away_primary_color, at.secondary_color as away_secondary_color, at.logo_url as away_logo_url
 			FROM games game

@@ -19,17 +19,24 @@ func getPicksByScenario(db *database.DB) fiber.Handler {
 
 		query := `
 			SELECT
-				pick.id, pick.scenario_id, pick.game_id, pick.picked_team_id, pick.predicted_home_score, pick_predicted_away_score, pick.status, pick.created_at, pick.updated_at,
-				game.espn_id as game_espn_id, game.start_time, game.week, game.home_team_id, game.away_team_id, game.home_score, game.away_score, game.status as game_status,
-				ht.abbreviation as home_abbr, ht.city as home_city, ht.name as home_name, ht.conference as home_conference, ht.division as home_division, ht.primary_color as home_primary_color, home.secondary_color as home_secondary_color, ht.logo_url as home_logo_url,
-				at.abbreviation as away_abbr, at.city as away_city, at.name as away_name, at.conference as away_conference, at.division as away_division, at.primary_color as away_primary_color, at.secondary_color as away_secondary_color, at.logo_url as away_logo_url
-			FROM picks pick
-			JOIN games game on pick.game_id = game.id
-			JOIN teams ht on game.home_team_id = home_team_id
-			JOIN teams at on game.away_team_id = away_team_id
-			LEFT JOIN teams picked_team ON pick.picked_team_id = picked_team.id
-			WHERE pick.scenario_id = $1
-			ORDER BY game.start_time
+                pick.id, pick.scenario_id, pick.game_id, pick.picked_team_id, 
+                pick.predicted_home_score, pick.predicted_away_score, 
+                pick.status, pick.created_at, pick.updated_at,
+                game.espn_id, game.start_time, game.week, 
+                game.home_team_id, game.away_team_id, 
+                game.home_score, game.away_score, game.status as game_status,
+                home_team.abbreviation, home_team.city, home_team.name, 
+                home_team.conference, home_team.division, 
+                home_team.primary_color, home_team.secondary_color, home_team.logo_url,
+                away_team.abbreviation, away_team.city, away_team.name, 
+                away_team.conference, away_team.division, 
+                away_team.primary_color, away_team.secondary_color, away_team.logo_url
+            FROM picks pick
+            JOIN games game ON pick.game_id = game.id
+            JOIN teams home_team ON game.home_team_id = home_team.id
+            JOIN teams away_team ON game.away_team_id = away_team.id
+            WHERE pick.scenario_id = $1
+            ORDER BY game.start_time
 		`
 
 		rows, err := db.Query(query, scenarioID)
@@ -73,12 +80,11 @@ func getPicksByScenario(db *database.DB) fiber.Handler {
 					"espn_id": gameESPNID,
 					"start_time": startTime,
 					"week": week,
-					"home_team_id": homeTeamID,
-					"away_team_id": awayTeamID,
 					"home_score": homeScore,
 					"away_score": awayScore,
 					"status": gameStatus,
 					"home_team": map[string]interface{}{
+						"id": homeTeamID,
 						"abbreviation": homeAbbr,
 						"city": homeCity,
 						"name": homeName,
@@ -89,6 +95,7 @@ func getPicksByScenario(db *database.DB) fiber.Handler {
 						"logo_url": homeLogoURL,
 					},
 					"away_team": map[string]interface{}{
+						"id": awayTeamID,
 						"abbreviation": awayAbbr,
 						"city": awayCity,
 						"name": awayName,
@@ -306,11 +313,19 @@ func verifyScenarioOwnership(db *database.DB, scenarioID string, isAuthenticated
 		return false
 	}
 
-	if isAuthenticated {
-		currentUserID := c.Locals("user_id").(int)
+	// Get current user info from locals
+	currentUserID, _ := c.Locals("user_id").(int)
+	currentSessionToken, _ := c.Locals("session_token").(string)
+
+	// Check authenticated user ownership
+	if isAuthenticated && currentUserID > 0 {
 		return ownerUserID != nil && *ownerUserID == currentUserID
-	} else {
-		currentSessionToken := c.Locals("session_token").(string)
+	}
+	
+	// Check guest session ownership
+	if !isAuthenticated && currentSessionToken != "" {
 		return ownerSessionToken != nil && *ownerSessionToken == currentSessionToken
 	}
+
+	return false
 }

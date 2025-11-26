@@ -135,22 +135,23 @@ func getTeams(db *database.DB, seasonID int) ([]TeamRecord, error) {
 func getGameResults(db *database.DB, scenarioID int, seasonID int) ([]GameResult, error) {
 	query := `
 		SELECT
-			game.id, game.home_team_id, game.away_team_id, game.week, game.is_postseason
-			COALESCE(game.home_score, pick.predicted_home_score) AS home_score,
-			COALESCE(game.away_score, pick.predicted_away_score) AS away_score,
-			CASE
-				WHEN game.status = 'final' THEN 'final'
-				WHEN pick.picked_team_id IS NOT NULL THEN 'predicted'
-				ELSE 'unpicked'
-			END AS result_type
-		FROM games game
-		LEFT JOIN picks pick ON game.id = pick.game_id AND pick.scenario_id = $1
-		WHERE game.season_id = $2
-		AND (
-			game.status = 'final'
-			OR pick.picked_team_id IS NOT NULL
-		)
-		ORDER BY game.week, game.start_time
+            game.id, game.home_team_id, game.away_team_id, game.week, game.is_postseason,
+            COALESCE(game.home_score, pick.predicted_home_score) AS home_score,
+            COALESCE(game.away_score, pick.predicted_away_score) AS away_score,
+            CASE
+                WHEN game.status = 'final' THEN 'final'
+                WHEN pick.picked_team_id IS NOT NULL THEN 'predicted'
+                ELSE 'unpicked'
+            END AS result_type
+        FROM games game
+        LEFT JOIN picks pick ON game.id = pick.game_id AND pick.scenario_id = $1
+        WHERE game.season_id = $2
+        AND game.is_postseason = false
+        AND (
+            game.status = 'final'
+            OR pick.picked_team_id IS NOT NULL
+        )
+        ORDER BY game.week, game.start_time
 	`
 
 	rows, err := db.Query(query, scenarioID, seasonID)

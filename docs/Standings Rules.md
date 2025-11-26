@@ -6,7 +6,7 @@
 * Teams are grouped by division (4 teams per division) and conference (4 divisions per conference)
 * Win percentage = Wins / (Wins + Losses + 0.5 * Ties)
 * Ties count as one-half win and one-half loss for both teams
-* Need to calculate and retrieve overall record, win percentage, home record, away record, inter-division record, inter-conference record, points for, points against, points differential, current win/loss streak, strength of schedule, strength of victory, head-to-head records (between tied teams), common opponents (games all tied teams played), playoff seeding, draft order
+* Need to calculate and retrieve overall record, win percentage, home record, away record, inter-division record, inter-conference record, points for, points against, points differential, games back, current win/loss streak, strength of schedule, strength of victory, head-to-head records (between tied teams), common opponents (games all tied teams played), playoff seeding, draft order
 
 ### Playoff Seeding
 * 7 teams per conference make the playoffs
@@ -25,7 +25,10 @@
         4. Best win percentage in games played within the conference
         5. Strength of victory in all games
         6. Strength of schedule in all games
-        7. Coin toss
+        7. Point differential
+        8. Points scored
+        10. Points allowed
+        11. Coin toss
     * Three teams:
         * Note: If two teams remain tied after one or more teams are eliminated during any step, tiebreaker restarts at Step 1 of two-team format. If three teams remain tied after a fourth team is eliminated during any step, tiebreaker restarts at step 1 of three-team format.
         1. Head-to-head (best win percentage in games among the teams)
@@ -46,7 +49,10 @@
         3. Best win percentage in common games, minimum of four
         4. Strength of victory in all games
         5. Strength of schedule in all games
-        6. Coin toss
+        6. Point differential
+        7. Points scored
+        8. Points allowed
+        9. Coin toss
     * Three or more teams:
         * Note: If two teams remain tied after one or more teams are eliminated during any step, tiebreaker restarts at step 1 of two-team format. If three teams remain tied after fourth team is eliminated during any step, tiebreaker restarts at step 2 of three-team format.
         1. Apply division tiebreaker to eliminate all but highest ranked team in each division prior to proceeding to step 2. Original seeding within division upon application of division tiebreaker remains same for all subsequent applications of procedure that are necessary to identify the two wild card participants.
@@ -59,15 +65,15 @@
     * When the first wild card team has been identified, the procedure is repeated ot name the second and third wild card (i.e., eliminate all but the highest-ranked team in each division prior to proceeding to step 2). In situations in which three teams from same division are involved in procedure, original seeding of teams remains the same for subsequent applications of the tiebreaker if top-ranked team in that division qualifies for wild card berth.
 
 #### Other tie-breaking procedures
-1. Only one team advances to playoffs in any tie-breaking step. Remaining tied teams revert to first step of applicable division or wild card tiebreakers. As an example, if two teams remain tied in any tiebreakaer step after all other clubs have been eliminated, the procedure reverts to step 1 of the two-team format to determine the winner. When one team wins the tiebreaker, all other teams revert to step 1 of the applicable two-team or three-team format.
+1. Only one team advances to playoffs in any tie-breaking step. Remaining tied teams revert to first step of applicable division or wild card tiebreakers. As an example, if two teams remain tied in any tiebreakaer step after all other teams have been eliminated, the procedure reverts to step 1 of the two-team format to determine the winner. When one team wins the tiebreaker, all other teams revert to step 1 of the applicable two-team or three-team format.
 2. In comparing records against common opponents among tied teams, the best win percentage is the deciding factor, since teams may have played an unequal number of games
 3. To determine home-field priority among division winners, apply wild card tiebreakers.
 4. To determine home-field priority for wild card qualifiers, apply division tiebreakers (if teams are from the same divisiion) or wild card tiebreakers (if teams are from different divisions).
 5. To determine the best combined ranking among conference teams in points scored and points allowed, add a team's position in the two categories and the lowest score wins. For example, if Team A is first in points scored and second in points allowed, its combined ranking is 3. If Team B is third in points scored and first in points allowed, its combined ranking is 4. Team A then wins the tiebreaker. If two teams are tied for a position, both teams are awarded the ranking as if they held it solely. For example, if Team A and Team B are tied for first in points scored, each team is assigned a ranking of 1 in that category, and if Team C is third, its ranking will still be 3.
 
 #### Tiebreaker procedure for draft selection meeting
-1. Clubs not participating in the playoffs shall select in the first through 19th positions in league-wide reverse-standings order.
-2. Clubs participating in the playoffs shall select according to the following procedures:
+1. Teams not participating in the playoffs shall select in the first through 19th positions in league-wide reverse-standings order.
+2. Teams participating in the playoffs shall select according to the following procedures:
     a. The losers of the wild card games shall select in the 19th through 24th positions based on win percentage in reverse-standings order.
     b. The losers of the divisional playoff games shall select in the 25th through 28th positions based on win percentage in reverse-standings order.
     c. The losers of conference championship games shall select 29th and 30th based on win percentage in reverse-standings order.
@@ -77,7 +83,7 @@
     a. For divisional or conference ties, use procedures on the previous page.
     b. For inter-conference ties, use the following procedures:
         i. Ties involving two teams from different conferences will be broken by (a) head-to-head meeting; (b) best win percentage in common games, minimum of four; (c) strength of victory in all games; (d) best combined ranking among all teams in points scored and points allowed in all games; (e) best net points in all games; (f) best net touchdowns in all games, and finally (g) coin toss.
-        ii. Ties involving three or more clubs from different conferences will be broken by applying (a) divisional tiebreakers to determine lowest-ranked team in a division, (b) conference tiebreakers to determine lowest ranked team within conference, and (c) interconference tiebreakers to determine the lowest ranked team in the league. The process will be repeated until draft order has been established.
+        ii. Ties involving three or more teams from different conferences will be broken by applying (a) divisional tiebreakers to determine lowest-ranked team in a division, (b) conference tiebreakers to determine lowest ranked team within conference, and (c) interconference tiebreakers to determine the lowest ranked team in the league. The process will be repeated until draft order has been established.
 
 ### Other Notes
 
