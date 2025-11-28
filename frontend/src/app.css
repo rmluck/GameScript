@@ -1,1 +1,49 @@
 @import 'tailwindcss';
+
+@theme {
+  --color-primary-50: #f7f7ff;
+  --color-primary-100: #e8eef7;
+  --color-primary-200: #bdd5ea;
+  --color-primary-300: #92bce0;
+  --color-primary-400: #739fc4;
+  --color-primary-500: #577399;
+  --color-primary-600: #4a6380;
+  --color-primary-700: #3d5266;
+  --color-primary-800: #495867;
+  --color-primary-900: #2d3a45;
+
+  --color-accent-50: #fff5f5;
+  --color-accent-100: #ffe3e3;
+  --color-accent-200: #ffc7c7;
+  --color-accent-300: #ffa5a5;
+  --color-accent-400: #ff8080;
+  --color-accent-500: #fe5f55;
+  --color-accent-600: #e54d44;
+  --color-accent-700: #cc3d35;
+  --color-accent-800: #b32d26;
+  --color-accent-900: #991f1a;
+
+  --color-neutral-50: #f7f7ff;
+  --color-neutral-100: #e8eef7;
+  --color-neutral-200: #bdd5ea;
+  --color-neutral-300: #8fa5b8;
+  --color-neutral-400: #6b7f92;
+  --color-neutral-500: #495867;
+  --color-neutral-600: #3d4a56;
+  --color-neutral-700: #313c46;
+  --color-neutral-800: #252e36;
+  --color-neutral-900: #1a2026;
+
+  --font-sans: "Smooch Sans", system-ui, sans-serif;
+  --font-display: "Bebas Neue", sans-serif;
+  --font-heading: "Oswald", sans-serif;
+  --font-mono: "Roboto Condensed", monospace;
+}
+
+@utility font-display {
+  font-family: var(--font-display);
+}
+
+@utility font-heading {
+  font-family: var(--font-heading);
+}

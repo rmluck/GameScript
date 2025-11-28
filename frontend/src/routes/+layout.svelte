@@ -18,49 +18,58 @@
     });
 </script>
 
-<div class="min-h-screen bg-gray-50">
-    <nav class="bg-white shadow-sm">
+<div class="min-h-screen bg-primary-900">
+    <nav class="bg-primary-800 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex">
                     <a href="/" class="flex items-center">
-                        <span class="text-2xl font-bold text-primary-600">GameScript</span>
+                        <span class="font-sans font-bold text-3xl text-primary-400">GameScript</span>
                     </a>
-                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                    <div class="ml-6 flex space-x-8">
                         <a
-                            href="/scenarios"
-                            class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900"
+                            href="/nfl"
+                            class="inline-flex items-center px-1 pt-1 font-sans font-semibold text-lg text-neutral-100 hover:text-neutral-200"
                         >
-                            Scenarios
+                            NFL
                         </a>
                         <a
-                            href="/games"
-                            class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-900"
+                            href="/nba"
+                            class="inline-flex items-center px-1 pt-1 font-sans font-semibold text-lg text-neutral-100 hover:text-neutral-200"
                         >
-                            Games
+                            NBA
+                        </a>
+                        <a
+                            href="/cfb"
+                            class="inline-flex items-center px-1 pt-1 font-sans font-semibold text-lg text-neutral-100 hover:text-neutral-200"
+                        >
+                            CFB
                         </a>
                     </div>
                 </div>
                 <div class="flex items-center">
                     {#if $authStore.isAuthenticated}
-                        <span class="text-sm text-gray-700 mr-4">
+                        <span class="text-sm text-neutral-300 mr-4">
                             {$authStore.user?.username}
                         </span>
+                        <a href="/auth/profile" class="font-sans font-semibold text-lg text-neutral-100 hover:text-neutral-200 mr-4">
+                            PROFILE
+                        </a>
                         <button
                             on:click={() => authStore.logout()}
-                            class="text-sm font-medium text-gray-500 hover:text-gray-900"
+                            class="font-sans font-semibold text-lg text-neutral-100 bg-primary-500 hover:bg-accent-500 px-4 py-2 rounded-md"
                         >
-                            Logout
+                            LOGOUT
                         </button>
                     {:else}
-                        <a href="/auth/login" class="text-sm font-medium text-gray-500 hover:text-gray-900 mr-4">
-                            Login
+                        <a href="/auth/login" class="font-sans font-semibold text-lg text-neutral-100 bg-primary-500 hover:bg-accent-500 px-4 py-2 rounded-md mr-4">
+                            LOGIN
                         </a>
                         <a
                             href="/auth/register"
-                            class="text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 px-4 py-2 rounded-md"
+                            class="font-sans font-semibold text-lg text-neutral-100 bg-primary-500 hover:bg-accent-500 px-4 py-2 rounded-md"
                         >
-                            Sign Up
+                            SIGN UP
                         </a>
                     {/if}
                 </div>
