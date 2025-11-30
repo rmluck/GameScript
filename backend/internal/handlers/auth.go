@@ -1,82 +1,155 @@
 package handlers
 
 import (
-	"os"
-	"time"
+    "os"
+    "regexp"
+    "time"
+    "unicode"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
-	"golang.org/x/crypto/bcrypt"
+    "github.com/gofiber/fiber/v2"
+    "github.com/golang-jwt/jwt/v5"
+    "golang.org/x/crypto/bcrypt"
 
-	"gamescript/internal/database"
+    "gamescript/internal/database"
 )
 
-func registerUser(db *database.DB) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		type RegisterRequest struct {
-			Email   	string `json:"email"`
-			Username 	string `json:"username"`
-			Password 	string `json:"password"`
-		}
+func validatePassword(password string) []string {
+    var errors []string
+    
+    if len(password) < 8 {
+        errors = append(errors, "Password must be at least 8 characters")
+    }
 
-		var req RegisterRequest
-		if err := c.BodyParser(&req); err != nil {
-			return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
-		}
-
-		if req.Email == "" || req.Username == "" || req.Password == "" {
-			return c.Status(400).JSON(fiber.Map{"error": "Missing required fields"})
-		}
-
-		if len(req.Password) < 8 {
-			return c.Status(400).JSON(fiber.Map{"error": "Password must be at least 8 characters"})
-		}
-
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": "Failed to hash password"})
-		}
-
-		query := `
-			INSERT INTO users (email, username, password_hash)
-			VALUES ($1, $2, $3)
-			RETURNING id, email, username, is_admin, created_at
-		`
-
-		var id int
-		var email, username string
-		var isAdmin bool
-		var createdAt time.Time
-
-		err = db.Conn.QueryRow(query, req.Email, req.Username, string(hashedPassword)).Scan(
-			&id, &email, &username, &isAdmin, &createdAt,
-		)
-		if err != nil {
-			if err.Error() == "pq: duplicate key value violates unique constraint \"users_email_key\"" {
-				return c.Status(400).JSON(fiber.Map{"error": "Email already in use"})
-			}
-			if err.Error() == "pq: duplicate key value violates unique constraint \"users_username_key\"" {
-				return c.Status(400).JSON(fiber.Map{"error": "Username already in use"})
-			}
-			return c.Status(500).JSON(fiber.Map{"error": "Failed to create user"})
-		}
-
-		token := generateJWT(id, email, username)
-
-		return c.Status(201).JSON(fiber.Map{
-			"user": map[string]interface{}{
-				"id": id,
-				"email": email,
-				"username": username,
-				"is_admin": isAdmin,
-				"created_at": createdAt,
-			},
-			"token": token,
-		})
-	}
+	var hasUpper, hasLower, hasNumber, hasSpecial bool
+    for _, char := range password {
+        switch {
+			case unicode.IsUpper(char):
+				hasUpper = true
+			case unicode.IsLower(char):
+				hasLower = true
+			case unicode.IsDigit(char):
+				hasNumber = true
+			case unicode.IsPunct(char) || unicode.IsSymbol(char):
+				hasSpecial = true
+        }
+    }
+    
+    if !hasUpper {
+        errors = append(errors, "Password must contain at least one uppercase letter")
+    }
+    if !hasLower {
+        errors = append(errors, "Password must contain at least one lowercase letter")
+    }
+    if !hasNumber {
+        errors = append(errors, "Password must contain at least one number")
+    }
+    if !hasSpecial {
+        errors = append(errors, "Password must contain at least one special character")
+    }
+    
+    return errors
 }
 
-func loginUser(db *database.DB) fiber.Handler {
+func validateEmail(email string) bool {
+    emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+    return emailRegex.MatchString(email)
+}
+
+func validateUsername(username string) []string {
+    var errors []string
+    
+    if len(username) < 3 {
+        errors = append(errors, "Username must be at least 3 characters")
+    }
+    if len(username) > 50 {
+        errors = append(errors, "Username must be less than 50 characters")
+    }
+    
+    usernameRegex := regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+    if !usernameRegex.MatchString(username) {
+        errors = append(errors, "Username can only contain letters, numbers, hyphens, and underscores")
+    }
+    
+    return errors
+}
+
+func RegisterUser(db *database.DB) fiber.Handler {
+    return func(c *fiber.Ctx) error {
+        type RegisterRequest struct {
+            Email    string `json:"email"`
+            Username string `json:"username"`
+            Password string `json:"password"`
+        }
+
+        var req RegisterRequest
+        if err := c.BodyParser(&req); err != nil {
+            return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+        }
+
+        // Validate all fields
+        var errors []string
+        
+        if req.Email == "" || req.Username == "" || req.Password == "" {
+            return c.Status(400).JSON(fiber.Map{"error": "Missing required fields"})
+        }
+        
+        if !validateEmail(req.Email) {
+            errors = append(errors, "Invalid email format")
+        }
+        
+        errors = append(errors, validateUsername(req.Username)...)
+        errors = append(errors, validatePassword(req.Password)...)
+        
+        if len(errors) > 0 {
+            return c.Status(400).JSON(fiber.Map{"error": errors[0], "errors": errors})
+        }
+
+		// Hash password with higher cost for production
+        hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), 12)
+        if err != nil {
+            return c.Status(500).JSON(fiber.Map{"error": "Failed to hash password"})
+        }
+
+        query := `
+            INSERT INTO users (email, username, password_hash)
+            VALUES ($1, $2, $3)
+            RETURNING id, email, username, is_admin, created_at
+        `
+
+        var id int
+        var email, username string
+        var isAdmin bool
+        var createdAt time.Time
+
+        err = db.Conn.QueryRow(query, req.Email, req.Username, string(hashedPassword)).Scan(
+            &id, &email, &username, &isAdmin, &createdAt,
+        )
+        if err != nil {
+            if err.Error() == "pq: duplicate key value violates unique constraint \"users_email_key\"" {
+                return c.Status(400).JSON(fiber.Map{"error": "Email already in use"})
+            }
+            if err.Error() == "pq: duplicate key value violates unique constraint \"users_username_key\"" {
+                return c.Status(400).JSON(fiber.Map{"error": "Username already in use"})
+            }
+            return c.Status(500).JSON(fiber.Map{"error": "Failed to create user"})
+        }
+
+        token := generateJWT(id, email, username)
+
+        return c.Status(201).JSON(fiber.Map{
+            "user": map[string]interface{}{
+                "id":         id,
+                "email":      email,
+                "username":   username,
+                "is_admin":   isAdmin,
+                "created_at": createdAt,
+            },
+            "token": token,
+        })
+    }
+}
+
+func LoginUser(db *database.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		type LoginRequest struct {
 			Email string `json:"email"`
@@ -92,6 +165,26 @@ func loginUser(db *database.DB) fiber.Handler {
 			return c.Status(400).JSON(fiber.Map{"error": "Email and password are required"})
 		}
 
+		// Check for account lockout
+		var userID int
+		var failedAttempts int
+		var lockedUntil *time.Time
+		lockCheckQuery := `
+			SELECT id, failed_login_attempts, locked_until
+			FROM users
+			WHERE email = $1
+		`
+		err := db.Conn.QueryRow(lockCheckQuery, req.Email).Scan(&userID, &failedAttempts, &lockedUntil)
+
+		// If user exists, check lockout status
+		if err == nil && lockedUntil != nil && time.Now().Before(*lockedUntil) {
+            remainingTime := time.Until(*lockedUntil).Minutes()
+            return c.Status(423).JSON(fiber.Map{
+                "error": "Account is temporarily locked due to multiple failed login attempts. Please try again later.",
+                "locked_for_minutes": int(remainingTime) + 1,
+            })
+        }
+
 		query := `
 			SELECT id, email, username, password_hash, is_admin, created_at
 			FROM users
@@ -103,7 +196,7 @@ func loginUser(db *database.DB) fiber.Handler {
 		var isAdmin bool
 		var createdAt time.Time
 
-		err := db.Conn.QueryRow(query, req.Email).Scan(
+		err = db.Conn.QueryRow(query, req.Email).Scan(
 			&id, &email, &username, &passwordHash, &isAdmin, &createdAt,
 		)
 		if err != nil {
@@ -111,8 +204,39 @@ func loginUser(db *database.DB) fiber.Handler {
 		}
 
 		if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(req.Password)); err != nil {
-			return c.Status(401).JSON(fiber.Map{"error": "Invalid email or password"})
-		}
+            // Increment failed attempts
+            failedAttempts++
+            var lockTime *time.Time
+            
+            if failedAttempts >= 5 {
+                // Lock account for 15 minutes after 5 failed attempts
+                lockDuration := time.Now().Add(15 * time.Minute)
+                lockTime = &lockDuration
+            }
+
+            updateQuery := `
+                UPDATE users
+                SET failed_login_attempts = $1, locked_until = $2
+                WHERE id = $3
+            `
+            db.Conn.Exec(updateQuery, failedAttempts, lockTime, id)
+
+            if failedAttempts >= 5 {
+                return c.Status(423).JSON(fiber.Map{
+                    "error": "Too many failed attempts. Account locked for 15 minutes.",
+                })
+            }
+
+            return c.Status(401).JSON(fiber.Map{"error": "Invalid email or password"})
+        }
+
+		// Reset failed attempts and update last login on successful login
+        resetQuery := `
+            UPDATE users
+            SET failed_login_attempts = 0, locked_until = NULL, last_login = $1
+            WHERE id = $2
+        `
+        db.Conn.Exec(resetQuery, time.Now(), id)
 
 		token := generateJWT(id, email, username)
 
@@ -129,7 +253,7 @@ func loginUser(db *database.DB) fiber.Handler {
 	}
 }
 
-func getCurrentUser(db *database.DB) fiber.Handler {
+func GetCurrentUser(db *database.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		userID := c.Locals("user_id").(int)
 
@@ -165,20 +289,20 @@ func getCurrentUser(db *database.DB) fiber.Handler {
 }
 
 func generateJWT(userID int, email, username string) string {
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		jwtSecret = "jwt_dev_secret_key"
-	}
+    jwtSecret := os.Getenv("JWT_SECRET")
+    if jwtSecret == "" {
+        jwtSecret = "jwt_dev_secret_key"
+    }
 
-	claims := jwt.MapClaims{
-		"user_id": userID,
-		"email": email,
-		"username": username,
-		"exp": time.Now().Add(time.Hour * 24 * 7).Unix(), // 7 days
-	}
+    claims := jwt.MapClaims{
+        "user_id":  userID,
+        "email":    email,
+        "username": username,
+        "exp":      time.Now().Add(time.Hour * 24 * 7).Unix(), // 7 days
+    }
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, _ := token.SignedString([]byte(jwtSecret))
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    tokenString, _ := token.SignedString([]byte(jwtSecret))
 
-	return tokenString
+    return tokenString
 }

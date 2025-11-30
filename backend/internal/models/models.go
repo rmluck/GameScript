@@ -88,6 +88,10 @@ type User struct {
 	PasswordHash 	string    	`json:"-"`
 	IsAdmin			bool     	`json:"is_admin"`
 	AvatarURL 		*string   	`json:"avatar_url"`
+	FailedLoginAttempts int 	 `json:"failed_login_attempts"`
+	LockedUntil		*time.Time	`json:"locked_until"`
+	LastLogin		*time.Time	`json:"last_login"`
+	PasswordChangedAt time.Time  `json:"password_changed_at"`
 	CreatedAt		time.Time 	`json:"created_at"`
 	UpdatedAt		time.Time 	`json:"updated_at"`
 }

@@ -18,9 +18,9 @@
     });
 </script>
 
-<div class="min-h-screen bg-linear-to-br from-primary-975  to-primary-950">
+<div class="min-h-screen bg-linear-to-br from-primary-975  to-primary-950 flex flex-col">
     <nav class="bg-primary-900/30 shadow-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex">
                     <a href="/" class="flex items-center">
@@ -50,9 +50,10 @@
                 <div class="flex items-center">
                     {#if $authStore.isAuthenticated}
                         <span class="text-sm text-neutral-300 mr-4">
+                            {$authStore.user?.is_admin ? 'ADMIN:' : ''}
                             {$authStore.user?.username}
                         </span>
-                        <a href="/auth/profile" class="font-sans font-semibold text-lg bg-primary-800/60 hover:bg-primary-600 text-neutral transition-colors duration-200 px-4 py-2 rounded-md">
+                        <a href="/auth/profile" class="font-sans font-semibold text-lg bg-primary-800/60 hover:bg-primary-600 text-neutral transition-colors duration-200 px-4 py-2 rounded-md mr-4">
                             PROFILE
                         </a>
                         <button
@@ -77,7 +78,7 @@
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="flex flex-1 flex-col max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <slot />
     </main>
 

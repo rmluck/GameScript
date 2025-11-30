@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	// "time"
+
 	"github.com/gofiber/fiber/v2"
 
 	"gamescript/internal/database"
@@ -12,12 +14,12 @@ func SetupRoutes(app *fiber.App, db *database.DB, scheduler *scheduler.Scheduler
 	api := app.Group("/api")
 
 	// Health check
-	api.Get("/health", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"status": "ok",
-			"message": "GameScript API is running",
-		})
-	})
+	// api.Get("/health", func(c *fiber.Ctx) error {
+	// 	return c.JSON(fiber.Map{
+	// 		"status": "ok",
+	// 		"message": "GameScript API is running",
+	// 	})
+	// })
 
 	// Sports routes
 	api.Get("/sports", getSports(db))
@@ -37,10 +39,10 @@ func SetupRoutes(app *fiber.App, db *database.DB, scheduler *scheduler.Scheduler
 	api.Get("/games/:game_id", getGame(db))
 
 	// Authentication
-	auth := api.Group("/auth")
-	auth.Post("/register", registerUser(db))
-	auth.Post("/login", loginUser(db))
-	auth.Get("/me", middleware.AuthMiddleware, getCurrentUser(db))
+	// auth := api.Group("/auth")
+	// auth.Post("/register", middleware.RateLimitAuth(5, 15*time.Minute), registerUser(db))
+	// auth.Post("/login", middleware.RateLimitAuth(5, 15*time.Minute), loginUser(db))
+	// auth.Get("/me", middleware.AuthMiddleware, getCurrentUser(db))
 
 	// Scenarios (optional auth - guest or user)
 	scenarios := api.Group("/scenarios")

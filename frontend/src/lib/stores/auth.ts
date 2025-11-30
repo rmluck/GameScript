@@ -9,30 +9,44 @@ interface AuthState {
 }
 
 function createAuthStore() {
-    const initialState: AuthState = {
+    const { subscribe, set, update } = writable<AuthState>({
         user: null,
         token: null,
         isAuthenticated: false
-    };
+    });
 
-    // Load from localStorage on init
+    // Initialize from localStorage with expiry check
     if (browser) {
         const storedToken = localStorage.getItem('token');
+        const tokenExpiry = localStorage.getItem('token_expiry');
         const storedUser = localStorage.getItem('user');
-        if (storedToken && storedUser) {
-            initialState.token = storedToken;
-            initialState.user = JSON.parse(storedUser);
-            initialState.isAuthenticated = true;
+
+        if (storedToken && tokenExpiry && storedUser) {
+            const expiry = new Date(tokenExpiry);
+            if (expiry > new Date()) {
+                set({
+                    user: JSON.parse(storedUser),
+                    token: storedToken,
+                    isAuthenticated: true
+                });
+            } else {
+                // Token expired, clear everything
+                localStorage.removeItem('token');
+                localStorage.removeItem('token_expiry');
+                localStorage.removeItem('user');
+            }
         }
     }
-
-    const { subscribe, set, update } = writable<AuthState>(initialState);
 
     return {
         subscribe,
         login: (user: User, token: string) => {
             if (browser) {
                 localStorage.setItem('token', token);
+                // Set expiry for 7 days
+                const expiry = new Date();
+                expiry.setDate(expiry.getDate() + 7);
+                localStorage.setItem('token_expiry', expiry.toISOString());
                 localStorage.setItem('user', JSON.stringify(user));
             }
             set({ user, token, isAuthenticated: true });
@@ -40,6 +54,7 @@ function createAuthStore() {
         logout: () => {
             if (browser) {
                 localStorage.removeItem('token');
+                localStorage.removeItem('token_expiry');
                 localStorage.removeItem('user');
             }
             set({ user: null, token: null, isAuthenticated: false });
@@ -48,7 +63,7 @@ function createAuthStore() {
             if (browser) {
                 localStorage.setItem('user', JSON.stringify(user));
             }
-            update((state) => ({ ...state, user }));
+            update(state => ({ ...state, user }));
         }
     };
 }

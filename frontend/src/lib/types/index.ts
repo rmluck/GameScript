@@ -4,6 +4,10 @@ export interface User {
     username: string;
     is_admin: boolean;
     avatar_url?: string;
+    failed_login_attempts: number;
+    locked_until?: string;
+    last_login?: string;
+    password_changed_at: string;
     created_at: string;
     updated_at: string;
 }
