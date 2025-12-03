@@ -1,11 +1,25 @@
 <script lang="ts">
+    import { goto } from '$app/navigation'
     import { authStore } from '$lib/stores/auth';
+    import CreateScenarioModal from '$lib/components/scenarios/CreateScenarioModal.svelte'
+
+    let showCreateModal = false;
+
+    function handleScenarioCreated(event: CustomEvent) {
+        const scenario = event.detail;
+        goto(`/scenarios/${scenario.id}`);
+    }
 </script>
 
 <svelte:head>
     <title>GameScript</title>
     <meta name="description" content="Create custom playoff scenarios and see how your picks affect the standings, playoff seeding, and draft order." />
 </svelte:head>
+
+<CreateScenarioModal 
+    bind:isOpen={showCreateModal} 
+    on:created={handleScenarioCreated}
+/>
 
 <div class="text-center">
     <h1 class="font-display font-bold text-neutral text-4xl sm:text-5xl md:text-6xl mt-16">
@@ -19,12 +33,12 @@
     <!-- CTA Buttons -->
     <div class="mt-8 flex justify-center gap-x-6">
         {#if $authStore.isAuthenticated}
-            <a
-                href="/scenarios/new"
-                class="bg-primary-900/60 hover:bg-primary-600 border-2 border-primary-900 hover:border-primary-500 rounded-lg shadow-lg transition-all hover:scale-105 px-6 py-3 font-sans font-semibold text-xl text-neutral"
+            <button
+                on:click={() => showCreateModal = true}
+                class="bg-primary-900/60 hover:bg-primary-600 border-2 border-primary-900 hover:border-primary-500 rounded-lg shadow-lg transition-all hover:scale-105 px-6 py-3 font-sans font-semibold text-xl text-neutral cursor-pointer"
             >
                 CREATE SCENARIO
-            </a>
+            </button>
             <a
                 href="/scenarios"
                 class="bg-primary-900/60 hover:bg-primary-600 border-2 border-primary-900 hover:border-primary-500 rounded-lg shadow-lg transition-all hover:scale-105 px-6 py-3 font-sans font-semibold text-xl text-neutral"
