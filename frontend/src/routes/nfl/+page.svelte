@@ -40,7 +40,7 @@
             });
 
             // Redirect to scenario page
-            goto(`/scenarios/${scenario.id}`);
+            goto(`/scenarios/nfl/${scenario.id}`);
         } catch (error) {
             console.error('Failed to create NFL scenario:', error);
             // Could redirect to error page or show error message
