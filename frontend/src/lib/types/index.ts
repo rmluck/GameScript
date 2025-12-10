@@ -111,6 +111,9 @@ export interface TeamRecord {
     point_diff: number;
     division_games_back?: number;
     conference_games_back?: number;
+    logo_url: string;
+    team_primary_color: string;
+    team_secondary_color: string;
 }
 
 export interface PlayoffSeed {
@@ -122,12 +125,14 @@ export interface PlayoffSeed {
     losses: number;
     ties: number;
     is_division_winner: boolean;
+    logo_url: string;
+    team_primary_color: string;
+    team_secondary_color: string;
 }
 
 export interface ConferenceStandings {
     divisions: Record<string, TeamRecord[]>;
     playoff_seeds: PlayoffSeed[];
-    all_seeds: PlayoffSeed[];
 }
 
 export interface Standings {
@@ -143,4 +148,7 @@ export interface DraftPick {
     team_abbr: string;
     record: string;
     reason: string;
+    logo_url: string;
+    team_primary_color: string;
+    team_secondary_color: string;
 }

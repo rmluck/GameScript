@@ -115,6 +115,9 @@ func formatDivisions(divisions map[string][]standings.TeamRecord) map[string]int
 				"point_diff": team.PointsFor - team.PointsAgainst,
 				"division_games_back": team.DivisionGamesBack,
 				"conference_games_back": team.ConferenceGamesBack,
+				"logo_url": team.LogoURL,
+				"team_primary_color": team.TeamPrimaryColor,
+				"team_secondary_color": team.TeamSecondaryColor,
 			})
 		}
 		result[divName] = formattedTeams
@@ -136,6 +139,9 @@ func formatPlayoffSeeds(seeds []standings.PlayoffSeed) []map[string]interface{} 
 			"losses": seed.Team.Losses,
 			"ties": seed.Team.Ties,
 			"is_division_winner": seed.IsDivisionWinner,
+			"logo_url": seed.Team.LogoURL,
+			"team_primary_color": seed.Team.TeamPrimaryColor,
+			"team_secondary_color": seed.Team.TeamSecondaryColor,
 		})
 	}
 
@@ -153,6 +159,9 @@ func formatDraftOrder(picks []standings.DraftPick) []map[string]interface{} {
 			"team_abbr": pick.Team.TeamAbbr,
 			"record": fmt.Sprintf("%d-%d-%d", pick.Team.Wins, pick.Team.Losses, pick.Team.Ties),
 			"reason": pick.Reason,
+			"logo_url": pick.Team.LogoURL,
+			"team_primary_color": pick.Team.TeamPrimaryColor,
+			"team_secondary_color": pick.Team.TeamSecondaryColor,
 		})
 	}
 

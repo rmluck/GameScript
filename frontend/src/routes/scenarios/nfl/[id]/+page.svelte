@@ -2,17 +2,20 @@
     import { onMount } from 'svelte';
     import { page } from '$app/stores';
     import { scenariosAPI } from '$lib/api/scenarios';
-    import type { Scenario } from '$types';
+    import { standingsAPI } from '$lib/api/standings';
+    import type { Scenario, Standings } from '$types';
 
     import ScenarioHeader from '$lib/components/scenarios/ScenarioHeader.svelte';
     import ScenarioSettings from '$lib/components/scenarios/ScenarioSettings.svelte';
     import ScenarioInfo from '$lib/components/nfl/ScenarioInfo.svelte';
     import PicksBox from '$lib/components/nfl/PicksBox.svelte';
     import StandingsBox from '$lib/components/nfl/StandingsBox.svelte';
+    import StandingsBoxExpanded from '$lib/components/nfl/StandingsBoxExpanded.svelte';
     import DraftOrderBox from '$lib/components/nfl/DraftOrderBox.svelte';
 
     let scenarioId: number;
     let scenario: Scenario | null = null;
+    let standings: Standings | null = null;
     let loading = true;
     let error = '';
 
@@ -22,6 +25,10 @@
     // Current week being viewed
     let currentWeek = 1;
 
+    // Shared standings view mode
+    type ViewMode = 'conference' | 'division';
+    let standingsViewMode: ViewMode = 'conference';
+
     // Save status indicator
     let saveStatus: 'idle' | 'saving' | 'saved' | 'error' = 'idle';
 
@@ -29,6 +36,7 @@
 
     onMount(async () => {
         await loadScenario();
+        await loadStandings();
     });
 
     async function loadScenario() {
@@ -42,6 +50,14 @@
             error = err.response?.data?.error || 'Failed to load scenario.';
         } finally {
             loading = false;
+        }
+    }
+
+    async function loadStandings() {
+        try {
+            standings = await standingsAPI.getByScenario(scenarioId);
+        } catch (err: any) {
+            console.error('Failed to load standings:', err);
         }
     }
 
@@ -60,6 +76,7 @@
     function handlePickUpdated() {
         saveStatus = 'saved';
         setTimeout(() => saveStatus = 'idle', 2000);
+        loadStandings();
     }
 </script>
 
@@ -101,7 +118,13 @@
         <div class="hidden lg:grid lg:grid-cols-[minmax(250px,1fr)_minmax(700px,2fr)_minmax(250px,1fr)] lg:gap-6">
             <!-- Left: AFC Standings -->
             <div class="min-w-0">
-                <StandingsBox conference="AFC" {scenarioId} {currentWeek} />
+                {#if standings}
+                    <StandingsBox 
+                        standings={standings.afc} 
+                        conference="AFC"
+                        bind:viewMode={standingsViewMode}
+                    />
+                {/if}
             </div>
 
             <!-- Center: Picks -->
@@ -116,7 +139,13 @@
 
             <!-- Right: NFC Standings -->
             <div class="min-w-0">
-                <StandingsBox conference="NFC" {scenarioId} {currentWeek} />
+                {#if standings}
+                    <StandingsBox 
+                        standings={standings.nfc} 
+                        conference="NFC"
+                        bind:viewMode={standingsViewMode}
+                    />
+                {/if}
             </div>
         </div>
 
@@ -131,8 +160,20 @@
             />
 
             <!-- Standings -->
-            <StandingsBox conference="AFC" {scenarioId} {currentWeek} expanded={true} />
-            <StandingsBox conference="NFC" {scenarioId} {currentWeek} expanded={true} />
+            {#if standings}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <StandingsBoxExpanded 
+                        standings={standings.afc} 
+                        conference="AFC"
+                        bind:viewMode={standingsViewMode}
+                    />
+                    <StandingsBoxExpanded 
+                        standings={standings.nfc} 
+                        conference="NFC"
+                        bind:viewMode={standingsViewMode}
+                    />
+                </div>
+            {/if}
         </div>
 
         <!-- Draft Order -->

@@ -28,6 +28,9 @@ type TeamRecord struct {
 	WinPct       		float64
 	ConferenceGamesBack	float64
 	DivisionGamesBack	float64
+	LogoURL	 			string
+	TeamPrimaryColor	string
+	TeamSecondaryColor	string
 }
 
 type NFLStandings struct {
@@ -100,7 +103,7 @@ func CalculateNFLStandings(db *database.DB, scenarioID int, seasonID int) (*NFLS
 func getTeams(db *database.DB, seasonID int) ([]TeamRecord, error) {
 	query := `
 		SELECT
-			id, city, name, abbreviation, conference, division
+			id, city, name, abbreviation, conference, division, logo_url, primary_color, secondary_color
 		FROM teams
 		WHERE season_id = $1
 		ORDER BY conference, division, name
@@ -122,6 +125,9 @@ func getTeams(db *database.DB, seasonID int) ([]TeamRecord, error) {
 			&team.TeamAbbr,
 			&team.Conference,
 			&team.Division,
+			&team.LogoURL,
+			&team.TeamPrimaryColor,
+			&team.TeamSecondaryColor,
 		)
 		if err != nil {
 			continue
