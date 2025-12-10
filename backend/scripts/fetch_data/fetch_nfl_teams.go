@@ -17,7 +17,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	file, err := os.Create("database/nfl/teams/nfl_teams_2025.json")
+	file, err := os.Create("database/nfl/teams/nfl_teams.json")
 	if err != nil {
 		fmt.Printf("Error creating file: %v\n", err)
 		os.Exit(1)

@@ -30,6 +30,7 @@ CREATE TABLE teams (
     primary_color VARCHAR(20),
     secondary_color VARCHAR(20),
     logo_url VARCHAR(255),
+    alternate_logo_url VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(season_id, espn_id)
 );

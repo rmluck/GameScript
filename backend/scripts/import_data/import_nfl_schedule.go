@@ -75,7 +75,6 @@ func main() {
 }
 
 func insertGames(db *database.DB, games []models.Game) error {
-    // Prepare insert statement
     stmt := `
         INSERT INTO games (
             season_id, espn_id, home_team_id, away_team_id, start_time, day_of_week,
@@ -94,8 +93,14 @@ func insertGames(db *database.DB, games []models.Game) error {
             network = EXCLUDED.network
     `
 
-    // Insert each game
     for _, game := range games {
+        // Only set scores if status is "final"
+        var homeScore, awayScore *int
+        if game.Status != nil && *game.Status == "final" {
+            homeScore = game.HomeScore
+            awayScore = game.AwayScore
+        }
+
         _, err := db.Conn.Exec(
             stmt,
             game.SeasonID,
@@ -108,8 +113,8 @@ func insertGames(db *database.DB, games []models.Game) error {
             game.Location,
             game.Primetime,
             game.Network,
-            game.HomeScore,
-            game.AwayScore,
+            homeScore,  // Will be NULL for upcoming games
+            awayScore,  // Will be NULL for upcoming games
             game.Status,
             game.IsPostseason,
         )

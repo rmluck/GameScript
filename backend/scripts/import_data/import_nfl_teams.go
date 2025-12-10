@@ -14,7 +14,7 @@ import (
 
 func main() {
 	// Open JSON file
-	file, err := os.Open("database/nfl_teams_2025.json")
+	file, err := os.Open("database/nfl/teams/nfl_teams_2025.json")
 	if err != nil {
 		fmt.Printf("Error opening file: %v\n", err)
 		os.Exit(1)
@@ -56,13 +56,16 @@ func insertTeams(db *database.DB, teams []models.Team) error {
 	stmt := `
 		INSERT INTO teams (
 			sport_id, season_id, espn_id, abbreviation, city, name,
-			conference, division, primary_color, secondary_color, logo_url,
+			conference, division, primary_color, secondary_color, logo_url, alternate_logo_url,
 			created_at
 			) VALUES (
 			 $1, $2, $3, $4, $5, $6,
-			 $7, $8, $9, $10, $11, $12
+			 $7, $8, $9, $10, $11, $12, $13
 		)
-		ON CONFLICT (sport_id, espn_id) DO NOTHING
+		ON CONFLICT (season_id, espn_id)
+		DO UPDATE SET
+			alternate_logo_url = EXCLUDED.alternate_logo_url,
+			logo_url = EXCLUDED.logo_url
 	`
 
 	// Insert each team
@@ -80,6 +83,7 @@ func insertTeams(db *database.DB, teams []models.Team) error {
 			team.PrimaryColor,
 			team.SecondaryColor,
 			team.LogoURL,
+			team.AlternateLogoURL,
 			time.Now(),
 		)
 		if err != nil {

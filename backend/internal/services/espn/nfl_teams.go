@@ -27,8 +27,10 @@ func (c *Client) FetchNFLTeams() ([]models.Team, error) {
 			conference := team.Conference.Name
 			division := team.Division.Name
 			var logoURL *string
-			if len(team.Logos) > 0 {
+			var alternateLogoURL *string
+			if len(team.Logos) > 1 {
 				logoURL = &team.Logos[0].Href
+				alternateLogoURL = &team.Logos[1].Href
 			}
 			teams = append(teams, models.Team{
 				SportID:		1,
@@ -42,6 +44,7 @@ func (c *Client) FetchNFLTeams() ([]models.Team, error) {
 				PrimaryColor:  	team.PrimaryColor,
 				SecondaryColor:	team.SecondaryColor,
 				LogoURL:		logoURL,
+				AlternateLogoURL: alternateLogoURL,
 			})
 		}
 	}

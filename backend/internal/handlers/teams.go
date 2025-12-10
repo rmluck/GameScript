@@ -15,7 +15,7 @@ func getTeamsBySeason(db *database.DB) fiber.Handler {
 				team.id, team.sport_id, team.season_id, team.espn_id,
 				team.abbreviation, team.city, team.name, 
 				team.conference, team.division,
-				team.primary_color, team.secondary_color, team.logo_url
+				team.primary_color, team.secondary_color, team.logo_url, team.alternate_logo_url
 			FROM teams team
 			WHERE team.season_id = $1
 			ORDER BY team.name
@@ -31,13 +31,13 @@ func getTeamsBySeason(db *database.DB) fiber.Handler {
 		for rows.Next() {
 			var id, sportID, seasonID int
 			var espnID, abbreviation, city, name, primaryColor, secondaryColor string
-			var conference, division, logoURL *string
+			var conference, division, logoURL, alternateLogoURL *string
 
 			err := rows.Scan(
 				&id, &sportID, &seasonID, &espnID,
 				&abbreviation, &city, &name,
 				&conference, &division,
-				&primaryColor, &secondaryColor, &logoURL,
+				&primaryColor, &secondaryColor, &logoURL, &alternateLogoURL,
 			)
 			if err != nil {
 				continue
@@ -56,6 +56,7 @@ func getTeamsBySeason(db *database.DB) fiber.Handler {
 				"primary_color": primaryColor,
 				"secondary_color": secondaryColor,
 				"logo_url": logoURL,
+				"alternate_logo_url": alternateLogoURL,
 			})
 		}
 
@@ -72,20 +73,20 @@ func getTeam(db *database.DB) fiber.Handler {
 				team.id, team.sport_id, team.season_id, team.espn_id,
 				team.abbreviation, team.city, team.name, 
 				team.conference, team.division,
-				team.primary_color, team.secondary_color, team.logo_url
+				team.primary_color, team.secondary_color, team.logo_url, team.alternate_logo_url
 			FROM teams team
 			WHERE team.id = $1
 		`
 
 		var id, sportID, seasonID int
 		var espnID, abbreviation, city, name, primaryColor, secondaryColor string
-		var conference, division, logoURL *string
+		var conference, division, logoURL, alternateLogoURL *string
 
 		err := db.Conn.QueryRow(query, teamID).Scan(
 			&id, &sportID, &seasonID, &espnID,
 			&abbreviation, &city, &name,
 			&conference, &division,
-			&primaryColor, &secondaryColor, &logoURL,
+			&primaryColor, &secondaryColor, &logoURL, &alternateLogoURL,
 		)
 		if err != nil {
 			return c.Status(404).JSON(fiber.Map{"error": "Team not found"})
@@ -104,6 +105,7 @@ func getTeam(db *database.DB) fiber.Handler {
 			"primary_color": primaryColor,
 			"secondary_color": secondaryColor,
 			"logo_url": logoURL,
+			"alternate_logo_url": alternateLogoURL,
 		})
 	}
 }

@@ -98,14 +98,14 @@
     <!-- Main Content - Responsive Grid -->
     <div class="mt-6 space-y-6 lg:space-y-0">
         <!-- Desktop: 3-column layout -->
-        <div class="hidden lg:grid lg:grid-cols-12 lg:gap-6">
+        <div class="hidden lg:grid lg:grid-cols-[minmax(250px,1fr)_minmax(700px,2fr)_minmax(250px,1fr)] lg:gap-6">
             <!-- Left: AFC Standings -->
-            <div class="lg:col-span-3">
+            <div class="min-w-0">
                 <StandingsBox conference="AFC" {scenarioId} {currentWeek} />
             </div>
 
             <!-- Center: Picks -->
-            <div class="lg:col-span-6">
+            <div class="min-w-0">
                 <PicksBox 
                     {scenarioId}
                     {currentWeek}
@@ -115,7 +115,7 @@
             </div>
 
             <!-- Right: NFC Standings -->
-            <div class="lg:col-span-3">
+            <div class="min-w-0">
                 <StandingsBox conference="NFC" {scenarioId} {currentWeek} />
             </div>
         </div>

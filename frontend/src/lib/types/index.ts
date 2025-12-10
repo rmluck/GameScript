@@ -46,6 +46,7 @@ export interface Team {
     primary_color: string;
     secondary_color?: string;
     logo_url?: string;
+    alternate_logo_url?: string;
 }
 
 export interface Game {
@@ -64,6 +65,8 @@ export interface Game {
     away_score?: number;
     status: 'upcoming' | 'in_progress' | 'final';
     is_postseason: boolean;
+    home_team: Team;
+    away_team: Team;
 }
 
 export interface Scenario {
@@ -83,10 +86,11 @@ export interface Pick {
     id: number;
     scenario_id: number;
     game_id: number;
-    picked_team_id: number;
-    predicted_home_score: number;
-    predicted_away_score: number;
+    picked_team_id: number | null;
+    predicted_home_score?: number;
+    predicted_away_score?: number;
     status: 'pending' | 'correct' | 'incorrect';
+    game?: Game;
     created_at: string;
     updated_at: string;
 }

@@ -55,8 +55,8 @@ func (c *Client) FetchNFLSchedule(year int, week int) ([]models.Game, error) {
 		if err != nil {
 			continue
 		}
-		gameTime := gameTimeUTC.In(pst)
-		dayOfWeek := gameTime.Weekday().String()
+		gameTimePST := gameTimeUTC.In(pst)
+		dayOfWeek := gameTimePST.Weekday().String()
 
 		// Parse the location
 		location := competition.Venue.FullName
@@ -85,7 +85,7 @@ func (c *Client) FetchNFLSchedule(year int, week int) ([]models.Game, error) {
 		}
 
 		// Parse primetime info
-		primetime := determinePrimetime(gameTime, location)
+		primetime := determinePrimetime(gameTimePST, location)
 
 		// Parse broadcasts
 		var network string
@@ -102,7 +102,7 @@ func (c *Client) FetchNFLSchedule(year int, week int) ([]models.Game, error) {
 		game := models.Game{
 			SeasonID: 			1,
 			ESPNID: 			competition.ID,
-			StartTime: 			gameTime,
+			StartTime: 			gameTimeUTC,
 			DayOfWeek: 			&dayOfWeek,
 			Week: 				&week,
 			Location: 			&location,

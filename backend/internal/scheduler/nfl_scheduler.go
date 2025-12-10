@@ -83,61 +83,68 @@ func (s *Scheduler) updateNFLSchedule() {
 }
 
 func (s *Scheduler) updateNFLGame(game models.Game) error {
-	stmt := `
-		INSERT INTO games (
-			season_id, espn_id, home_team_id, away_team_id, start_time,
-			day_of_week, week, location, primetime, network,
-			home_score, away_score, status, is_postseason
-		) VALUES (
-		 	$1, $2,
-			(SELECT id FROM teams WHERE season_id = $1 AND espn_id = $3),
-			(SELECT id FROM teams WHERE season_id = $1 AND espn_id = $4),
-			$5, $6, $7, $8, $9, $10, $11, $12, $13, $14
-		)
-		ON CONFLICT (season_id, espn_id) DO UPDATE SET
-			start_time = EXCLUDED.start_time,
-			day_of_week = EXCLUDED.day_of_week,
-			week = EXCLUDED.week,
-			location = EXCLUDED.location,
-			primetime = EXCLUDED.primetime,
-			network = EXCLUDED.network,
-			home_score = EXCLUDED.home_score,
-			away_score = EXCLUDED.away_score,
-			status = EXCLUDED.status
-	`
+    stmt := `
+        INSERT INTO games (
+            season_id, espn_id, home_team_id, away_team_id, start_time,
+            day_of_week, week, location, primetime, network,
+            home_score, away_score, status, is_postseason
+        ) VALUES (
+         	$1, $2,
+            (SELECT id FROM teams WHERE season_id = $1 AND espn_id = $3),
+            (SELECT id FROM teams WHERE season_id = $1 AND espn_id = $4),
+            $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+        )
+        ON CONFLICT (season_id, espn_id) DO UPDATE SET
+            start_time = EXCLUDED.start_time,
+            day_of_week = EXCLUDED.day_of_week,
+            week = EXCLUDED.week,
+            location = EXCLUDED.location,
+            primetime = EXCLUDED.primetime,
+            network = EXCLUDED.network,
+            home_score = EXCLUDED.home_score,
+            away_score = EXCLUDED.away_score,
+            status = EXCLUDED.status
+    `
 
-	result, err := s.db.Conn.Exec(
-		stmt,
-		game.SeasonID,
-		game.ESPNID,
-		*game.HomeTeamESPNID,
-		*game.AwayTeamESPNID,
-		game.StartTime,
-		game.DayOfWeek,
-		game.Week,
-		game.Location,
-		game.Primetime,
-		game.Network,
-		game.HomeScore,
-		game.AwayScore,
-		game.Status,
-		game.IsPostseason,
-	)
+    // Only set scores if status is "final"
+    var homeScore, awayScore *int
+    if game.Status != nil && *game.Status == "final" {
+        homeScore = game.HomeScore
+        awayScore = game.AwayScore
+    }
 
-	if err != nil {
-		return fmt.Errorf("database error: %w", err)
-	}
+    result, err := s.db.Conn.Exec(
+        stmt,
+        game.SeasonID,
+        game.ESPNID,
+        *game.HomeTeamESPNID,
+        *game.AwayTeamESPNID,
+        game.StartTime,
+        game.DayOfWeek,
+        game.Week,
+        game.Location,
+        game.Primetime,
+        game.Network,
+        homeScore,   // Will be NULL for upcoming games
+        awayScore,   // Will be NULL for upcoming games
+        game.Status,
+        game.IsPostseason,
+    )
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("error checking rows affected: %w", err)
-	}
+    if err != nil {
+        return fmt.Errorf("database error: %w", err)
+    }
 
-	if rowsAffected == 0 {
-		return fmt.Errorf("no game found with espn_id %s", game.ESPNID)
-	}
+    rowsAffected, err := result.RowsAffected()
+    if err != nil {
+        return fmt.Errorf("error checking rows affected: %w", err)
+    }
 
-	return nil
+    if rowsAffected == 0 {
+        return fmt.Errorf("no game found with espn_id %s", game.ESPNID)
+    }
+
+    return nil
 }
 
 // Public method for manual triggering

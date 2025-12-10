@@ -31,6 +31,7 @@ type Team struct {
 	PrimaryColor	string     	`json:"primary_color"`
 	SecondaryColor	string     	`json:"secondary_color"`
 	LogoURL			*string   	`json:"logo_url"`
+	AlternateLogoURL *string   	`json:"alternate_logo_url"`
 	CreatedAt		time.Time 	`json:"created_at"`
 }
 

@@ -12,6 +12,7 @@
     "primary_color": "a40227",
     "secondary_color": "face07",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/ari.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/ari.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -27,6 +28,7 @@
     "primary_color": "a71930",
     "secondary_color": "000000",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/atl.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/atl.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -42,6 +44,7 @@
     "primary_color": "29126f",
     "secondary_color": "d1b62c",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/bal.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/bal.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -57,6 +60,7 @@
     "primary_color": "00338d",
     "secondary_color": "d50a0a",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/buf.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/buf.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -72,6 +76,7 @@
     "primary_color": "0085ca",
     "secondary_color": "000000",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/car.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/car.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -87,6 +92,7 @@
     "primary_color": "0b1c3a",
     "secondary_color": "e64100",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/chi.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/chi.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -102,6 +108,7 @@
     "primary_color": "fb4f14",
     "secondary_color": "000000",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/cin.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/cin.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -117,6 +124,7 @@
     "primary_color": "472a08",
     "secondary_color": "ff3c00",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/cle.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/cle.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -132,6 +140,7 @@
     "primary_color": "002a5c",
     "secondary_color": "b0b7bc",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/dal.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/dal.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -147,6 +156,7 @@
     "primary_color": "0a2343",
     "secondary_color": "fc4c02",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/den.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/den.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -162,6 +172,7 @@
     "primary_color": "0076b6",
     "secondary_color": "bbbbbb",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/det.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/det.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -177,6 +188,7 @@
     "primary_color": "204e32",
     "secondary_color": "ffb612",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/gb.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/gb.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -192,6 +204,7 @@
     "primary_color": "00143f",
     "secondary_color": "c41230",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/hou.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/hou.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -207,6 +220,7 @@
     "primary_color": "003b75",
     "secondary_color": "ffffff",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/ind.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/ind.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -222,6 +236,7 @@
     "primary_color": "007487",
     "secondary_color": "d7a22a",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/jax.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/jax.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -237,6 +252,7 @@
     "primary_color": "e31837",
     "secondary_color": "ffb612",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/kc.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/kc.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -252,6 +268,7 @@
     "primary_color": "000000",
     "secondary_color": "a5acaf",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/lv.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/lv.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -267,6 +284,7 @@
     "primary_color": "0080c6",
     "secondary_color": "ffc20e",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/lac.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/lac.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -281,7 +299,8 @@
     "division": "NFC West",
     "primary_color": "003594",
     "secondary_color": "ffd100",
-    "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/lar.png",
+    "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/lar.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/lar.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -297,6 +316,7 @@
     "primary_color": "008e97",
     "secondary_color": "fc4c02",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/mia.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/mia.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -312,6 +332,7 @@
     "primary_color": "4f2683",
     "secondary_color": "ffc62f",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/min.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/min.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -327,6 +348,7 @@
     "primary_color": "002a5c",
     "secondary_color": "c60c30",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/ne.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/ne.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -342,6 +364,7 @@
     "primary_color": "d3bc8d",
     "secondary_color": "000000",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/no.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/no.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -356,7 +379,8 @@
     "division": "NFC East",
     "primary_color": "003c7f",
     "secondary_color": "c9243f",
-    "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/nyg.png",
+    "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/nyg.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/nyg.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -371,7 +395,8 @@
     "division": "AFC East",
     "primary_color": "115740",
     "secondary_color": "ffffff",
-    "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/nyj.png",
+    "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/nyj.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/nyj.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -387,6 +412,7 @@
     "primary_color": "06424d",
     "secondary_color": "bbbbbb",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/phi.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/phi.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -402,6 +428,7 @@
     "primary_color": "000000",
     "secondary_color": "ffb612",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/pit.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/pit.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -417,6 +444,7 @@
     "primary_color": "aa0000",
     "secondary_color": "b3995d",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/sf.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/sf.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -432,6 +460,7 @@
     "primary_color": "002a5c",
     "secondary_color": "69be28",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/sea.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/sea.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -447,6 +476,7 @@
     "primary_color": "bd1c36",
     "secondary_color": "3e3a35",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/tb.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/tb.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -462,6 +492,7 @@
     "primary_color": "4b92db",
     "secondary_color": "002a5c",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/ten.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/ten.png",
     "created_at": "0001-01-01T00:00:00Z"
   },
   {
@@ -477,6 +508,7 @@
     "primary_color": "5a1414",
     "secondary_color": "ffb612",
     "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/wsh.png",
+    "alternate_logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/wsh.png",
     "created_at": "0001-01-01T00:00:00Z"
   }
 ]

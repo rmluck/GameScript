@@ -9,16 +9,16 @@ import (
 )
 
 func getPicksByScenario(db *database.DB) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		scenarioID := c.Params("scenario_id")
-		isAuthenticated := c.Locals("is_authenticated").(bool)
+    return func(c *fiber.Ctx) error {
+        scenarioID := c.Params("scenario_id")
+        isAuthenticated := c.Locals("is_authenticated").(bool)
 
-		if !verifyScenarioOwnership(db, scenarioID, isAuthenticated, c) {
-			return c.Status(403).JSON(fiber.Map{"error": "Unauthorized"})
-		}
+        if !verifyScenarioOwnership(db, scenarioID, isAuthenticated, c) {
+            return c.Status(403).JSON(fiber.Map{"error": "Unauthorized"})
+        }
 
-		query := `
-			SELECT
+        query := `
+            SELECT
                 pick.id, pick.scenario_id, pick.game_id, pick.picked_team_id, 
                 pick.predicted_home_score, pick.predicted_away_score, 
                 pick.status, pick.created_at, pick.updated_at,
@@ -27,101 +27,104 @@ func getPicksByScenario(db *database.DB) fiber.Handler {
                 game.home_score, game.away_score, game.status as game_status,
                 home_team.abbreviation, home_team.city, home_team.name, 
                 home_team.conference, home_team.division, 
-                home_team.primary_color, home_team.secondary_color, home_team.logo_url,
+                home_team.primary_color, home_team.secondary_color, home_team.logo_url, home_team.alternate_logo_url,
                 away_team.abbreviation, away_team.city, away_team.name, 
                 away_team.conference, away_team.division, 
-                away_team.primary_color, away_team.secondary_color, away_team.logo_url
+                away_team.primary_color, away_team.secondary_color, away_team.logo_url, away_team.alternate_logo_url
             FROM picks pick
             JOIN games game ON pick.game_id = game.id
             JOIN teams home_team ON game.home_team_id = home_team.id
             JOIN teams away_team ON game.away_team_id = away_team.id
             WHERE pick.scenario_id = $1
             ORDER BY game.start_time
-		`
+        `
 
-		rows, err := db.Query(query, scenarioID)
-		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
-		}
-		defer rows.Close()
+        rows, err := db.Query(query, scenarioID)
+        if err != nil {
+            return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+        }
+        defer rows.Close()
 
-		var picks []map[string]interface{}
-		for rows.Next() {
-			var pickID, scenarioID, gameID, homeTeamID, awayTeamID int
-			var pickedTeamID *int
-			var week *int
-			var predictedHomeScore, predictedAwayScore, homeScore, awayScore *int
-			var gameESPNID, homeAbbr, homeCity, homeName, homeConference, homeDivision, homePrimaryColor, homeSecondaryColor, homeLogoURL, awayAbbr, awayCity, awayName, awayConference, awayDivision, awayPrimaryColor, awaySecondaryColor, awayLogoURL string
-			var pickedAbbr, pickedCity, pickedName *string
-			var pickStatus, gameStatus *string
-			var startTime, createdAt, updatedAt time.Time
+        var picks []map[string]interface{}
+        for rows.Next() {
+            var pickID, scenarioID, gameID, homeTeamID, awayTeamID int
+            var pickedTeamID *int
+            var week *int
+            var predictedHomeScore, predictedAwayScore, homeScore, awayScore *int
+            var gameESPNID, homeAbbr, homeCity, homeName, homePrimaryColor, homeSecondaryColor, awayAbbr, awayCity, awayName, awayPrimaryColor, awaySecondaryColor string
+            var homeConference, homeDivision, homeLogoURL, homeAlternateLogoURL, awayConference, awayDivision, awayLogoURL, awayAlternateLogoURL *string
+            var pickedAbbr, pickedCity, pickedName *string
+            var pickStatus, gameStatus *string
+            var startTime, createdAt, updatedAt time.Time
 
-			err := rows.Scan(
-				&pickID, &scenarioID, &gameID, &pickedTeamID, &predictedHomeScore, &predictedAwayScore, &pickStatus, &createdAt, &updatedAt, &gameESPNID, &startTime, &week, &homeTeamID, &awayTeamID, &homeScore, &awayScore, &gameStatus,
-				&homeAbbr, &homeCity, &homeName, &homeConference, &homeDivision, &homePrimaryColor, &homeSecondaryColor, &homeLogoURL,
-				&awayAbbr, &awayCity, &awayName, &awayConference, &awayDivision, &awayPrimaryColor, &awaySecondaryColor, &awayLogoURL,
-				&pickedAbbr, &pickedCity, &pickedName,
-			)
-			if err != nil {
-				continue
-			}
+            err := rows.Scan(
+                &pickID, &scenarioID, &gameID, &pickedTeamID, &predictedHomeScore, &predictedAwayScore, &pickStatus, &createdAt, &updatedAt, 
+                &gameESPNID, &startTime, &week, &homeTeamID, &awayTeamID, &homeScore, &awayScore, &gameStatus,
+                &homeAbbr, &homeCity, &homeName, &homeConference, &homeDivision, &homePrimaryColor, &homeSecondaryColor, &homeLogoURL, &homeAlternateLogoURL,
+                &awayAbbr, &awayCity, &awayName, &awayConference, &awayDivision, &awayPrimaryColor, &awaySecondaryColor, &awayLogoURL, &awayAlternateLogoURL,
+            )
+            if err != nil {
+                continue
+            }
 
-			pick := map[string]interface{}{
-				"id": pickID,
-				"scenario_id": scenarioID,
-				"game_id": gameID,
-				"picked_team_id": pickedTeamID,
-				"predicted_home_score": predictedHomeScore,
-				"predicted_away_score": predictedAwayScore,
-				"status": pickStatus,
-				"created_at": createdAt,
-				"updated_at": updatedAt,
-				"game": map[string]interface{}{
-					"espn_id": gameESPNID,
-					"start_time": startTime,
-					"week": week,
-					"home_score": homeScore,
-					"away_score": awayScore,
-					"status": gameStatus,
-					"home_team": map[string]interface{}{
-						"id": homeTeamID,
-						"abbreviation": homeAbbr,
-						"city": homeCity,
-						"name": homeName,
-						"conference": homeConference,
-						"division": homeDivision,
-						"primary_color": homePrimaryColor,
-						"secondary_color": homeSecondaryColor,
-						"logo_url": homeLogoURL,
-					},
-					"away_team": map[string]interface{}{
-						"id": awayTeamID,
-						"abbreviation": awayAbbr,
-						"city": awayCity,
-						"name": awayName,
-						"conference": awayConference,
-						"division": awayDivision,
-						"primary_color": awayPrimaryColor,
-						"secondary_color": awaySecondaryColor,
-						"logo_url": awayLogoURL,
-					},
-				},
-			}
+            pick := map[string]interface{}{
+                "id": pickID,
+                "scenario_id": scenarioID,
+                "game_id": gameID,
+                "picked_team_id": pickedTeamID,
+                "predicted_home_score": predictedHomeScore,
+                "predicted_away_score": predictedAwayScore,
+                "status": pickStatus,
+                "created_at": createdAt,
+                "updated_at": updatedAt,
+                "game": map[string]interface{}{
+                    "espn_id": gameESPNID,
+                    "start_time": startTime,
+                    "week": week,
+                    "home_score": homeScore,
+                    "away_score": awayScore,
+                    "status": gameStatus,
+                    "home_team": map[string]interface{}{
+                        "id": homeTeamID,
+                        "abbreviation": homeAbbr,
+                        "city": homeCity,
+                        "name": homeName,
+                        "conference": homeConference,
+                        "division": homeDivision,
+                        "primary_color": homePrimaryColor,
+                        "secondary_color": homeSecondaryColor,
+                        "logo_url": homeLogoURL,
+                        "alternate_logo_url": homeAlternateLogoURL,
+                    },
+                    "away_team": map[string]interface{}{
+                        "id": awayTeamID,
+                        "abbreviation": awayAbbr,
+                        "city": awayCity,
+                        "name": awayName,
+                        "conference": awayConference,
+                        "division": awayDivision,
+                        "primary_color": awayPrimaryColor,
+                        "secondary_color": awaySecondaryColor,
+                        "logo_url": awayLogoURL,
+                        "alternate_logo_url": awayAlternateLogoURL,
+                    },
+                },
+            }
 
-			if pickedTeamID != nil {
-				pick["picked_team"] = map[string]interface{}{
-					"id": pickedTeamID,
-					"abbreviation": pickedAbbr,
-					"city": pickedCity,
-					"name": pickedName,
-				}
-			}
+            if pickedTeamID != nil {
+                pick["picked_team"] = map[string]interface{}{
+                    "id": pickedTeamID,
+                    "abbreviation": pickedAbbr,
+                    "city": pickedCity,
+                    "name": pickedName,
+                }
+            }
 
-			picks = append(picks, pick)
-		}
+            picks = append(picks, pick)
+        }
 
-		return c.JSON(picks)
-	}
+        return c.JSON(picks)
+    }
 }
 
 func getPick(db *database.DB) fiber.Handler {
