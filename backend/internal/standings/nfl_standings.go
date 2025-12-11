@@ -139,64 +139,96 @@ func getTeams(db *database.DB, seasonID int) ([]TeamRecord, error) {
 }
 
 func getGameResults(db *database.DB, scenarioID int, seasonID int) ([]GameResult, error) {
-	query := `
-		SELECT
+    query := `
+        SELECT
             game.id, game.home_team_id, game.away_team_id, game.week, game.is_postseason,
-            COALESCE(game.home_score, pick.predicted_home_score) AS home_score,
-            COALESCE(game.away_score, pick.predicted_away_score) AS away_score,
-            CASE
-                WHEN game.status = 'final' THEN 'final'
-                WHEN pick.picked_team_id IS NOT NULL THEN 'predicted'
-                ELSE 'unpicked'
-            END AS result_type
+            game.home_score AS actual_home_score,
+            game.away_score AS actual_away_score,
+            game.status,
+            pick.picked_team_id,
+            pick.predicted_home_score,
+            pick.predicted_away_score
         FROM games game
         LEFT JOIN picks pick ON game.id = pick.game_id AND pick.scenario_id = $1
         WHERE game.season_id = $2
         AND game.is_postseason = false
-        AND (
-            game.status = 'final'
-            OR pick.picked_team_id IS NOT NULL
-        )
         ORDER BY game.week, game.start_time
-	`
+    `
 
-	rows, err := db.Query(query, scenarioID, seasonID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+    rows, err := db.Query(query, scenarioID, seasonID)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
 
-	var games []GameResult
-	for rows.Next() {
-		var game GameResult
-		var resultType string
-		var homeScore, awayScore *int
+    var games []GameResult
+    for rows.Next() {
+        var game GameResult
+        var actualHomeScore, actualAwayScore *int
+        var status string
+        var pickedTeamID, predictedHomeScore, predictedAwayScore *int
 
-		err := rows.Scan(
-			&game.GameID,
-			&game.HomeTeamID,
-			&game.AwayTeamID,
-			&game.Week,
-			&game.IsPostseason,
-			&homeScore,
-			&awayScore,
-			&resultType,
-		)
-		if err != nil {
-			continue
-		}
+        err := rows.Scan(
+            &game.GameID,
+            &game.HomeTeamID,
+            &game.AwayTeamID,
+            &game.Week,
+            &game.IsPostseason,
+            &actualHomeScore,
+            &actualAwayScore,
+            &status,
+            &pickedTeamID,
+            &predictedHomeScore,
+            &predictedAwayScore,
+        )
+        if err != nil {
+            continue
+        }
 
-		// Skip games without results
-		if homeScore == nil || awayScore == nil {
-			continue
-		}
+        // Priority 1: User has made a pick - always use the pick
+        if pickedTeamID != nil {
+            // If user provided predicted scores, use those
+            if predictedHomeScore != nil && predictedAwayScore != nil {
+                game.HomeScore = *predictedHomeScore
+                game.AwayScore = *predictedAwayScore
+            } else {
+                // No predicted scores, use dummy scores based on picked winner
+                if *pickedTeamID == game.HomeTeamID {
+                    // Home team picked to win
+                    game.HomeScore = 1
+                    game.AwayScore = 0
+                } else if *pickedTeamID == game.AwayTeamID {
+                    // Away team picked to win
+                    game.HomeScore = 0
+                    game.AwayScore = 1
+                } else if *pickedTeamID == 0 {
+                    // Tie picked
+                    game.HomeScore = 0
+                    game.AwayScore = 0
+                } else {
+                    // Invalid picked_team_id, skip this game
+                    continue
+                }
+            }
+            games = append(games, game)
+            continue
+        }
 
-		game.HomeScore = *homeScore
-		game.AwayScore = *awayScore
-		games = append(games, game)
-	}
+        // Priority 2: No pick, but game is final - use actual scores
+        if status == "final" {
+            if actualHomeScore != nil && actualAwayScore != nil {
+                game.HomeScore = *actualHomeScore
+                game.AwayScore = *actualAwayScore
+                games = append(games, game)
+                continue
+            }
+        }
 
-	return games, nil
+        // Priority 3: No pick and game not final - skip this game
+        // (don't add to games slice)
+    }
+
+    return games, nil
 }
 
 func calculateTeamRecords(teams []TeamRecord, games []GameResult) []TeamRecord {

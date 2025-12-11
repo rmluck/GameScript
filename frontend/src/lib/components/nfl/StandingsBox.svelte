@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import type { ConferenceStandings, TeamRecord, PlayoffSeed } from '$types';
+    import type { ConferenceStandings, PlayoffSeed } from '$types';
 
     export let standings: ConferenceStandings;
     export let conference: 'AFC' | 'NFC';
@@ -11,8 +11,6 @@
     $: divisionWinners = standings.playoff_seeds.slice(0, 4);
     $: wildCardTeams = standings.playoff_seeds.slice(4, 7);
     $: nonPlayoffTeams = standings.playoff_seeds.slice(7);
-
-    console.log('StandingsBox:', standings);
 
     // Get divisions in order
     $: orderedDivisions = ['North', 'South', 'East', 'West'].filter(div => 

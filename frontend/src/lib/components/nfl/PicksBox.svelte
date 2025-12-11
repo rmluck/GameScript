@@ -60,6 +60,7 @@
         
         try {
             games = await gamesAPI.getBySeasonAndWeek(seasonId, currentWeek);
+            console.log('Loaded games for week', currentWeek, ':', games);
             calculateByeTeams();
         } catch (err: any) {
             console.error('Error loading games:', err);
@@ -183,7 +184,7 @@
                     </h3>
                     
                     <!-- Games for this day - Responsive Grid -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-2 md:gap-3">
+                    <div class="grid grid-cols-2 gap-2 md:gap-3">
                         {#each dayGames as game (game.id)}
                             <GameCard 
                                 {game}

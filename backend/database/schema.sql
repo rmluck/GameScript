@@ -90,7 +90,7 @@ CREATE TABLE picks (
     id SERIAL PRIMARY KEY,
     scenario_id INTEGER NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
     game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
-    picked_team_id INTEGER REFERENCES teams(id),
+    picked_team_id INTEGER,
     predicted_home_score INTEGER,
     predicted_away_score INTEGER,
     status VARCHAR(50) DEFAULT 'pending',

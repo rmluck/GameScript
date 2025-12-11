@@ -95,26 +95,26 @@ export interface Pick {
     updated_at: string;
 }
 
-export interface TeamRecord {
-    rank: number;
-    team_id: number;
-    team_name: string;
-    team_abbr: string;
-    wins: number;
-    losses: number;
-    ties: number;
-    win_pct: number;
-    division_record: string;
-    conference_record: string;
-    points_for: number;
-    points_against: number;
-    point_diff: number;
-    division_games_back?: number;
-    conference_games_back?: number;
-    logo_url: string;
-    team_primary_color: string;
-    team_secondary_color: string;
-}
+// export interface TeamRecord {
+//     rank: number;
+//     team_id: number;
+//     team_name: string;
+//     team_abbr: string;
+//     wins: number;
+//     losses: number;
+//     ties: number;
+//     win_pct: number;
+//     division_record: string;
+//     conference_record: string;
+//     points_for: number;
+//     points_against: number;
+//     point_diff: number;
+//     division_games_back?: number;
+//     conference_games_back?: number;
+//     logo_url: string;
+//     team_primary_color: string;
+//     team_secondary_color: string;
+// }
 
 export interface PlayoffSeed {
     seed: number;
@@ -124,14 +124,22 @@ export interface PlayoffSeed {
     wins: number;
     losses: number;
     ties: number;
+    win_pct: number;
     is_division_winner: boolean;
     logo_url: string;
     team_primary_color: string;
     team_secondary_color: string;
+    conference_record: string;
+    division_record: string;
+    conference_games_back: number;
+    division_games_back: number;
+    points_for: number;
+    points_against: number;
+    point_diff: number;
 }
 
 export interface ConferenceStandings {
-    divisions: Record<string, TeamRecord[]>;
+    divisions: Record<string, PlayoffSeed[]>; 
     playoff_seeds: PlayoffSeed[];
 }
 

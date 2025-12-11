@@ -23,7 +23,7 @@
     
     $: isHomeTeamPicked = pick?.picked_team_id === game.home_team_id;
     $: isAwayTeamPicked = pick?.picked_team_id === game.away_team_id;
-    $: isTiePicked = pick !== undefined && pick.picked_team_id === null;
+    $: isTiePicked = pick !== undefined && pick.picked_team_id === 0;
 
     // Check if user made any pick
     $: userMadePick = pick !== undefined;
@@ -102,7 +102,7 @@
         } else {
             dispatch('pickChanged', {
                 gameId: game.id,
-                pickedTeamId: null,
+                pickedTeamId: 0,
                 predictedHomeScore: predictedHomeScore ? parseInt(predictedHomeScore) : undefined,
                 predictedAwayScore: predictedAwayScore ? parseInt(predictedAwayScore) : undefined
             });
