@@ -1,18 +1,21 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
+    import { createEventDispatcher } from 'svelte';
     import type { ConferenceStandings, PlayoffSeed } from '$types';
 
     export let standings: ConferenceStandings;
     export let conference: 'AFC' | 'NFC';
+    export let scenarioId: number;
+    export let seasonId: number;
 
     type ViewMode = 'conference' | 'division';
     export let viewMode: ViewMode = 'conference';
+
+    const dispatch = createEventDispatcher();
 
     $: divisionWinners = standings.playoff_seeds.slice(0, 4);
     $: wildCardTeams = standings.playoff_seeds.slice(4, 7);
     $: nonPlayoffTeams = standings.playoff_seeds.slice(7);
 
-    // Get divisions in order
     $: orderedDivisions = ['North', 'South', 'East', 'West'].filter(div => 
         standings.divisions[`${conference} ${div}`]
     );
@@ -45,6 +48,39 @@
         target.querySelectorAll('span, div').forEach(el => {
             (el as HTMLElement).style.color = '';
         });
+    }
+
+    function openTeamModal(team: PlayoffSeed) {
+        dispatch('openTeamModal', { team });
+    }
+
+    function convertToPlayoffSeed(team: any): PlayoffSeed {
+        return {
+            seed: team.seed,
+            team_id: team.team_id,
+            team_name: team.team_name,
+            team_city: team.team_city,
+            team_abbr: team.team_abbr,
+            wins: team.wins,
+            losses: team.losses,
+            ties: team.ties,
+            win_pct: team.win_pct,
+            is_division_winner: team.is_division_winner,
+            logo_url: team.logo_url,
+            team_primary_color: team.team_primary_color,
+            team_secondary_color: team.team_secondary_color,
+            conference_wins: team.conference_wins,
+            conference_losses: team.conference_losses,
+            conference_ties: team.conference_ties,
+            division_wins: team.division_wins,
+            division_losses: team.division_losses,
+            division_ties: team.division_ties,
+            conference_games_back: team.conference_games_back,
+            division_games_back: team.division_games_back,
+            points_for: team.points_for,
+            points_against: team.points_against,
+            point_diff: team.point_diff
+        };
     }
 </script>
 
@@ -87,11 +123,10 @@
                 </h3>
                 <div class="space-y-1">
                     {#each divisionWinners as seed}
-                        <div class="flex items-center gap-2 px-2 py-2 rounded transition-colors"
+                        <button class="w-full flex items-center gap-2 px-2 py-2 rounded transition-colors cursor-pointer"
                             on:mouseenter={(e) => handleMouseEnter(e, seed.team_primary_color)}
                             on:mouseleave={handleMouseLeave}
-                            role="row"
-                            tabindex="0"
+                            on:click={() => openTeamModal(seed)}
                         >
                             <span class="text-sm font-heading font-bold text-primary-600 w-6">
                                 {seed.seed}
@@ -102,14 +137,14 @@
                                 class="w-6 h-6 object-contain"
                             />
                             <div class="flex-1 min-w-0">
-                                <div class="text-sm font-sans font-semibold text-black truncate">
+                                <div class="text-left text-sm font-sans font-semibold text-black truncate">
                                     {seed.team_name}
                                 </div>
                             </div>
                             <span class="text-sm font-heading font-bold text-black whitespace-nowrap">
                                 {formatRecord(seed.wins, seed.losses, seed.ties)}
                             </span>
-                        </div>
+                        </button>
                     {/each}
                 </div>
             </div>
@@ -122,11 +157,10 @@
                     </h3>
                     <div class="space-y-1">
                         {#each wildCardTeams as seed}
-                            <div class="flex items-center gap-2 px-2 py-2 rounded transition-colors"
+                            <button class="w-full flex items-center gap-2 px-2 py-2 rounded transition-colors cursor-pointer"
                                 on:mouseenter={(e) => handleMouseEnter(e, seed.team_primary_color)}
                                 on:mouseleave={handleMouseLeave}
-                                role="row"
-                                tabindex="0"
+                                on:click={() => openTeamModal(seed)}
                             >
                                 <span class="text-sm font-heading font-bold text-primary-600 w-6">
                                     {seed.seed}
@@ -137,14 +171,14 @@
                                     class="w-6 h-6 object-contain"
                                 />
                                 <div class="flex-1 min-w-0">
-                                    <div class="text-sm font-sans font-semibold text-black truncate">
+                                    <div class="text-left text-sm font-sans font-semibold text-black truncate">
                                         {seed.team_name}
                                     </div>
                                 </div>
                                 <span class="text-sm font-heading font-bold text-black whitespace-nowrap">
                                     {formatRecord(seed.wins, seed.losses, seed.ties)}
                                 </span>
-                            </div>
+                            </button>
                         {/each}
                     </div>
                 </div>
@@ -158,11 +192,10 @@
                     </h3>
                     <div class="space-y-1">
                         {#each nonPlayoffTeams as seed}
-                            <div class="flex items-center gap-2 px-2 py-2 rounded transition-colors"
+                            <button class="w-full flex items-center gap-2 px-2 py-2 rounded transition-colors cursor-pointer"
                                 on:mouseenter={(e) => handleMouseEnter(e, seed.team_primary_color)}
                                 on:mouseleave={handleMouseLeave}
-                                role="row"
-                                tabindex="0"
+                                on:click={() => openTeamModal(seed)}
                             >
                                 <span class="text-sm font-heading font-bold text-primary-600 w-6">
                                     {seed.seed}
@@ -173,14 +206,14 @@
                                     class="w-6 h-6 object-contain"
                                 />
                                 <div class="flex-1 min-w-0">
-                                    <div class="text-sm font-sans font-semibold text-black truncate">
+                                    <div class="text-left text-sm font-sans font-semibold text-black truncate">
                                         {seed.team_name}
                                     </div>
                                 </div>
                                 <span class="text-sm font-heading font-bold text-black whitespace-nowrap">
                                     {formatRecord(seed.wins, seed.losses, seed.ties)}
                                 </span>
-                            </div>
+                            </button>
                         {/each}
                     </div>
                 </div>
@@ -201,12 +234,12 @@
                     </h3>
                     <div class="space-y-1">
                         {#each divisionTeams as team, index}
-                            <div class="flex items-center gap-2 px-2 py-2 rounded transition-colors"
+                            <button class="w-full flex items-center gap-2 px-2 py-2 rounded transition-colors cursor-pointer"
                                 on:mouseenter={(e) => handleMouseEnter(e, team.team_primary_color)}
                                 on:mouseleave={handleMouseLeave}
-                                role="row"
-                                tabindex="0"
-                                class:opacity-60={getTeamSeed(team.team_id) > 7}>
+                                on:click={() => openTeamModal(convertToPlayoffSeed(team))}
+                                class:opacity-60={getTeamSeed(team.team_id) > 7}
+                            >
                                 <span class="text-sm font-heading font-bold text-primary-600 w-6">
                                     {getTeamSeed(team.team_id) ?? '-'}
                                 </span>
@@ -218,14 +251,14 @@
                                     />
                                 {/if}
                                 <div class="flex-1 min-w-0">
-                                    <div class="text-sm font-sans font-semibold text-black truncate">
+                                    <div class="text-left text-sm font-sans font-semibold text-black truncate">
                                         {team.team_name}
                                     </div>
                                 </div>
                                 <span class="text-sm font-heading font-bold text-black whitespace-nowrap">
                                     {formatRecord(team.wins, team.losses, team.ties)}
                                 </span>
-                            </div>
+                            </button>
                         {/each}
                     </div>
                 </div>

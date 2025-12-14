@@ -16,6 +16,7 @@
     const dispatch = createEventDispatcher();
 
     let games: Game[] = [];
+    let allGames: Game[] = [];
     let picks: Map<number, Pick> = new Map();
     let allTeams: Team[] = [];
     let byeTeams: Team[] = [];
@@ -30,9 +31,10 @@
         await loadData();
     });
 
-    // Reload when week changes (but only if we have a seasonId)
-    $: if (currentWeek && seasonId) {
-        loadGamesForWeek();
+    // Filter games when week changes
+    $: if (currentWeek && allGames.length > 0) {
+        games = allGames.filter(game => game.week === currentWeek);
+        calculateByeTeams();
     }
 
     async function loadData() {
@@ -43,10 +45,17 @@
             const scenario = await scenariosAPI.getById(scenarioId);
             seasonId = scenario.season_id;
 
+            // Load all teams
             allTeams = await teamsAPI.getBySeason(seasonId);
 
-            await loadGamesForWeek();
+            // Load ALL games for the season once
+            allGames = await gamesAPI.getBySeason(seasonId);
+            
+            // Filter to current week
+            games = allGames.filter(game => game.week === currentWeek);
+            
             await loadPicks();
+            calculateByeTeams();
         } catch (err: any) {
             error = err.response?.data?.error || 'Failed to load games';
             console.error('Error loading data:', err);
@@ -55,18 +64,18 @@
         }
     }
 
-    async function loadGamesForWeek() {
-        if (!seasonId) return;
+    // async function loadGamesForWeek() {
+    //     if (!seasonId) return;
         
-        try {
-            games = await gamesAPI.getBySeasonAndWeek(seasonId, currentWeek);
-            console.log('Loaded games for week', currentWeek, ':', games);
-            calculateByeTeams();
-        } catch (err: any) {
-            console.error('Error loading games:', err);
-            error = 'Failed to load games for this week';
-        }
-    }
+    //     try {
+    //         games = await gamesAPI.getBySeasonAndWeek(seasonId, currentWeek);
+    //         console.log('Loaded games for week', currentWeek, ':', games);
+    //         calculateByeTeams();
+    //     } catch (err: any) {
+    //         console.error('Error loading games:', err);
+    //         error = 'Failed to load games for this week';
+    //     }
+    // }
 
     async function loadPicks() {
         try {
@@ -98,11 +107,9 @@
             grouped.get(day)!.push(game);
         });
 
-        // Define the correct NFL week order
         const dayOrder = ['Thursday', 'Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday'];
         const sortedMap = new Map<string, Game[]>();
         
-        // Add days in the correct order, but only if they have games
         dayOrder.forEach(day => {
             if (grouped.has(day)) {
                 sortedMap.set(day, grouped.get(day)!);
@@ -155,11 +162,14 @@
 
 <div class="bg-neutral border-2 border-primary-700 rounded-lg p-3 sm:p-4 md:p-6 w-full max-w-full">
     <!-- Week Navigator -->
-    <WeekNavigator 
-        {currentWeek}
-        maxWeek={18}
-        on:weekChanged={handleWeekChange}
-    />
+    {#if allGames.length > 0}
+        <WeekNavigator 
+            {currentWeek}
+            maxWeek={18}
+            {allGames}
+            on:weekChanged={handleWeekChange}
+        />
+    {/if}
 
     {#if loading}
         <div class="flex items-center justify-center py-12">
@@ -177,13 +187,11 @@
         <!-- Games List -->
         <div class="mt-4 md:mt-6 space-y-4 md:space-y-6">
             {#each [...gamesByDay.entries()] as [day, dayGames]}
-                <!-- Day Header -->
                 <div>
                     <h3 class="text-lg sm:text-xl font-heading font-bold text-primary-700 mb-2 md:mb-3 uppercase tracking-wide">
                         {day}
                     </h3>
                     
-                    <!-- Games for this day - Responsive Grid -->
                     <div class="grid grid-cols-2 gap-2 md:gap-3">
                         {#each dayGames as game (game.id)}
                             <GameCard 
@@ -197,7 +205,6 @@
             {/each}
         </div>
 
-        <!-- Bye Teams -->
         {#if byeTeams.length > 0}
             <ByeTeams teams={byeTeams} />
         {/if}

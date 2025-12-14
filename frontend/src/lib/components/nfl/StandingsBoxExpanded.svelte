@@ -1,11 +1,16 @@
 <script lang="ts">
-    import type { ConferenceStandings } from '$types';
+    import { createEventDispatcher } from 'svelte';
+    import type { ConferenceStandings, PlayoffSeed } from '$types';
 
     export let standings: ConferenceStandings;
     export let conference: 'AFC' | 'NFC';
+    export let scenarioId: number;
+    export let seasonId: number;
 
     type ViewMode = 'conference' | 'division';
     export let viewMode: ViewMode = 'conference';
+
+    const dispatch = createEventDispatcher();
 
     $: divisionWinners = standings.playoff_seeds.slice(0, 4);
     $: wildCardTeams = standings.playoff_seeds.slice(4, 7);
@@ -57,6 +62,39 @@
         target.querySelectorAll('span, div').forEach(el => {
             (el as HTMLElement).style.color = '';
         });
+    }
+
+    function openTeamModal(team: PlayoffSeed) {
+        dispatch('openTeamModal', { team });
+    }
+
+    function convertToPlayoffSeed(team: any): PlayoffSeed {
+        return {
+            seed: team.seed,
+            team_id: team.team_id,
+            team_name: team.team_name,
+            team_city: team.team_city,
+            team_abbr: team.team_abbr,
+            wins: team.wins,
+            losses: team.losses,
+            ties: team.ties,
+            win_pct: team.win_pct,
+            is_division_winner: team.is_division_winner,
+            logo_url: team.logo_url,
+            team_primary_color: team.team_primary_color,
+            team_secondary_color: team.team_secondary_color,
+            conference_wins: team.conference_wins,
+            conference_losses: team.conference_losses,
+            conference_ties: team.conference_ties,
+            division_wins: team.division_wins,
+            division_losses: team.division_losses,
+            division_ties: team.division_ties,
+            conference_games_back: team.conference_games_back,
+            division_games_back: team.division_games_back,
+            points_for: team.points_for,
+            points_against: team.points_against,
+            point_diff: team.point_diff
+        };
     }
 </script>
 
@@ -116,11 +154,11 @@
                     <!-- Data Rows -->
                     <div class="space-y-1 mt-2">
                         {#each divisionWinners as seed}
-                            <div class="grid grid-cols-15 gap-2 px-2 py-2 rounded transition-colors"
+                            <button class="w-full grid grid-cols-15 gap-2 px-2 py-2 rounded transition-colors cursor-pointer"
                                 on:mouseenter={(e) => handleMouseEnter(e, seed.team_primary_color)}
                                 on:mouseleave={handleMouseLeave}
-                                role="row"
-                                tabindex="0">
+                                on:click={() => openTeamModal(seed)}
+                            >
                                 <div class="col-span-1">
                                     <span class="text-sm font-heading font-bold text-primary-600">
                                         {seed.seed}
@@ -150,12 +188,12 @@
                                 </div>
                                 <div class="col-span-2 text-center">
                                     <span class="text-sm font-sans text-black">
-                                        {seed.conference_record}
+                                        {formatRecord(seed.conference_wins, seed.conference_losses, seed.conference_ties)}
                                     </span>
                                 </div>
                                 <div class="col-span-2 text-center">
                                     <span class="text-sm font-sans text-black">
-                                        {seed.division_record}
+                                        {formatRecord(seed.division_wins, seed.division_losses, seed.division_ties)}
                                     </span>
                                 </div>
                                 <div class="col-span-1 text-center">
@@ -178,7 +216,7 @@
                                             {seed.points_against}
                                         </span>
                                     </div>
-                            </div>
+                            </button>
                         {/each}
                     </div>
                 </div>
@@ -206,11 +244,11 @@
 
                         <div class="space-y-1 mt-2">
                             {#each wildCardTeams as seed}
-                                <div class="grid grid-cols-15 gap-2 px-2 py-2 rounded transition-colors"
+                                <button class="w-full grid grid-cols-15 gap-2 px-2 py-2 rounded transition-colors cursor-pointer"
                                     on:mouseenter={(e) => handleMouseEnter(e, seed.team_primary_color)}
                                     on:mouseleave={handleMouseLeave}
-                                    role="row"
-                                    tabindex="0">
+                                    on:click={() => openTeamModal(seed)}
+                                >
                                     <div class="col-span-1">
                                         <span class="text-sm font-heading font-bold text-primary-600">
                                             {seed.seed}
@@ -240,12 +278,12 @@
                                     </div>
                                     <div class="col-span-2 text-center">
                                         <span class="text-sm font-sans text-black">
-                                            {seed.conference_record}
+                                            {formatRecord(seed.conference_wins, seed.conference_losses, seed.conference_ties)}
                                         </span>
                                     </div>
                                     <div class="col-span-2 text-center">
                                         <span class="text-sm font-sans text-black">
-                                            {seed.division_record}
+                                            {formatRecord(seed.division_wins, seed.division_losses, seed.division_ties)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
@@ -268,7 +306,7 @@
                                             {seed.points_against}
                                         </span>
                                     </div>
-                                </div>
+                                </button>
                             {/each}
                         </div>
                     </div>
@@ -296,11 +334,11 @@
 
                         <div class="space-y-1 mt-2">
                             {#each nonPlayoffTeams as seed}
-                                <div class="grid grid-cols-15 gap-2 px-2 py-2 rounded transition-colors"
+                                <button class="w-full grid grid-cols-15 gap-2 px-2 py-2 rounded transition-colors cursor-pointer"
                                     on:mouseenter={(e) => handleMouseEnter(e, seed.team_primary_color)}
                                     on:mouseleave={handleMouseLeave}
-                                    role="row"
-                                    tabindex="0">
+                                    on:click={() => openTeamModal(seed)}
+                                >
                                     <div class="col-span-1">
                                         <span class="text-sm font-heading font-bold text-primary-600">
                                             {seed.seed}
@@ -330,12 +368,12 @@
                                     </div>
                                     <div class="col-span-2 text-center">
                                         <span class="text-sm font-sans text-black">
-                                            {seed.conference_record}
+                                            {formatRecord(seed.conference_wins, seed.conference_losses, seed.conference_ties)}
                                         </span>
                                     </div>
                                     <div class="col-span-2 text-center">
                                         <span class="text-sm font-sans text-black">
-                                            {seed.division_record}
+                                            {formatRecord(seed.division_wins, seed.division_losses, seed.division_ties)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
@@ -358,7 +396,7 @@
                                             {seed.points_against}
                                         </span>
                                     </div>
-                                </div>
+                                </button>
                             {/each}
                         </div>
                     </div>
@@ -397,12 +435,12 @@
                             {#each divisionTeams as team}
                                 {@const teamSeed = getTeamSeed(team.team_id)}
                                 {@const isPlayoffTeam = teamSeed && teamSeed <= 7}
-                                <div class="grid grid-cols-15 gap-2 px-2 py-2 rounded transition-colors"
+                                <button class="w-full grid grid-cols-15 gap-2 px-2 py-2 rounded transition-colors cursor-pointer"
                                     class:opacity-60={!isPlayoffTeam}
                                     on:mouseenter={(e) => handleMouseEnter(e, team.team_primary_color)}
                                     on:mouseleave={handleMouseLeave}
-                                    role="row"
-                                    tabindex="0">
+                                    on:click={() => openTeamModal(convertToPlayoffSeed(team))}
+                                >
                                     <div class="col-span-1">
                                         <span class="text-sm font-heading font-bold text-primary-600">
                                             {teamSeed ?? '—'}
@@ -432,12 +470,12 @@
                                     </div>
                                     <div class="col-span-2 text-center">
                                         <span class="text-sm font-sans text-black">
-                                            {team.conference_record}
+                                            {formatRecord(team.conference_wins, team.conference_losses, team.conference_ties)}
                                         </span>
                                     </div>
                                     <div class="col-span-2 text-center">
                                         <span class="text-sm font-sans text-black">
-                                            {team.division_record}
+                                            {formatRecord(team.division_wins, team.division_losses, team.division_ties)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
@@ -460,7 +498,7 @@
                                             {team.points_against}
                                         </span>
                                     </div>
-                                </div>
+                                </button>
                             {/each}
                         </div>
                     </div>

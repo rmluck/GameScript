@@ -120,6 +120,7 @@ export interface PlayoffSeed {
     seed: number;
     team_id: number;
     team_name: string;
+    team_city: string;
     team_abbr: string;
     wins: number;
     losses: number;
@@ -129,8 +130,12 @@ export interface PlayoffSeed {
     logo_url: string;
     team_primary_color: string;
     team_secondary_color: string;
-    conference_record: string;
-    division_record: string;
+    conference_wins: number;
+    conference_losses: number;
+    conference_ties: number;
+    division_wins: number;
+    division_losses: number;
+    division_ties: number;
     conference_games_back: number;
     division_games_back: number;
     points_for: number;

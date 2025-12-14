@@ -3,6 +3,7 @@
     import { page } from '$app/stores';
     import { scenariosAPI } from '$lib/api/scenarios';
     import { standingsAPI } from '$lib/api/standings';
+    import { gamesAPI } from '$lib/api/games';
     import type { Scenario, Standings } from '$types';
 
     import ScenarioHeader from '$lib/components/scenarios/ScenarioHeader.svelte';
@@ -12,6 +13,9 @@
     import StandingsBox from '$lib/components/nfl/StandingsBox.svelte';
     import StandingsBoxExpanded from '$lib/components/nfl/StandingsBoxExpanded.svelte';
     import DraftOrderBox from '$lib/components/nfl/DraftOrderBox.svelte';
+    import TeamModal from '$lib/components/nfl/TeamModal.svelte';
+    import { getCurrentNFLWeekFromGames } from '$lib/utils/nfl/dates';
+    import type { PlayoffSeed } from '$types';
 
     let scenarioId: number;
     let scenario: Scenario | null = null;
@@ -22,14 +26,13 @@
     let showSettings = false;
     let showInfo = false;
 
-    // Current week being viewed
     let currentWeek = 1;
 
-    // Shared standings view mode
     type ViewMode = 'conference' | 'division';
     let standingsViewMode: ViewMode = 'conference';
 
-    // Save status indicator
+    let selectedTeam: PlayoffSeed | null = null;
+
     let saveStatus: 'idle' | 'saving' | 'saved' | 'error' = 'idle';
 
     $: scenarioId = parseInt($page.params.id);
@@ -44,8 +47,10 @@
             loading = true;
             scenario = await scenariosAPI.getById(scenarioId);
 
-            // Determine current week (could be based on current date or last edited week)
-            currentWeek = getCurrentWeek(scenario);
+            if (scenario.season_id) {
+                const allGames = await gamesAPI.getBySeason(scenario.season_id);
+                currentWeek = getCurrentNFLWeekFromGames(allGames);
+            }
         } catch (err: any) {
             error = err.response?.data?.error || 'Failed to load scenario.';
         } finally {
@@ -61,22 +66,28 @@
         }
     }
 
-    function getCurrentWeek(scenario: Scenario): number {
-        // TODO: Calculate current NFL week based on today's date
-        // For now, default to week 1
-        return 1;
-    }
-
     function handleScenarioUpdated(event: CustomEvent) {
         scenario = event.detail;
         saveStatus = 'saved';
         setTimeout(() => saveStatus = 'idle', 2000);
     }
 
+    function handleWeekChange(event: CustomEvent) {
+        currentWeek = event.detail.week;
+    }
+
     function handlePickUpdated() {
         saveStatus = 'saved';
         setTimeout(() => saveStatus = 'idle', 2000);
         loadStandings();
+    }
+
+    function handleOpenTeamModal(event: CustomEvent<{ team: PlayoffSeed }>) {
+        selectedTeam = event.detail.team;
+    }
+
+    function handleCloseTeamModal() {
+        selectedTeam = null;
     }
 </script>
 
@@ -118,11 +129,14 @@
         <div class="hidden lg:grid lg:grid-cols-[minmax(250px,1fr)_minmax(700px,2fr)_minmax(250px,1fr)] lg:gap-6">
             <!-- Left: AFC Standings -->
             <div class="min-w-0">
-                {#if standings}
+                {#if standings && scenario.season_id}
                     <StandingsBox 
                         standings={standings.afc} 
                         conference="AFC"
+                        {scenarioId}
+                        seasonId={scenario.season_id}
                         bind:viewMode={standingsViewMode}
+                        on:openTeamModal={handleOpenTeamModal}
                     />
                 {/if}
             </div>
@@ -139,11 +153,14 @@
 
             <!-- Right: NFC Standings -->
             <div class="min-w-0">
-                {#if standings}
+                {#if standings && scenario.season_id}
                     <StandingsBox 
                         standings={standings.nfc} 
                         conference="NFC"
+                        {scenarioId}
+                        seasonId={scenario.season_id}
                         bind:viewMode={standingsViewMode}
+                        on:openTeamModal={handleOpenTeamModal}
                     />
                 {/if}
             </div>
@@ -160,17 +177,23 @@
             />
 
             <!-- Standings -->
-            {#if standings}
+            {#if standings && scenario.season_id}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <StandingsBoxExpanded 
                         standings={standings.afc} 
                         conference="AFC"
+                        {scenarioId}
+                        seasonId={scenario.season_id}
                         bind:viewMode={standingsViewMode}
+                        on:openTeamModal={handleOpenTeamModal}
                     />
                     <StandingsBoxExpanded 
                         standings={standings.nfc} 
                         conference="NFC"
+                        {scenarioId}
+                        seasonId={scenario.season_id}
                         bind:viewMode={standingsViewMode}
+                        on:openTeamModal={handleOpenTeamModal}
                     />
                 </div>
             {/if}
@@ -181,4 +204,15 @@
             <DraftOrderBox {scenarioId} />
         </div>
     </div>
+{/if}
+
+<!-- Team Modal -->
+{#if selectedTeam && scenario}
+    <TeamModal 
+        team={selectedTeam}
+        {scenarioId}
+        seasonId={scenario.season_id}
+        on:close={handleCloseTeamModal}
+        on:pickUpdated={handlePickUpdated}
+    />
 {/if}
