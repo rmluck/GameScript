@@ -35,7 +35,7 @@
 
     let saveStatus: 'idle' | 'saving' | 'saved' | 'error' = 'idle';
 
-    $: scenarioId = parseInt($page.params.id);
+    $: scenarioId = parseInt($page.params.id ?? '0');
 
     onMount(async () => {
         await loadScenario();
@@ -133,8 +133,6 @@
                     <StandingsBox 
                         standings={standings.afc} 
                         conference="AFC"
-                        {scenarioId}
-                        seasonId={scenario.season_id}
                         bind:viewMode={standingsViewMode}
                         on:openTeamModal={handleOpenTeamModal}
                     />
@@ -157,8 +155,6 @@
                     <StandingsBox 
                         standings={standings.nfc} 
                         conference="NFC"
-                        {scenarioId}
-                        seasonId={scenario.season_id}
                         bind:viewMode={standingsViewMode}
                         on:openTeamModal={handleOpenTeamModal}
                     />
@@ -182,16 +178,12 @@
                     <StandingsBoxExpanded 
                         standings={standings.afc} 
                         conference="AFC"
-                        {scenarioId}
-                        seasonId={scenario.season_id}
                         bind:viewMode={standingsViewMode}
                         on:openTeamModal={handleOpenTeamModal}
                     />
                     <StandingsBoxExpanded 
                         standings={standings.nfc} 
                         conference="NFC"
-                        {scenarioId}
-                        seasonId={scenario.season_id}
                         bind:viewMode={standingsViewMode}
                         on:openTeamModal={handleOpenTeamModal}
                     />
@@ -201,7 +193,7 @@
 
         <!-- Draft Order -->
         <div class="w-full">
-            <DraftOrderBox {scenarioId} />
+            <DraftOrderBox />
         </div>
     </div>
 {/if}

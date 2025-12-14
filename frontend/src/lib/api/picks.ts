@@ -13,25 +13,33 @@ export const picksAPI = {
     },
 
     async create(scenarioId: number, gameId: number, data: {
-        picked_team_id?: number;
+        picked_team_id?: number | null;
         predicted_home_score?: number;
         predicted_away_score?: number;
     }): Promise<Pick> {
         const response = await apiClient.post<Pick>(
             `/picks/scenarios/${scenarioId}/games/${gameId}`,
-            data
+            {
+                picked_team_id: data.picked_team_id === undefined ? null : data.picked_team_id,
+                predicted_home_score: data.predicted_home_score,
+                predicted_away_score: data.predicted_away_score
+            }
         );
         return response.data;
     },
 
     async update(scenarioId: number, gameId: number, data: {
-        picked_team_id?: number;
+        picked_team_id?: number | null;
         predicted_home_score?: number;
         predicted_away_score?: number;
     }): Promise<Pick> {
         const response = await apiClient.put<Pick>(
             `/picks/scenarios/${scenarioId}/games/${gameId}`,
-            data
+            {
+                picked_team_id: data.picked_team_id === undefined ? null : data.picked_team_id,
+                predicted_home_score: data.predicted_home_score,
+                predicted_away_score: data.predicted_away_score
+            }
         );
         return response.data;
     },

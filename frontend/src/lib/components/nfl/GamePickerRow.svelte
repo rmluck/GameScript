@@ -10,6 +10,12 @@
 
     let predictedHomeScore = pick?.predicted_home_score?.toString() || '';
     let predictedAwayScore = pick?.predicted_away_score?.toString() || '';
+    let completed: boolean = game.status === 'final';
+    let hasPick: boolean = pick !== undefined;
+    let showInfo = false;
+    
+    // Reference for positioning fixed tooltip
+    let infoButton: HTMLButtonElement;
 
     $: {
         predictedHomeScore = pick?.predicted_home_score?.toString() || '';
@@ -24,12 +30,12 @@
 
     $: userMadePick = pick !== undefined;
 
-    $: homeTeamWon = isGameCompleted && 
+    $: homeTeamWon = isGameCompleted && game.home_score && game.away_score &&
         game.home_score !== null && 
         game.away_score !== null && 
         game.home_score > game.away_score;
     
-    $: awayTeamWon = isGameCompleted && 
+    $: awayTeamWon = isGameCompleted && game.away_score && game.home_score &&
         game.home_score !== null && 
         game.away_score !== null && 
         game.away_score > game.home_score;
@@ -91,6 +97,40 @@
             });
         }
     }
+
+    function formatTime(dateString: string): string {
+        const date = new Date(dateString);
+        const timeStr = date.toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+        });
+
+        const timeZone = new Intl.DateTimeFormat('en-US', {
+            timeZoneName: 'short'
+        }).formatToParts(date).find(part => part.type === 'timeZoneName')?.value || '';
+
+        return `${timeStr} ${timeZone}`;
+    }
+
+    function formatDate(dateString: string): string {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { 
+            weekday: 'short', 
+            month: 'short', 
+            day: 'numeric' 
+        });
+    }
+
+    function getTooltipPosition(element: HTMLElement) {
+        if (!element) return { top: 0, left: 0 };
+        const rect = element.getBoundingClientRect();
+        return {
+            top: rect.bottom + 8,
+            left: rect.left + rect.width / 2
+        };
+    }
+
+    $: infoPosition = showInfo && infoButton ? getTooltipPosition(infoButton) : { top: 0, left: 0 };
 </script>
 
 <style>
@@ -105,7 +145,7 @@
     }
 </style>
 
-<div class="flex items-center gap-2">
+<div class="flex items-center gap-2" class:z-50={showInfo} class:opacity-80={completed && !hasPick}>
     <!-- Away Team Section -->
     <div class="flex-1 flex items-stretch">
         <!-- Away Score -->
@@ -160,19 +200,35 @@
         </button>
     </div>
 
-    <!-- Tie Button -->
-    <button
-        on:click={selectTie}
-        class="px-2 sm:px-3 py-1 sm:py-2 rounded border text-xs font-sans font-semibold transition-all shrink-0 cursor-pointer"
-        class:bg-primary-600={isTiePicked}
-        class:border-primary-500={isTiePicked}
-        class:text-neutral={isTiePicked}
-        class:bg-transparent={!isTiePicked}
-        class:border-primary-600={!isTiePicked}
-        class:hover:border-primary-400={!isTiePicked}
-    >
-        TIE
-    </button>
+    <!-- Center: Info/Tie -->
+    <div class="flex flex-col items-center gap-1 shrink-0">
+        <!-- Info Button -->
+        <button
+            bind:this={infoButton}
+            on:mouseenter={() => showInfo = true}
+            on:mouseleave={() => showInfo = false}
+            class="p-1.5 rounded-full bg-primary-700/50 hover:bg-primary-600 transition-colors cursor-pointer"
+            title="Game Info"
+        >
+            <svg class="w-4 h-4 text-neutral" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </button>
+
+        <!-- Tie Button -->
+        <button
+            on:click={selectTie}
+            class="px-2 py-0.5 rounded border text-xs font-sans font-semibold transition-all cursor-pointer"
+            class:bg-primary-600={isTiePicked}
+            class:border-primary-500={isTiePicked}
+            class:text-neutral={isTiePicked}
+            class:bg-transparent={!isTiePicked}
+            class:border-primary-600={!isTiePicked}
+            class:hover:border-primary-400={!isTiePicked}
+        >
+            TIE
+        </button>
+    </div>
 
     <!-- Home Team Section -->
     <div class="flex-1 flex items-stretch">
@@ -228,3 +284,28 @@
         </div>
     </div>
 </div>
+
+<!-- Tooltip rendered outside parent (not affected by opacity) -->
+{#if showInfo}
+    <div 
+        class="fixed z-50 w-48 bg-primary-950 border border-primary-600 rounded-lg p-3 text-sm text-neutral text-center shadow-xl pointer-events-none"
+        style="top: {infoPosition.top}px; left: {infoPosition.left}px; transform: translateX(-50%);"
+    >
+        <div class="space-y-1 font-sans">
+            <div class="font-semibold">{formatDate(game.start_time)}</div>
+            <div>{formatTime(game.start_time)}</div>
+            {#if game.location}
+                <div class="text-neutral/70">{game.location}</div>
+            {/if}
+            {#if game.network}
+                <div class="text-primary-400">{game.network}</div>
+            {/if}
+            {#if isGameCompleted}
+                <div class="pt-2 mt-2 border-t border-primary-600">
+                    <div class="text-green-400 font-semibold mb-1">FINAL</div>
+                    <div class="text-neutral">{game.away_team.abbreviation} {game.away_score} - {game.home_team.abbreviation} {game.home_score}</div>
+                </div>
+            {/if}
+        </div>
+    </div>
+{/if}

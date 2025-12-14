@@ -4,8 +4,8 @@
 
     export let standings: ConferenceStandings;
     export let conference: 'AFC' | 'NFC';
-    export let scenarioId: number;
-    export let seasonId: number;
+    // export let scenarioId: number;
+    // export let seasonId: number;
 
     type ViewMode = 'conference' | 'division';
     export let viewMode: ViewMode = 'conference';

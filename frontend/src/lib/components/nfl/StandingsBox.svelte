@@ -4,8 +4,8 @@
 
     export let standings: ConferenceStandings;
     export let conference: 'AFC' | 'NFC';
-    export let scenarioId: number;
-    export let seasonId: number;
+    // export let scenarioId: number;
+    // export let seasonId: number;
 
     type ViewMode = 'conference' | 'division';
     export let viewMode: ViewMode = 'conference';
@@ -238,7 +238,7 @@
                                 on:mouseenter={(e) => handleMouseEnter(e, team.team_primary_color)}
                                 on:mouseleave={handleMouseLeave}
                                 on:click={() => openTeamModal(convertToPlayoffSeed(team))}
-                                class:opacity-60={getTeamSeed(team.team_id) > 7}
+                                class:opacity-60={(getTeamSeed(team.team_id) !== undefined) && getTeamSeed(team.team_id)! > 7}
                             >
                                 <span class="text-sm font-heading font-bold text-primary-600 w-6">
                                     {getTeamSeed(team.team_id) ?? '-'}

@@ -27,7 +27,6 @@
     onMount(async () => {
         await loadTeamGames();
         await loadPicks();
-        await loadTeamDivision();
     });
 
     async function loadTeamGames() {
@@ -37,6 +36,8 @@
             teamGames = allGames.filter(
                 game => game.home_team_id === team.team_id || game.away_team_id === team.team_id
             );
+
+            await loadTeamDivision();
 
             // Find bye week
             const playedWeeks = new Set(teamGames.map(game => game.week));
@@ -50,9 +51,9 @@
             // Insert bye week into the schedule
             if (byeWeek !== null) {
                 gamesWithBye = [
-                    ...teamGames.filter(game => game.week < byeWeek),
+                    ...teamGames.filter(game => game.week < byeWeek!),
                     { isByeWeek: true, week: byeWeek },
-                    ...teamGames.filter(game => game.week > byeWeek)
+                    ...teamGames.filter(game => game.week > byeWeek!)
                 ];
             } else {
                 gamesWithBye = teamGames;
@@ -208,7 +209,7 @@
             if (game.home_score === game.away_score) return 'tie';
             const teamScore = isHomeGame(game) ? game.home_score : game.away_score;
             const oppScore = isHomeGame(game) ? game.away_score : game.home_score;
-            return teamScore > oppScore ? 'win' : 'loss';
+            return (teamScore ?? 0) > (oppScore ?? 0) ? 'win' : 'loss';
         }
         
         return 'upcoming';
@@ -234,7 +235,7 @@
         <!-- Header -->
         <div
             class="border-b-4 p-6"
-            style={`background-color: #${currentTeam.team_primary_color}20; border-color: #${currentTeam.team_primary_color};`}
+            style={`background-color: #${currentTeam.team_primary_color}70; border-color: #${currentTeam.team_primary_color};`}
         >
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-4">
@@ -262,10 +263,10 @@
                 
                 <button
                     on:click={closeModal}
-                    class="p-2 rounded-lg cursor-pointer transition-colors"
+                    class="p-2 rounded-lg cursor-pointer transition-colors bg-transparent"
                     style={`color: #${currentTeam.team_primary_color}E6;`}
-                    on:mouseenter={(e) => e.currentTarget.style.color = 'white'}
-                    on:mouseleave={(e) => e.currentTarget.style.color = `#${currentTeam.team_primary_color}E6`}
+                    on:mouseenter={(e) => e.currentTarget.style.backgroundColor = `#${currentTeam.team_primary_color}80`}
+                    on:mouseleave={(e) => e.currentTarget.style.backgroundColor = `transparent`}
                     aria-label="Close modal"
                 >
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -361,8 +362,8 @@
                 </div>
             {:else}
                 <div class="space-y-2">
-                    {#each gamesWithBye as item (item.isByeWeek ? `bye-${item.week}` : item.id)}
-                        {#if item.isByeWeek}
+                    {#each gamesWithBye as item ('isByeWeek' in item ? `bye-${item.week}` : item.id)}
+                        {#if 'isByeWeek' in item}
                             <!-- Bye Week Row -->
                             <div
                                 class="border-2 rounded-lg transition-colors"
@@ -399,15 +400,13 @@
                             {@const result = getGameResult(game)}
                             {@const pick = picks.get(game.id)}
                             {@const isHome = isHomeGame(game)}
-                            {@const completed = game.status === 'final'}
-                            {@const hasPick = pick !== undefined}
                             
                             <div
                                 class="border-2 rounded-lg p-4 transition-colors"
                                 style={`border-color: #${currentTeam.team_primary_color}60;`}
                                 on:mouseenter={(e) => e.currentTarget.style.borderColor = `#${currentTeam.team_primary_color}90`}
                                 on:mouseleave={(e) => e.currentTarget.style.borderColor = `#${currentTeam.team_primary_color}60`}
-                                class:opacity-80={completed && !hasPick}
+
                                 role="region"
                             >
                                 <!-- Game Header -->
