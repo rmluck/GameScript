@@ -64,19 +64,6 @@
         }
     }
 
-    // async function loadGamesForWeek() {
-    //     if (!seasonId) return;
-        
-    //     try {
-    //         games = await gamesAPI.getBySeasonAndWeek(seasonId, currentWeek);
-    //         console.log('Loaded games for week', currentWeek, ':', games);
-    //         calculateByeTeams();
-    //     } catch (err: any) {
-    //         console.error('Error loading games:', err);
-    //         error = 'Failed to load games for this week';
-    //     }
-    // }
-
     async function loadPicks() {
         try {
             const allPicks = await picksAPI.getByScenario(scenarioId);
@@ -84,6 +71,11 @@
         } catch (err: any) {
             console.error('Error loading picks:', err);
         }
+    }
+
+    // Export function to reload picks from parent
+    export async function reloadPicks() {
+        await loadPicks();
     }
 
     function calculateByeTeams() {
@@ -151,8 +143,8 @@
             }
 
             picks.set(gameId, updated);
-            dispatch('pickUpdated');
             picks = new Map(picks);
+            dispatch('pickUpdated');
         } catch (err: any) {
             console.error('Error saving pick:', err);
             alert('Failed to save pick. Please try again.');

@@ -48,6 +48,16 @@
     // Priority goes to user pick (if exists) over actual result (if exists)
     $: highlightHomeButton = userMadePick ? isHomeTeamPicked : (isGameCompleted ? homeTeamWon : false);
     $: highlightAwayButton = userMadePick ? isAwayTeamPicked : (isGameCompleted ? awayTeamWon : false);
+    $: highlightTieButton = userMadePick ? isTiePicked : (isGameCompleted ? isActualTie : false);
+
+    $: {
+        predictedHomeScore = pick?.predicted_home_score !== null && pick?.predicted_home_score !== undefined 
+            ? pick.predicted_home_score.toString() 
+            : '';
+        predictedAwayScore = pick?.predicted_away_score !== null && pick?.predicted_away_score !== undefined 
+            ? pick.predicted_away_score.toString() 
+            : '';
+    }
 
     // Determine which logo to use
     $: homeTeamLogoURL = highlightHomeButton && game.home_team.alternate_logo_url 
@@ -78,15 +88,15 @@
             dispatch('pickChanged', {
                 gameId: game.id,
                 pickedTeamId: undefined,
-                predictedHomeScore: predictedHomeScore ? parseInt(predictedHomeScore) : undefined,
-                predictedAwayScore: predictedAwayScore ? parseInt(predictedAwayScore) : undefined
+                predictedHomeScore: parseScoreInput(predictedHomeScore),
+                predictedAwayScore: parseScoreInput(predictedAwayScore)
             });
         } else {
             dispatch('pickChanged', {
                 gameId: game.id,
                 pickedTeamId: teamId,
-                predictedHomeScore: predictedHomeScore ? parseInt(predictedHomeScore) : undefined,
-                predictedAwayScore: predictedAwayScore ? parseInt(predictedAwayScore) : undefined
+                predictedHomeScore: parseScoreInput(predictedHomeScore),
+                predictedAwayScore: parseScoreInput(predictedAwayScore)
             });
         }
     }
@@ -96,15 +106,15 @@
             dispatch('pickChanged', {
                 gameId: game.id,
                 pickedTeamId: undefined,
-                predictedHomeScore: predictedHomeScore ? parseInt(predictedHomeScore) : undefined,
-                predictedAwayScore: predictedAwayScore ? parseInt(predictedAwayScore) : undefined
+                predictedHomeScore: parseScoreInput(predictedHomeScore),
+                predictedAwayScore: parseScoreInput(predictedAwayScore)
             });
         } else {
             dispatch('pickChanged', {
                 gameId: game.id,
                 pickedTeamId: 0,
-                predictedHomeScore: predictedHomeScore ? parseInt(predictedHomeScore) : undefined,
-                predictedAwayScore: predictedAwayScore ? parseInt(predictedAwayScore) : undefined
+                predictedHomeScore: parseScoreInput(predictedHomeScore),
+                predictedAwayScore: parseScoreInput(predictedAwayScore)
             });
         }
     }
@@ -114,10 +124,16 @@
             dispatch('pickChanged', {
                 gameId: game.id,
                 pickedTeamId: pick.picked_team_id,
-                predictedHomeScore: predictedHomeScore ? parseInt(predictedHomeScore) : undefined,
-                predictedAwayScore: predictedAwayScore ? parseInt(predictedAwayScore) : undefined
+                predictedHomeScore: parseScoreInput(predictedHomeScore),
+                predictedAwayScore: parseScoreInput(predictedAwayScore)
             });
         }
+    }
+
+    function parseScoreInput(value: string): number | undefined {
+        if (value === '') return undefined;
+        const parsed = parseInt(value);
+        return isNaN(parsed) ? undefined : parsed;
     }
 
     function formatTime(dateString: string): string {
@@ -226,6 +242,18 @@
                 on:click={() => selectTeam(game.away_team_id)}
                 on:mouseenter={() => showAwayTeamName = true}
                 on:mouseleave={() => showAwayTeamName = false}
+                on:mouseover={() => {
+                    if (!highlightAwayButton) {
+                        awayButton.style.backgroundColor = `#${game.away_team.primary_color}50`;
+                    }
+                }}
+                on:mouseout={() => {
+                    if (!highlightAwayButton) {
+                        awayButton.style.backgroundColor = 'transparent';
+                    }
+                }}
+                on:focus={() => showAwayTeamName = true}
+                on:blur={() => showAwayTeamName = false}
                 class="relative flex-1 p-2 rounded-r-lg border-2 transition-all cursor-pointer"
                 class:border-primary-600={!highlightAwayButton}
                 class:hover:border-primary-400={!highlightAwayButton}
@@ -264,12 +292,12 @@
             <button
                 on:click={selectTie}
                 class="px-2 py-0.5 rounded border text-xs font-sans font-semibold transition-all cursor-pointer"
-                class:bg-primary-600={isTiePicked}
-                class:border-primary-500={isTiePicked}
-                class:text-neutral={isTiePicked}
-                class:bg-transparent={!isTiePicked}
-                class:border-primary-600={!isTiePicked}
-                class:hover:border-primary-400={!isTiePicked}
+                class:bg-primary-600={highlightTieButton}
+                class:border-primary-500={highlightTieButton}
+                class:text-neutral={highlightTieButton}
+                class:bg-transparent={!highlightTieButton}
+                class:border-primary-600={!highlightTieButton}
+                class:hover:border-primary-400={!highlightTieButton}
             >
                 TIE
             </button>
@@ -283,6 +311,18 @@
                 on:click={() => selectTeam(game.home_team_id)}
                 on:mouseenter={() => showHomeTeamName = true}
                 on:mouseleave={() => showHomeTeamName = false}
+                on:mouseover={() => {
+                    if (!highlightHomeButton) {
+                        homeButton.style.backgroundColor = `#${game.home_team.primary_color}50`;
+                    }
+                }}
+                on:mouseout={() => {
+                    if (!highlightHomeButton) {
+                        homeButton.style.backgroundColor = 'transparent';
+                    }
+                }}
+                on:focus={() => showHomeTeamName = true}
+                on:blur={() => showHomeTeamName = false}
                 class="relative flex-1 p-2 rounded-l-lg border-2 transition-all cursor-pointer"
                 class:border-primary-600={!highlightHomeButton}
                 class:hover:border-primary-400={!highlightHomeButton}

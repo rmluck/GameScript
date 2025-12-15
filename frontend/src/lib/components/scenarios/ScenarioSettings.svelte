@@ -153,7 +153,7 @@
                     <button
                         type="button"
                         on:click={handleDelete}
-                        class="w-full bg-red-900/80 hover:bg-red-800/40 border-2 border-red-600 rounded-lg py-3 font-sans font-semibold text-lg text-red-200 hover:text-red-100 transition-colors cursor-pointer"
+                        class="w-full bg-red-900/80 hover:bg-red-800 border-2 border-red-600 rounded-lg py-3 font-sans font-semibold text-lg text-red-100 hover:text-red-100 transition-colors cursor-pointer"
                     >
                         DELETE SCENARIO
                     </button>

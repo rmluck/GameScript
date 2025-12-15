@@ -35,6 +35,10 @@
 
     let saveStatus: 'idle' | 'saving' | 'saved' | 'error' = 'idle';
 
+    // Add references to PicksBox components
+    let desktopPicksBox: PicksBox;
+    let mobilePicksBox: PicksBox;
+
     $: scenarioId = parseInt($page.params.id ?? '0');
 
     onMount(async () => {
@@ -76,10 +80,18 @@
         currentWeek = event.detail.week;
     }
 
-    function handlePickUpdated() {
+    async function handlePickUpdated() {
         saveStatus = 'saved';
         setTimeout(() => saveStatus = 'idle', 2000);
-        loadStandings();
+        await loadStandings();
+        
+        // Reload picks in both PicksBox instances
+        if (desktopPicksBox) {
+            await desktopPicksBox.reloadPicks();
+        }
+        if (mobilePicksBox) {
+            await mobilePicksBox.reloadPicks();
+        }
     }
 
     function handleOpenTeamModal(event: CustomEvent<{ team: PlayoffSeed }>) {
@@ -142,6 +154,7 @@
             <!-- Center: Picks -->
             <div class="min-w-0">
                 <PicksBox 
+                    bind:this={desktopPicksBox}
                     {scenarioId}
                     {currentWeek}
                     on:weekChanged={(e) => currentWeek = e.detail.week}
@@ -166,6 +179,7 @@
         <div class="lg:hidden space-y-6">
             <!-- Picks -->
             <PicksBox 
+                bind:this={mobilePicksBox}
                 {scenarioId}
                 {currentWeek}
                 on:weekChanged={(e) => currentWeek = e.detail.week}

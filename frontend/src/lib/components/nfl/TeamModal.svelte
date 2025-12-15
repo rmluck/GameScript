@@ -218,7 +218,7 @@
 
 <!-- Modal Overlay -->
 <div 
-    class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+    class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
     on:click={handleClickOutside}
     on:keydown={(e) => { if (e.key === 'Escape') closeModal(); }}
     role="dialog"

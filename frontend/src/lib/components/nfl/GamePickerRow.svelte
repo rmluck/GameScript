@@ -14,12 +14,18 @@
     let hasPick: boolean = pick !== undefined;
     let showInfo = false;
     
-    // Reference for positioning fixed tooltip
+    // Reference for positioning fixed tooltips
     let infoButton: HTMLButtonElement;
+    let awayButton: HTMLButtonElement;
+    let homeButton: HTMLButtonElement;
 
     $: {
-        predictedHomeScore = pick?.predicted_home_score?.toString() || '';
-        predictedAwayScore = pick?.predicted_away_score?.toString() || '';
+        predictedHomeScore = pick?.predicted_home_score !== null && pick?.predicted_home_score !== undefined 
+            ? pick.predicted_home_score.toString() 
+            : '';
+        predictedAwayScore = pick?.predicted_away_score !== null && pick?.predicted_away_score !== undefined 
+            ? pick.predicted_away_score.toString() 
+            : '';
     }
 
     $: isGameCompleted = game.status === 'final';
@@ -40,8 +46,14 @@
         game.away_score !== null && 
         game.away_score > game.home_score;
 
+    $: isActualTie = isGameCompleted && 
+        game.home_score && game.home_score !== null && 
+        game.away_score && game.away_score !== null && 
+        game.home_score === game.away_score;
+
     $: highlightHomeButton = userMadePick ? isHomeTeamPicked : (isGameCompleted ? homeTeamWon : false);
     $: highlightAwayButton = userMadePick ? isAwayTeamPicked : (isGameCompleted ? awayTeamWon : false);
+    $: highlightTieButton = userMadePick ? isTiePicked : (isGameCompleted ? isActualTie : false);
 
     $: homeTeamLogoURL = highlightHomeButton && game.home_team.alternate_logo_url 
         ? game.home_team.alternate_logo_url 
@@ -56,15 +68,15 @@
             dispatch('pickChanged', {
                 gameId: game.id,
                 pickedTeamId: undefined,
-                predictedHomeScore: predictedHomeScore ? parseInt(predictedHomeScore) : undefined,
-                predictedAwayScore: predictedAwayScore ? parseInt(predictedAwayScore) : undefined
+                predictedHomeScore: parseScoreInput(predictedHomeScore),
+                predictedAwayScore: parseScoreInput(predictedAwayScore)
             });
         } else {
             dispatch('pickChanged', {
                 gameId: game.id,
                 pickedTeamId: teamId,
-                predictedHomeScore: predictedHomeScore ? parseInt(predictedHomeScore) : undefined,
-                predictedAwayScore: predictedAwayScore ? parseInt(predictedAwayScore) : undefined
+                predictedHomeScore: parseScoreInput(predictedHomeScore),
+                predictedAwayScore: parseScoreInput(predictedAwayScore)
             });
         }
     }
@@ -74,8 +86,8 @@
             dispatch('pickChanged', {
                 gameId: game.id,
                 pickedTeamId: undefined,
-                predictedHomeScore: predictedHomeScore ? parseInt(predictedHomeScore) : undefined,
-                predictedAwayScore: predictedAwayScore ? parseInt(predictedAwayScore) : undefined
+                predictedHomeScore: parseScoreInput(predictedHomeScore),
+                predictedAwayScore: parseScoreInput(predictedAwayScore)
             });
         } else {
             dispatch('pickChanged', {
@@ -96,6 +108,12 @@
                 predictedAwayScore: predictedAwayScore ? parseInt(predictedAwayScore) : undefined
             });
         }
+    }
+
+    function parseScoreInput(value: string): number | undefined {
+        if (value === '') return undefined;
+        const parsed = parseInt(value);
+        return isNaN(parsed) ? undefined : parsed;
     }
 
     function formatTime(dateString: string): string {
@@ -173,7 +191,28 @@
 
         <!-- Away Team Button -->
         <button
+            bind:this={awayButton}
             on:click={() => selectTeam(game.away_team_id)}
+            on:mouseover={() => {
+                if (!highlightAwayButton) {
+                    awayButton.style.backgroundColor = `#${game.away_team.primary_color}50`;
+                }
+            }}
+            on:focus={() => {
+                if (!highlightAwayButton) {
+                    awayButton.style.backgroundColor = `#${game.away_team.primary_color}50`;
+                }
+            }}
+            on:mouseout={() => {
+                if (!highlightAwayButton) {
+                    awayButton.style.backgroundColor = 'transparent';
+                }
+            }}
+            on:blur={() => {
+                if (!highlightAwayButton) {
+                    awayButton.style.backgroundColor = 'transparent';
+                }
+            }}
             class="flex-1 p-2 rounded-r-lg border-2 transition-all cursor-pointer"
             class:border-primary-600={!highlightAwayButton}
             class:hover:border-primary-400={!highlightAwayButton}
@@ -219,12 +258,12 @@
         <button
             on:click={selectTie}
             class="px-2 py-0.5 rounded border text-xs font-sans font-semibold transition-all cursor-pointer"
-            class:bg-primary-600={isTiePicked}
-            class:border-primary-500={isTiePicked}
-            class:text-neutral={isTiePicked}
-            class:bg-transparent={!isTiePicked}
-            class:border-primary-600={!isTiePicked}
-            class:hover:border-primary-400={!isTiePicked}
+            class:bg-primary-600={highlightTieButton}
+            class:border-primary-500={highlightTieButton}
+            class:text-neutral={highlightTieButton}
+            class:bg-transparent={!highlightTieButton}
+            class:border-primary-600={!highlightTieButton}
+            class:hover:border-primary-400={!highlightTieButton}
         >
             TIE
         </button>
@@ -234,7 +273,38 @@
     <div class="flex-1 flex items-stretch">
         <!-- Home Team Button -->
         <button
+            bind:this={homeButton}
             on:click={() => selectTeam(game.home_team_id)}
+            on:mouseover={() => {
+                if (!highlightHomeButton) {
+                    homeButton.style.backgroundColor = `#${game.home_team.primary_color}50`;
+                }
+            }}
+            on:focus={() => {
+                if (!highlightHomeButton) {
+                    homeButton.style.backgroundColor = `#${game.home_team.primary_color}50`;
+                }
+            }}
+            on:mouseout={() => {
+                if (!highlightHomeButton) {
+                    homeButton.style.backgroundColor = 'transparent';
+                }
+            }}
+            on:blur={() => {
+                if (!highlightHomeButton) {
+                    homeButton.style.backgroundColor = 'transparent';
+                }
+            }}
+            on:mouseout={() => {
+                if (!highlightHomeButton) {
+                    homeButton.style.backgroundColor = 'transparent';
+                }
+            }}
+            on:blur={() => {
+                if (!highlightHomeButton) {
+                    homeButton.style.backgroundColor = 'transparent';
+                }
+            }}
             class="flex-1 p-2 rounded-l-lg border-2 transition-all cursor-pointer"
             class:border-primary-600={!highlightHomeButton}
             class:hover:border-primary-400={!highlightHomeButton}
