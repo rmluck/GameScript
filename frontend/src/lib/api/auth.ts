@@ -24,6 +24,16 @@ export const authAPI = {
         return response.data;
     },
 
+    async updateProfile(data: {
+        username?: string;
+        email?: string;
+        current_password?: string;
+        new_password?: string;
+    }): Promise<User> {
+        const response = await apiClient.put<User>('/auth/profile', data);
+        return response.data;
+    },
+
     async logout(): Promise<void> {
         // Could call backend logout endpoint if you add one
         // For now, just clear local state

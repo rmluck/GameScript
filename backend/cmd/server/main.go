@@ -76,6 +76,7 @@ func main() {
     auth.Post("/register", middleware.RateLimitAuth(5, 15*time.Minute), handlers.RegisterUser(db))
     auth.Post("/login", middleware.RateLimitAuth(5, 15*time.Minute), handlers.LoginUser(db))
     auth.Get("/me", middleware.AuthMiddleware, handlers.GetCurrentUser(db))
+    auth.Put("/profile", middleware.AuthMiddleware, handlers.UpdateProfile(db))
 
     // Setup other routes
     handlers.SetupRoutes(app, db, scheduler)

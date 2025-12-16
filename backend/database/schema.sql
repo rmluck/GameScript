@@ -64,12 +64,13 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     is_admin BOOLEAN DEFAULT FALSE,
     avatar_url VARCHAR(255),
+    -- Need to update database to add these fields
     failed_login_attempts INTEGER DEFAULT 0,
-    locked_until TIMESTAMP,
-    last_login TIMESTAMP,
-    password_changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    locked_until TIMESTAMPTZ,
+    last_login TIMESTAMPTZ,
+    password_changed_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- SCENARIOS

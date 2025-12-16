@@ -288,6 +288,121 @@ func GetCurrentUser(db *database.DB) fiber.Handler {
 	}
 }
 
+func UpdateProfile(db *database.DB) fiber.Handler {
+    return func(c *fiber.Ctx) error {
+        userID := c.Locals("user_id").(int)
+
+        type UpdateProfileRequest struct {
+            Username       *string `json:"username"`
+            Email          *string `json:"email"`
+            CurrentPassword *string `json:"current_password"`
+            NewPassword    *string `json:"new_password"`
+        }
+
+        var request UpdateProfileRequest
+        if err := c.BodyParser(&request); err != nil {
+            return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
+        }
+
+        // If changing password, verify current password
+        if request.NewPassword != nil && *request.NewPassword != "" {
+            if request.CurrentPassword == nil || *request.CurrentPassword == "" {
+                return c.Status(400).JSON(fiber.Map{"error": "Current password is required to change password"})
+            }
+
+            // Validate new password
+            if errors := validatePassword(*request.NewPassword); len(errors) > 0 {
+                return c.Status(400).JSON(fiber.Map{"error": errors[0], "errors": errors})
+            }
+
+            // Get current password hash
+            var currentHash string
+            err := db.Conn.QueryRow("SELECT password_hash FROM users WHERE id = $1", userID).Scan(&currentHash)
+            if err != nil {
+                return c.Status(500).JSON(fiber.Map{"error": "Failed to verify password"})
+            }
+
+            // Verify current password
+            if err := bcrypt.CompareHashAndPassword([]byte(currentHash), []byte(*request.CurrentPassword)); err != nil {
+                return c.Status(401).JSON(fiber.Map{"error": "Current password is incorrect"})
+            }
+
+            // Hash new password
+            hashedPassword, err := bcrypt.GenerateFromPassword([]byte(*request.NewPassword), 12)
+            if err != nil {
+                return c.Status(500).JSON(fiber.Map{"error": "Failed to hash new password"})
+            }
+
+            // Update password
+            _, err = db.Conn.Exec(`
+                UPDATE users
+                SET password_hash = $1, password_changed_at = $2, updated_at = $3
+                WHERE id = $4
+            `, string(hashedPassword), time.Now(), time.Now(), userID)
+            if err != nil {
+                return c.Status(500).JSON(fiber.Map{"error": "Failed to update password"})
+            }
+        }
+
+        // Update username if provided
+        if request.Username != nil && *request.Username != "" {
+            if errors := validateUsername(*request.Username); len(errors) > 0 {
+                return c.Status(400).JSON(fiber.Map{"error": errors[0], "errors": errors})
+            }
+
+            _, err := db.Conn.Exec("UPDATE users SET username = $1, updated_at = $2 WHERE id = $3", *request.Username, time.Now(), userID)
+            if err != nil {
+                if err.Error() == "pq: duplicate key value violates unique constraint \"users_username_key\"" {
+                    return c.Status(400).JSON(fiber.Map{"error": "Username already in use"})
+                }
+                return c.Status(500).JSON(fiber.Map{"error": "Failed to update username"})
+            }
+        }
+
+        // Update email if provided
+        if request.Email != nil && *request.Email != "" {
+            if !validateEmail(*request.Email) {
+                return c.Status(400).JSON(fiber.Map{"error": "Invalid email format"})
+            }
+
+            _, err := db.Conn.Exec("UPDATE users SET email = $1, updated_at = $2 WHERE id = $3", *request.Email, time.Now(), userID)
+            if err != nil {
+                if err.Error() == "pq: duplicate key value violates unique constraint \"users_email_key\"" {
+                    return c.Status(400).JSON(fiber.Map{"error": "Email already in use"})
+                }
+                return c.Status(500).JSON(fiber.Map{"error": "Failed to update email"})
+            }
+        }
+
+        // Return updated user
+        var id int
+        var email, username string
+        var isAdmin bool
+        var avatarURL *string
+        var createdAt, updatedAt time.Time
+
+        err := db.Conn.QueryRow(`
+            SELECT id, email, username, is_admin, avatar_url, created_at, updated_at
+            FROM users
+            WHERE id = $1
+        `, userID).Scan(&id, &email, &username, &isAdmin, &avatarURL, &createdAt, &updatedAt)
+        
+        if err != nil {
+            return c.Status(500).JSON(fiber.Map{"error": "Failed to retrieve user"})
+        }
+
+        return c.JSON(fiber.Map{
+            "id":             id,
+            "email":          email,
+            "username":       username,
+            "is_admin":      isAdmin,
+            "avatar_url":    avatarURL,
+            "created_at":    createdAt,
+            "updated_at":    updatedAt,
+        })
+    }
+}
+
 func generateJWT(userID int, email, username string) string {
     jwtSecret := os.Getenv("JWT_SECRET")
     if jwtSecret == "" {

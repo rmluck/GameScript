@@ -53,7 +53,7 @@
                             {$authStore.user?.is_admin ? 'ADMIN:' : ''}
                             {$authStore.user?.username}
                         </span>
-                        <a href="/auth/profile" class="font-sans font-semibold text-lg bg-primary-800/60 hover:bg-primary-600 text-neutral transition-colors duration-200 px-4 py-2 rounded-md mr-4">
+                        <a href="/profile" class="font-sans font-semibold text-lg bg-primary-800/60 hover:bg-primary-600 text-neutral transition-colors duration-200 px-4 py-2 rounded-md mr-4">
                             PROFILE
                         </a>
                         <button

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -211,6 +212,20 @@ func createPick(db *database.DB) fiber.Handler {
 			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 		}
 
+		// Update scenario's updated_at timestamp
+        scenarioIDInt, err := strconv.Atoi(scenarioID)
+        if err == nil {
+            _, updateErr := db.Conn.Exec(`
+                UPDATE scenarios
+                SET updated_at = NOW()
+                WHERE id = $1
+            `, scenarioIDInt)
+            if updateErr != nil {
+                // Log error but don't fail the request
+                c.Locals("scenario_update_error", updateErr.Error())
+            }
+        }
+
 		return c.Status(201).JSON(map[string]interface{}{
 			"id": id,
 			"scenario_id": sID,
@@ -266,6 +281,20 @@ func updatePick(db *database.DB) fiber.Handler {
 			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 		}
 
+		// Update scenario's updated_at timestamp
+        scenarioIDInt, err := strconv.Atoi(scenarioID)
+        if err == nil {
+            _, updateErr := db.Conn.Exec(`
+                UPDATE scenarios
+                SET updated_at = NOW()
+                WHERE id = $1
+            `, scenarioIDInt)
+            if updateErr != nil {
+                // Log error but don't fail the request
+                c.Locals("scenario_update_error", updateErr.Error())
+            }
+        }
+
 		return c.JSON(map[string]interface{}{
 			"id": id,
 			"scenario_id": sID,
@@ -297,6 +326,20 @@ func deletePick(db *database.DB) fiber.Handler {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 		}
+
+		// Update scenario's updated_at timestamp
+        scenarioIDInt, err := strconv.Atoi(scenarioID)
+        if err == nil {
+            _, updateErr := db.Conn.Exec(`
+                UPDATE scenarios
+                SET updated_at = NOW()
+                WHERE id = $1
+            `, scenarioIDInt)
+            if updateErr != nil {
+                // Log error but don't fail the request
+                c.Locals("scenario_update_error", updateErr.Error())
+            }
+        }
 
 		return c.JSON(fiber.Map{"message": "Pick deleted successfully"})
 	}
