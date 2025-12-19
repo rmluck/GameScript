@@ -67,19 +67,26 @@ export function getCurrentNFLWeekFromGames(allGames: Game[]): number {
         const range = weekRanges.get(week);
         if (!range) continue;
         
-        // Add a buffer - week extends 2 days after last game
-        const weekEnd = new Date(range.endDate);
-        weekEnd.setDate(weekEnd.getDate() + 2);
-        
-        if (now >= range.startDate && now <= weekEnd) {
+        // Check if we're currently in this week's range
+        // Week starts on Tuesday and ends on Monday night
+        if (now >= range.startDate && now <= range.endDate) {
             return week;
         }
+    }
+    
+    // If we're past all weeks, check if we're between weeks
+    // Return the next upcoming week that hasn't started yet
+    for (let week = 1; week <= 18; week++) {
+        const range = weekRanges.get(week);
+        if (!range) continue;
         
-        // If we haven't reached this week yet
         if (now < range.startDate) {
+            // We're before this week starts, so return the previous week
+            // (or week 1 if this is week 1)
             return Math.max(1, week - 1);
         }
     }
     
-    return 18; // Default to final week
+    // We're after all regular season weeks
+    return 18;
 }

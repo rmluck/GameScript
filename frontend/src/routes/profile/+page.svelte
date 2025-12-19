@@ -4,6 +4,7 @@
     import { authAPI } from '$lib/api/auth';
     import { scenariosAPI } from '$lib/api/scenarios';
     import { goto } from '$app/navigation';
+    import CreateScenarioModal from '$lib/components/scenarios/CreateScenarioModal.svelte';
     import type { User, Scenario } from '$types';
 
     let user: User | null = null;
@@ -24,6 +25,7 @@
 
     // Scenario management
     let deletingScenarioId: number | null = null;
+    let showCreateModal = false;
 
     onMount(async () => {
         // Check if user is authenticated
@@ -121,6 +123,12 @@
         }
     }
 
+    function handleScenarioCreated(event: CustomEvent) {
+        const scenario = event.detail;
+        console.log("NEW SCENARIO CREATED:", scenario);
+        goto(`/scenarios/${scenario.sport_short_name?.toLowerCase()}/${scenario.id}`)
+    }
+
     function formatDate(dateString: string): string {
         return new Date(dateString).toLocaleDateString('en-US', {
             year: 'numeric',
@@ -132,8 +140,6 @@
     function getRelativeTime(dateString: string): string {
         const date = new Date(dateString);
         const now = new Date();
-        console.log("SELECTED DATE:", date);
-        console.log("CURRENT DATE:", now);
         const diffInMs = now.getTime() - date.getTime();
         const diffInMins = Math.floor(diffInMs / (1000 * 60));
         const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
@@ -158,6 +164,11 @@
 <svelte:head>
     <title>Profile - GameScript</title>
 </svelte:head>
+
+<CreateScenarioModal 
+    bind:isOpen={showCreateModal}
+    on:created={handleScenarioCreated}
+/>
 
 <div class="max-w-6xl mx-auto">
     <!-- Profile Header -->
@@ -315,12 +326,12 @@
     <div class="border-2 border-primary-700 rounded-lg p-6">
         <div class="flex items-center justify-between mb-6">
             <h2 class="text-2xl font-heading font-bold text-neutral">My Scenarios</h2>
-            <a 
-                href="/scenarios/create"
-                class="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-neutral font-sans font-semibold rounded-lg transition-colors"
+            <button 
+                on:click={() => showCreateModal = true}
+                class="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-neutral font-sans font-semibold rounded-lg transition-colors cursor-pointer"
             >
                 Create New Scenario
-            </a>
+            </button>
         </div>
 
         {#if loading}
@@ -383,7 +394,7 @@
 
                         <div class="flex gap-2">
                             <a
-                                href="/scenarios/{scenario.sport_short_name}/{scenario.id}"
+                                href="/scenarios/{scenario.sport_short_name?.toLowerCase()}/{scenario.id}"
                                 class="flex-1 px-3 py-2 bg-primary-700 hover:bg-primary-600 text-neutral text-center font-sans font-semibold rounded transition-colors"
                             >
                                 Open

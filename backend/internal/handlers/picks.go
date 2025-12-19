@@ -261,6 +261,22 @@ func updatePick(db *database.DB) fiber.Handler {
 			return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
 		}
 
+		// Check if playoffs exist for this scenario
+		var playoffStateID int
+		err := db.Conn.QueryRow(`
+			SELECT id FROM playoff_states WHERE scenario_id = $1
+		`, scenarioID).Scan(&playoffStateID)
+		if err == nil {
+			// Playoffs exist - delete them since regular season pick is being updated
+			_, err = db.Conn.Exec(`
+				DELETE FROM playoff_matchups WHERE playoff_state_id = $1
+			`, playoffStateID)
+
+			_, err = db.Conn.Exec(`
+				DELETE FROM playoff_states WHERE id = $1
+			`, playoffStateID)
+		}
+
 		query := `
 			UPDATE picks
 			SET picked_team_id = $1, predicted_home_score = $2, predicted_away_score = $3, updated_at = NOW()
@@ -274,7 +290,7 @@ func updatePick(db *database.DB) fiber.Handler {
 		var status *string
 		var updatedAt time.Time
 
-		err := db.Conn.QueryRow(query, req.PickedTeamID, req.PredictedHomeScore, req.PredictedAwayScore, scenarioID, gameID).Scan(
+		err = db.Conn.QueryRow(query, req.PickedTeamID, req.PredictedHomeScore, req.PredictedAwayScore, scenarioID, gameID).Scan(
 			&id, &sID, &gID, &pickedTeamID, &predictedHomeScore, &predictedAwayScore, &status, &updatedAt,
 		)
 		if err != nil {

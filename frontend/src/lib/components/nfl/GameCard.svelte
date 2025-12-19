@@ -4,6 +4,7 @@
 
     export let game: Game;
     export let pick: Pick | undefined = undefined;
+    export let hasPlayoffs: boolean = false;
 
     const dispatch = createEventDispatcher();
 
@@ -84,12 +85,19 @@
         : [];
 
     function selectTeam(teamId: number) {
+        // Show warning if playoffs exist and user is trying to change a regular season pick
+        if (hasPlayoffs) {
+            const confirmed = confirm(
+                'Warning: Changing this pick will reset all playoff picks and regenerate playoff matchups.'
+            );
+            if (!confirmed) return;
+        }
+
         if (pick?.picked_team_id === teamId) {
+            // Instead of setting to undefined, DELETE the pick
             dispatch('pickChanged', {
                 gameId: game.id,
-                pickedTeamId: undefined,
-                predictedHomeScore: parseScoreInput(predictedHomeScore),
-                predictedAwayScore: parseScoreInput(predictedAwayScore)
+                deletePick: true
             });
         } else {
             dispatch('pickChanged', {

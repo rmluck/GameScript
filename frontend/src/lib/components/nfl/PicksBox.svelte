@@ -4,7 +4,7 @@
     import { picksAPI } from '$lib/api/picks';
     import { teamsAPI } from '$lib/api/teams';
     import { scenariosAPI } from '$lib/api/scenarios';
-    import type { Game, Pick, Team } from '$types';
+    import type { Game, Pick, Team, PlayoffState } from '$types';
     
     import WeekNavigator from './WeekNavigator.svelte';
     import GameCard from './GameCard.svelte';
@@ -12,6 +12,8 @@
 
     export let scenarioId: number;
     export let currentWeek: number;
+    export let playoffState: PlayoffState | null = null;
+    export let canEnablePlayoffs: boolean = false;
 
     const dispatch = createEventDispatcher();
 
@@ -121,28 +123,35 @@
         pickedTeamId?: number | null;
         predictedHomeScore?: number;
         predictedAwayScore?: number;
+        deletePick?: boolean;
     }>) {
         try {
-            const { gameId, pickedTeamId, predictedHomeScore, predictedAwayScore } = event.detail;
+            const { gameId, pickedTeamId, predictedHomeScore, predictedAwayScore, deletePick } = event.detail;
             
             const existingPick = picks.get(gameId);
 
-            let updated: Pick;
-            if (existingPick) {
-                updated = await picksAPI.update(scenarioId, gameId, {
+            if (deletePick && existingPick) {
+                // DELETE the pick entirely
+                await picksAPI.delete(scenarioId, gameId);
+                picks.delete(gameId);
+            } else if (existingPick) {
+                // UPDATE existing pick
+                const updated = await picksAPI.update(scenarioId, gameId, {
                     picked_team_id: pickedTeamId === undefined ? null : pickedTeamId,
                     predicted_home_score: predictedHomeScore,
                     predicted_away_score: predictedAwayScore
                 });
+                picks.set(gameId, updated);
             } else {
-                updated = await picksAPI.create(scenarioId, gameId, {
+                // CREATE new pick
+                const updated = await picksAPI.create(scenarioId, gameId, {
                     picked_team_id: pickedTeamId === undefined ? null : pickedTeamId,
                     predicted_home_score: predictedHomeScore,
                     predicted_away_score: predictedAwayScore
                 });
+                picks.set(gameId, updated);
             }
 
-            picks.set(gameId, updated);
             picks = new Map(picks);
             dispatch('pickUpdated');
         } catch (err: any) {
@@ -157,8 +166,9 @@
     {#if allGames.length > 0}
         <WeekNavigator 
             {currentWeek}
-            maxWeek={18}
             {allGames}
+            {playoffState}
+            {canEnablePlayoffs}
             on:weekChanged={handleWeekChange}
         />
     {/if}
@@ -189,6 +199,7 @@
                             <GameCard 
                                 {game}
                                 pick={picks.get(game.id)}
+                                hasPlayoffs={playoffState?.is_enabled || false}
                                 on:pickChanged={handlePickChange}
                             />
                         {/each}

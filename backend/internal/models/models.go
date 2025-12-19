@@ -82,6 +82,33 @@ type Pick struct {
 	UpdatedAt		time.Time 	`json:"updated_at"`
 }
 
+type PlayoffState struct {
+	ID	   			int       	`json:"id"`
+	ScenarioID 		int       	`json:"scenario_id"`
+	CurrentRound	int       	`json:"current_round"`
+	IsEnabled		bool     	`json:"is_enabled"`
+	CreatedAt		time.Time 	`json:"created_at"`
+	UpdatedAt		time.Time 	`json:"updated_at"`
+}
+
+type PlayoffMatchup struct {
+	ID	   			int       	`json:"id"`
+	PlayoffStateID 	int       	`json:"playoff_state_id"`
+	Round			int       	`json:"round"`
+	MatchupOrder	int       	`json:"matchup_order"`
+	Conference		*string   	`json:"conference"`
+	HigherSeedTeamID *int     	`json:"higher_seed_team_id"`
+	LowerSeedTeamID *int      	`json:"lower_seed_team_id"`
+	HigherSeed		*int      	`json:"higher_seed"`
+	LowerSeed		*int      	`json:"lower_seed"`
+	PickedTeamID 	*int      	`json:"picked_team_id"`
+	PredictedHigherSeedScore *int     `json:"predicted_higher_seed_score"`
+	PredictedLowerSeedScore *int      `json:"predicted_lower_seed_score"`
+	Status 			*string   	`json:"status"`
+	CreatedAt		time.Time 	`json:"created_at"`
+	UpdatedAt		time.Time 	`json:"updated_at"`
+}
+
 type User struct {
 	ID 	 			int       	`json:"id"`
 	Email 			string    	`json:"email"`

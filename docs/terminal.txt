@@ -1,2 +1,8 @@
 To connect to local database:
-psql gamescript
+psql -U rohanmistry -d gamescript
+
+To run backend:
+go run cmd/server/main.go
+
+To run frontend:
+npm run dev

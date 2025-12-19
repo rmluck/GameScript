@@ -95,27 +95,6 @@ export interface Pick {
     updated_at: string;
 }
 
-// export interface TeamRecord {
-//     rank: number;
-//     team_id: number;
-//     team_name: string;
-//     team_abbr: string;
-//     wins: number;
-//     losses: number;
-//     ties: number;
-//     win_pct: number;
-//     division_record: string;
-//     conference_record: string;
-//     points_for: number;
-//     points_against: number;
-//     point_diff: number;
-//     division_games_back?: number;
-//     conference_games_back?: number;
-//     logo_url: string;
-//     team_primary_color: string;
-//     team_secondary_color: string;
-// }
-
 export interface PlayoffSeed {
     seed: number;
     team_id: number;
@@ -165,3 +144,46 @@ export interface DraftPick {
     team_primary_color: string;
     team_secondary_color: string;
 }
+
+export interface PlayoffState {
+    id: number;
+    scenario_id: number;
+    current_round: number;
+    is_enabled: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface PlayoffMatchup {
+    id: number;
+    playoff_state_id: number;
+    round: number;
+    matchup_order: number;
+    conference?: string;
+    higher_seed_team_id: number;
+    lower_seed_team_id: number;
+    higher_seed: number;
+    lower_seed: number;
+    picked_team_id?: number;
+    predicted_higher_seed_score?: number;
+    predicted_lower_seed_score?: number;
+    status: 'pending' | 'completed';
+    created_at: string;
+    updated_at: string;
+    higher_seed_team?: Team;
+    lower_seed_team?: Team;
+}
+
+export const PLAYOFF_ROUNDS = {
+    WILD_CARD: 1,
+    DIVISIONAL: 2,
+    CONFERENCE: 3,
+    SUPER_BOWL: 4,
+} as const;
+
+export const PLAYOFF_ROUND_NAMES: Record<number, string> = {
+    1: 'Wild Card',
+    2: 'Divisional',
+    3: 'Conference Championship',
+    4: 'Super Bowl',
+};

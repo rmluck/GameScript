@@ -3,8 +3,9 @@
     import { gamesAPI } from '$lib/api/games';
     import { picksAPI } from '$lib/api/picks';
     import { standingsAPI } from '$lib/api/standings';
+    import { playoffsAPI } from '$lib/api/playoffs';
     import GamePickerRow from './GamePickerRow.svelte';
-    import type { PlayoffSeed, Game, Pick } from '$types';
+    import type { PlayoffSeed, Game, Pick, PlayoffState } from '$types';
 
     export let team: PlayoffSeed;
     export let scenarioId: number;
@@ -24,9 +25,12 @@
     let currentTeam: PlayoffSeed = team;
     let teamDivision: string = '';
 
+    let playoffState: PlayoffState | null = null;
+
     onMount(async () => {
         await loadTeamGames();
         await loadPicks();
+        await loadPlayoffState();
     });
 
     async function loadTeamGames() {
@@ -90,6 +94,15 @@
         }
     }
 
+    async function loadPlayoffState() {
+        try {
+            const response = await playoffsAPI.getState(scenarioId);
+            playoffState = response.playoff_state;
+        } catch (err: any) {
+            console.error('Failed to load playoff state:', err);
+        }
+    }
+
     // Add function to reload team data
     async function reloadTeamData() {
         try {
@@ -123,25 +136,28 @@
 
     async function handlePickChange(event: CustomEvent) {
         try {
-            const { gameId, pickedTeamId, predictedHomeScore, predictedAwayScore } = event.detail;
+            const { gameId, pickedTeamId, predictedHomeScore, predictedAwayScore, deletePick } = event.detail;
             const existingPick = picks.get(gameId);
 
-            let updated: Pick;
-            if (existingPick) {
-                updated = await picksAPI.update(scenarioId, gameId, {
+            if (deletePick && existingPick) {
+                await picksAPI.delete(scenarioId, gameId);
+                picks.delete(gameId);
+            } else if (existingPick) {
+                const updated = await picksAPI.update(scenarioId, gameId, {
                     picked_team_id: pickedTeamId === undefined ? null : pickedTeamId,
                     predicted_home_score: predictedHomeScore,
                     predicted_away_score: predictedAwayScore
                 });
+                picks.set(gameId, updated);
             } else {
-                updated = await picksAPI.create(scenarioId, gameId, {
+                const updated = await picksAPI.create(scenarioId, gameId, {
                     picked_team_id: pickedTeamId === undefined ? null : pickedTeamId,
                     predicted_home_score: predictedHomeScore,
                     predicted_away_score: predictedAwayScore
                 });
+                picks.set(gameId, updated);
             }
-
-            picks.set(gameId, updated);
+            
             picks = new Map(picks);
             
             // Reload team data to get updated stats
@@ -247,12 +263,12 @@
                         />
                     {/if}
                     <div>
-                        <h2 class="text-3xl font-heading font-bold text-black">
-                            {currentTeam.team_name}
-                        </h2>
                         <p class="text-lg font-sans text-black/70">
                             {currentTeam.team_city}
                         </p>
+                        <h2 class="text-3xl font-heading font-bold text-black mb-1">
+                            {currentTeam.team_name}
+                        </h2>
                         {#if teamDivision}
                             <p class="text-sm font-sans text-black/60 uppercase">
                                 {teamDivision}
@@ -406,7 +422,6 @@
                                 style={`border-color: #${currentTeam.team_primary_color}60;`}
                                 on:mouseenter={(e) => e.currentTarget.style.borderColor = `#${currentTeam.team_primary_color}90`}
                                 on:mouseleave={(e) => e.currentTarget.style.borderColor = `#${currentTeam.team_primary_color}60`}
-
                                 role="region"
                             >
                                 <!-- Game Header -->
@@ -438,6 +453,7 @@
                                     {game}
                                     {pick}
                                     compact={true}
+                                    hasPlayoffs={playoffState?.is_enabled || false}
                                     on:pickChanged={handlePickChange}
                                 />
                             </div>

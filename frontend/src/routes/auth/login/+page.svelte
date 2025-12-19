@@ -15,7 +15,7 @@
         try {
             const response = await authAPI.login(email, password);
             authStore.login(response.user, response.token);
-            goto('/scenarios');
+            goto('/profile');
         } catch (err: any) {
             error = err.response?.data?.error || 'Login failed. Please try again.';
         } finally {

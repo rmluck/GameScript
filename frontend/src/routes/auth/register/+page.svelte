@@ -47,7 +47,7 @@
         try {
             const response = await authAPI.register(email, username, password);
             authStore.login(response.user, response.token);
-            goto('/scenarios');
+            goto('/profile');
         } catch (err: any) {
             errors.push(err.response?.data?.error || 'Registration failed. Please try again.');
         } finally {

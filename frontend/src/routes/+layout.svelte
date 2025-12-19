@@ -18,7 +18,7 @@
     });
 </script>
 
-<div class="min-h-screen bg-linear-to-br from-primary-975  to-primary-950 flex flex-col">
+<div class="min-h-screen bg-linear-to-br from-primary-975 to-primary-950 flex flex-col">
     <nav class="bg-primary-900/30 shadow-md">
         <div class="px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">

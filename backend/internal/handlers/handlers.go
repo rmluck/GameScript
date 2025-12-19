@@ -64,6 +64,15 @@ func SetupRoutes(app *fiber.App, db *database.DB, scheduler *scheduler.Scheduler
 	picks.Put("/scenarios/:scenario_id/games/:game_id", updatePick(db))
 	picks.Delete("/scenarios/:scenario_id/games/:game_id", deletePick(db))
 
+	// Playoffs (optional auth - guest or user)
+	playoffs := api.Group("/playoffs")
+	playoffs.Use(middleware.OptionalAuth)
+	playoffs.Get("/scenarios/:scenario_id/state", getPlayoffState(db))
+	playoffs.Post("/scenarios/:scenario_id/enable", enablePlayoffs(db))
+	playoffs.Get("/scenarios/:scenario_id/rounds/:round", getPlayoffMatchups(db))
+	playoffs.Put("/scenarios/:scenario_id/matchups/:matchup_id", updatePlayoffPick(db))
+	playoffs.Delete("/scenarios/:scenario_id/matchups/:matchup_id", deletePlayoffPick(db))
+
 	// Admin routes
 	admin := api.Group("/admin")
 	admin.Post("/update-schedule/nfl", triggerNFLUpdate(scheduler))
@@ -90,8 +99,8 @@ func getSports(db *database.DB) fiber.Handler {
 			}
 
 			sports = append(sports, map[string]interface{}{
-				"id": id,
-				"name": name,
+				"id":         id,
+				"name":       name,
 				"short_name": shortName,
 				"created_at": createdAt,
 			})
@@ -130,11 +139,11 @@ func getSeasons(db *database.DB) fiber.Handler {
 			}
 
 			seasons = append(seasons, map[string]interface{}{
-				"id": id,
-				"sport_id": sportID,
+				"id":         id,
+				"sport_id":   sportID,
 				"start_year": startYear,
-				"end_year": endYear,
-				"is_active": isActive,
+				"end_year":   endYear,
+				"is_active":  isActive,
 				"created_at": createdAt,
 			})
 		}
@@ -144,7 +153,7 @@ func getSeasons(db *database.DB) fiber.Handler {
 }
 
 func getSeason(db *database.DB) fiber.Handler {
-	return func (c *fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
 		seasonID := c.Params("season_id")
 
 		query := `
@@ -164,11 +173,11 @@ func getSeason(db *database.DB) fiber.Handler {
 		}
 
 		return c.JSON(map[string]interface{}{
-			"id": id,
-			"sport_id": sportID,
+			"id":         id,
+			"sport_id":   sportID,
 			"start_year": startYear,
-			"end_year": endYear,
-			"is_active": isActive,
+			"end_year":   endYear,
+			"is_active":  isActive,
 			"created_at": createdAt,
 		})
 	}
@@ -178,7 +187,7 @@ func triggerNFLUpdate(scheduler *scheduler.Scheduler) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		scheduler.UpdateNFLSchedule()
 		return c.JSON(fiber.Map{
-			"status": "ok",
+			"status":  "ok",
 			"message": "NFL schedule update triggered",
 		})
 	}

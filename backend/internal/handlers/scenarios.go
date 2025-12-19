@@ -263,11 +263,30 @@ func createScenario(db *database.DB) fiber.Handler {
 			}
 		}
 
+		var sportShortName string
+		var startYear int
+		var endYear *int
+
+		seasonQuery := `
+			SELECT sport.short_name, season.start_year, season.end_year
+			FROM sports sport
+			JOIN seasons season ON sport.id = season.sport_id
+			WHERE sport.id = $1 AND season.id = $2
+		`
+
+		err := db.Conn.QueryRow(seasonQuery, sportID, seasonID).Scan(&sportShortName, &startYear, &endYear)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": "Failed to retrieve sport information"})
+		}
+
 		return c.Status(201).JSON(map[string]interface{}{
 			"id": id,
 			"name": name,
 			"sport_id": sportID,
 			"season_id": seasonID,
+			"sport_short_name": sportShortName,
+			"season_start_year": startYear,
+			"season_end_year": endYear,
 			"is_public": isPublic,
 			"created_at": createdAt,
 			"updated_at": updatedAt,
