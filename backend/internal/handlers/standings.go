@@ -90,6 +90,12 @@ func formatDivisionsAsSeeds(divisions map[string][]standings.TeamRecord, allSeed
                 "logo_url": team.LogoURL,
                 "team_primary_color": team.TeamPrimaryColor,
                 "team_secondary_color": team.TeamSecondaryColor,
+                "home_wins": team.HomeWins,
+                "home_losses": team.HomeLosses,
+                "home_ties": team.HomeTies,
+                "away_wins": team.AwayWins,
+                "away_losses": team.AwayLosses,
+                "away_ties": team.AwayTies,
                 "conference_wins": team.ConferenceWins,
                 "conference_losses": team.ConferenceLosses,
                 "conference_ties": team.ConferenceTies,
@@ -101,6 +107,8 @@ func formatDivisionsAsSeeds(divisions map[string][]standings.TeamRecord, allSeed
                 "points_for": team.PointsFor,
                 "points_against": team.PointsAgainst,
                 "point_diff": team.PointsFor - team.PointsAgainst,
+                "strength_of_schedule": team.StrengthOfSchedule,
+                "strength_of_victory": team.StrengthOfVictory,
             })
         }
         result[divName] = formattedTeams
@@ -127,6 +135,12 @@ func formatPlayoffSeeds(seeds []standings.PlayoffSeed) []map[string]interface{} 
             "logo_url": seed.Team.LogoURL,
             "team_primary_color": seed.Team.TeamPrimaryColor,
             "team_secondary_color": seed.Team.TeamSecondaryColor,
+            "home_wins": seed.Team.HomeWins,
+            "home_losses": seed.Team.HomeLosses,
+            "home_ties": seed.Team.HomeTies,
+            "away_wins": seed.Team.AwayWins,
+            "away_losses": seed.Team.AwayLosses,
+            "away_ties": seed.Team.AwayTies,
             "conference_wins": seed.Team.ConferenceWins,
             "conference_losses": seed.Team.ConferenceLosses,
             "conference_ties": seed.Team.ConferenceTies,
@@ -138,6 +152,8 @@ func formatPlayoffSeeds(seeds []standings.PlayoffSeed) []map[string]interface{} 
             "points_for": seed.Team.PointsFor,
             "points_against": seed.Team.PointsAgainst,
             "point_diff": seed.Team.PointsFor - seed.Team.PointsAgainst,
+            "strength_of_schedule": seed.Team.StrengthOfSchedule,
+            "strength_of_victory": seed.Team.StrengthOfVictory,
         })
     }
 

@@ -120,6 +120,14 @@ export interface PlayoffSeed {
     points_for: number;
     points_against: number;
     point_diff: number;
+    home_wins: number;
+    home_losses: number;
+    home_ties: number;
+    away_wins: number;
+    away_losses: number;
+    away_ties: number;
+    strength_of_schedule: number;
+    strength_of_victory: number;
 }
 
 export interface ConferenceStandings {

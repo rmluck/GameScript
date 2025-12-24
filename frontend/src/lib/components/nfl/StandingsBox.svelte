@@ -69,6 +69,12 @@
             logo_url: team.logo_url,
             team_primary_color: team.team_primary_color,
             team_secondary_color: team.team_secondary_color,
+            home_wins: team.home_wins,
+            home_losses: team.home_losses,
+            home_ties: team.home_ties,
+            away_wins: team.away_wins,
+            away_losses: team.away_losses,
+            away_ties: team.away_ties,
             conference_wins: team.conference_wins,
             conference_losses: team.conference_losses,
             conference_ties: team.conference_ties,
@@ -79,7 +85,9 @@
             division_games_back: team.division_games_back,
             points_for: team.points_for,
             points_against: team.points_against,
-            point_diff: team.point_diff
+            point_diff: team.point_diff,
+            strength_of_schedule: team.strength_of_schedule,
+            strength_of_victory: team.strength_of_victory
         };
     }
 </script>

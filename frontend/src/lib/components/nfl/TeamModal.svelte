@@ -175,6 +175,7 @@
     }
 
     function formatWinPct(winPct: number): string {
+        if (winPct === -1.0) return '.000'; // Handle 0-0 case
         return winPct.toFixed(3);
     }
 
@@ -291,9 +292,8 @@
                 </button>
             </div>
 
-            <!-- Team Stats - 2 rows of 4 -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <!-- Row 1 -->
+            <!-- Team Stats - 2 rows of 6 -->
+            <div class="grid grid-cols-4 md:grid-cols-6 gap-3">
                 <div class="rounded-lg p-3 bg-white/50">
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase">Record</div>
                     <div class="text-xl font-heading font-bold text-black">
@@ -306,28 +306,38 @@
                 </div>
                 <div class="bg-white/50 rounded-lg p-3">
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase">Conf Record</div>
-                    <div class="flex flex-row">
-                        <div class="text-xl font-heading font-bold text-black">
+                    <div class="flex flex-row items-baseline gap-1">
+                        <div class="text-lg font-heading font-bold text-black">
                             {formatRecord(currentTeam.conference_wins, currentTeam.conference_losses, currentTeam.conference_ties)}
                         </div>
-                        <div class="text-sm font-sans text-black/60 ml-2 mt-2">
+                        <div class="text-xs font-sans text-black/60">
                             ({formatGamesBack(currentTeam.conference_games_back)} GB)
                         </div>
                     </div>
                 </div>
                 <div class="bg-white/50 rounded-lg p-3">
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase">Div Record</div>
-                    <div class="flex flex-row">
-                        <div class="text-xl font-heading font-bold text-black">
+                    <div class="flex flex-row items-baseline gap-1">
+                        <div class="text-lg font-heading font-bold text-black">
                             {formatRecord(currentTeam.division_wins, currentTeam.division_losses, currentTeam.division_ties)}
                         </div>
-                        <div class="text-sm font-sans text-black/60 ml-2 mt-2">
+                        <div class="text-xs font-sans text-black/60">
                             ({formatGamesBack(currentTeam.division_games_back)} GB)
                         </div>
                     </div>
                 </div>
-
-                <!-- Row 2 -->
+                <div class="bg-white/50 rounded-lg p-3">
+                    <div class="text-xs font-sans font-semibold text-black/60 uppercase">Home Record</div>
+                    <div class="text-xl font-heading font-bold text-black">
+                        {formatRecord(currentTeam.home_wins, currentTeam.home_losses, currentTeam.home_ties)}
+                    </div>
+                </div>
+                <div class="bg-white/50 rounded-lg p-3">
+                    <div class="text-xs font-sans font-semibold text-black/60 uppercase">Away Record</div>
+                    <div class="text-xl font-heading font-bold text-black">
+                        {formatRecord(currentTeam.away_wins, currentTeam.away_losses, currentTeam.away_ties)}
+                    </div>
+                </div>
                 <div class="bg-white/50 rounded-lg p-3">
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase">Win %</div>
                     <div class="text-xl font-heading font-bold text-black">
@@ -350,6 +360,18 @@
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase">Points Against</div>
                     <div class="text-xl font-heading font-bold text-black">
                         {currentTeam.points_against}
+                    </div>
+                </div>
+                <div class="bg-white/50 rounded-lg p-3">
+                    <div class="text-xs font-sans font-semibold text-black/60 uppercase" title="Strength of Schedule">SOS</div>
+                    <div class="text-xl font-heading font-bold text-black">
+                        {formatWinPct(currentTeam.strength_of_schedule)}
+                    </div>
+                </div>
+                <div class="bg-white/50 rounded-lg p-3">
+                    <div class="text-xs font-sans font-semibold text-black/60 uppercase" title="Strength of Victory">SOV</div>
+                    <div class="text-xl font-heading font-bold text-black">
+                        {formatWinPct(currentTeam.strength_of_victory)}
                     </div>
                 </div>
             </div>

@@ -4,8 +4,6 @@
 
     export let standings: ConferenceStandings;
     export let conference: 'AFC' | 'NFC';
-    // export let scenarioId: number;
-    // export let seasonId: number;
 
     type ViewMode = 'conference' | 'division';
     export let viewMode: ViewMode = 'conference';
@@ -29,6 +27,7 @@
     }
 
     function formatWinPct(winPct: number): string {
+        if (winPct === -1.0) return '.000'; // Handle 0-0 case
         return winPct.toFixed(3);
     }
 
@@ -49,7 +48,6 @@
     function handleMouseEnter(e: MouseEvent, primaryColor: string) {
         const target = e.currentTarget as HTMLElement;
         target.style.backgroundColor = `#${primaryColor}90`;
-        // Change all text elements to white
         target.querySelectorAll('span, div').forEach(el => {
             (el as HTMLElement).style.color = 'white';
         });
@@ -58,7 +56,6 @@
     function handleMouseLeave(e: MouseEvent) {
         const target = e.currentTarget as HTMLElement;
         target.style.backgroundColor = 'transparent';
-        // Reset all text colors
         target.querySelectorAll('span, div').forEach(el => {
             (el as HTMLElement).style.color = '';
         });
@@ -83,6 +80,12 @@
             logo_url: team.logo_url,
             team_primary_color: team.team_primary_color,
             team_secondary_color: team.team_secondary_color,
+            home_wins: team.home_wins,
+            home_losses: team.home_losses,
+            home_ties: team.home_ties,
+            away_wins: team.away_wins,
+            away_losses: team.away_losses,
+            away_ties: team.away_ties,
             conference_wins: team.conference_wins,
             conference_losses: team.conference_losses,
             conference_ties: team.conference_ties,
@@ -93,7 +96,9 @@
             division_games_back: team.division_games_back,
             points_for: team.points_for,
             points_against: team.points_against,
-            point_diff: team.point_diff
+            point_diff: team.point_diff,
+            strength_of_schedule: team.strength_of_schedule,
+            strength_of_victory: team.strength_of_victory
         };
     }
 </script>
@@ -130,7 +135,7 @@
     <!-- Conference View with Stats -->
     <div class="overflow-x-auto">
         {#if viewMode === 'conference'}
-            <div class="space-y-4 min-w-[500px]">
+            <div class="space-y-4 min-w-[800px]">
                 <!-- Division Winners (Seeds 1-4) -->
                 <div>
                     <h3 class="text-lg font-sans font-bold text-primary-700 uppercase tracking-wide mb-2 px-2">
@@ -138,23 +143,27 @@
                     </h3>
                     
                     <!-- Header Row -->
-                    <div class="grid grid-cols-15 gap-2 px-2 border-b border-primary-700/30 text-sm font-sans font-bold text-black uppercase">
-                        <div class="col-span-1">Seed</div>
-                        <div class="col-span-3">Team</div>
-                        <div class="col-span-2 text-center">Record</div>
-                        <div class="col-span-1 text-center">PCT</div>
-                        <div class="col-span-2 text-center">Conf</div>
-                        <div class="col-span-2 text-center">Div</div>
-                        <div class="col-span-1 text-center">GB</div>
-                        <div class="col-span-1 text-center">Diff</div>
-                        <div class="col-span-1 text-center">PF</div>
-                        <div class="col-span-1 text-center">PA</div>
+                    <div class="grid grid-cols-15 gap-1 px-2 border-b border-primary-700/30 text-xs font-sans font-bold text-black uppercase">
+                        <div class="col-span-1" title="Playoff Seed">Seed</div>
+                        <div class="col-span-2" title="Team">Team</div>
+                        <div class="col-span-1 text-center" title="Overall Record">Record</div>
+                        <div class="col-span-1 text-center" title="Win Percentage">PCT</div>
+                        <div class="col-span-1 text-center" title="Conference Record">Conf</div>
+                        <div class="col-span-1 text-center" title="Division Record">Div</div>
+                        <div class="col-span-1 text-center" title="Home Record">Home</div>
+                        <div class="col-span-1 text-center" title="Away Record">Away</div>
+                        <div class="col-span-1 text-center" title="Games Back">GB</div>
+                        <div class="col-span-1 text-center" title="Point Differential">Diff</div>
+                        <div class="col-span-1 text-center" title="Points For">PF</div>
+                        <div class="col-span-1 text-center" title="Points Against">PA</div>
+                        <div class="col-span-1 text-center" title="Strength of Schedule">SOS</div>
+                        <div class="col-span-1 text-center" title="Strength of Victory">SOV</div>
                     </div>
 
                     <!-- Data Rows -->
                     <div class="space-y-1 mt-2">
                         {#each divisionWinners as seed}
-                            <button class="w-full grid grid-cols-15 gap-2 px-2 py-2 rounded transition-colors cursor-pointer"
+                            <button class="w-full grid grid-cols-15 gap-1 px-2 py-2 rounded transition-colors cursor-pointer"
                                 on:mouseenter={(e) => handleMouseEnter(e, seed.team_primary_color)}
                                 on:mouseleave={handleMouseLeave}
                                 on:click={() => openTeamModal(seed)}
@@ -164,7 +173,7 @@
                                         {seed.seed}
                                     </span>
                                 </div>
-                                <div class="col-span-3 flex items-center gap-2">
+                                <div class="col-span-2 flex items-center gap-2">
                                     {#if seed.logo_url}
                                         <img 
                                             src={seed.logo_url} 
@@ -176,7 +185,7 @@
                                         {seed.team_abbr}
                                     </div>
                                 </div>
-                                <div class="col-span-2 text-center">
+                                <div class="col-span-1 text-center">
                                     <span class="text-sm font-heading font-bold text-black">
                                         {formatRecord(seed.wins, seed.losses, seed.ties)}
                                     </span>
@@ -186,14 +195,24 @@
                                         {formatWinPct(seed.win_pct)}
                                     </span>
                                 </div>
-                                <div class="col-span-2 text-center">
-                                    <span class="text-sm font-sans text-black">
+                                <div class="col-span-1 text-center">
+                                    <span class="text-xs font-sans text-black">
                                         {formatRecord(seed.conference_wins, seed.conference_losses, seed.conference_ties)}
                                     </span>
                                 </div>
-                                <div class="col-span-2 text-center">
-                                    <span class="text-sm font-sans text-black">
+                                <div class="col-span-1 text-center">
+                                    <span class="text-xs font-sans text-black">
                                         {formatRecord(seed.division_wins, seed.division_losses, seed.division_ties)}
+                                    </span>
+                                </div>
+                                <div class="col-span-1 text-center">
+                                    <span class="text-xs font-sans text-black">
+                                        {formatRecord(seed.home_wins, seed.home_losses, seed.home_ties)}
+                                    </span>
+                                </div>
+                                <div class="col-span-1 text-center">
+                                    <span class="text-xs font-sans text-black">
+                                        {formatRecord(seed.away_wins, seed.away_losses, seed.away_ties)}
                                     </span>
                                 </div>
                                 <div class="col-span-1 text-center">
@@ -202,20 +221,30 @@
                                     </span>
                                 </div>
                                 <div class="col-span-1 text-center">
-                                        <span class="text-sm font-sans text-black">
-                                            {formatPointDiff(seed.point_diff)}
-                                        </span>
-                                    </div>
-                                    <div class="col-span-1 text-center">
-                                        <span class="text-sm font-sans text-black">
-                                            {seed.points_for}
-                                        </span>
-                                    </div>
-                                    <div class="col-span-1 text-center">
-                                        <span class="text-sm font-sans text-black">
-                                            {seed.points_against}
-                                        </span>
-                                    </div>
+                                    <span class="text-sm font-sans text-black">
+                                        {formatPointDiff(seed.point_diff)}
+                                    </span>
+                                </div>
+                                <div class="col-span-1 text-center">
+                                    <span class="text-sm font-sans text-black">
+                                        {seed.points_for}
+                                    </span>
+                                </div>
+                                <div class="col-span-1 text-center">
+                                    <span class="text-sm font-sans text-black">
+                                        {seed.points_against}
+                                    </span>
+                                </div>
+                                <div class="col-span-1 text-center">
+                                    <span class="text-sm font-sans text-black">
+                                        {formatWinPct(seed.strength_of_schedule)}
+                                    </span>
+                                </div>
+                                <div class="col-span-1 text-center">
+                                    <span class="text-sm font-sans text-black">
+                                        {formatWinPct(seed.strength_of_victory)}
+                                    </span>
+                                </div>
                             </button>
                         {/each}
                     </div>
@@ -229,22 +258,26 @@
                         </h3>
                         
                         <!-- Header Row -->
-                        <div class="grid grid-cols-15 gap-2 px-2 border-b border-primary-700/30 text-sm font-sans font-bold text-black uppercase">
-                            <div class="col-span-1">Seed</div>
-                            <div class="col-span-3">Team</div>
-                            <div class="col-span-2 text-center">Record</div>
-                            <div class="col-span-1 text-center">PCT</div>
-                            <div class="col-span-2 text-center">Conf</div>
-                            <div class="col-span-2 text-center">Div</div>
-                            <div class="col-span-1 text-center">GB</div>
-                            <div class="col-span-1 text-center">Diff</div>
-                            <div class="col-span-1 text-center">PF</div>
-                            <div class="col-span-1 text-center">PA</div>
+                        <div class="grid grid-cols-15 gap-1 px-2 border-b border-primary-700/30 text-xs font-sans font-bold text-black uppercase">
+                            <div class="col-span-1" title="Playoff Seed">Seed</div>
+                            <div class="col-span-2" title="Team">Team</div>
+                            <div class="col-span-1 text-center" title="Overall Record">Record</div>
+                            <div class="col-span-1 text-center" title="Win Percentage">PCT</div>
+                            <div class="col-span-1 text-center" title="Conference Record">Conf</div>
+                            <div class="col-span-1 text-center" title="Division Record">Div</div>
+                            <div class="col-span-1 text-center" title="Home Record">Home</div>
+                            <div class="col-span-1 text-center" title="Away Record">Away</div>
+                            <div class="col-span-1 text-center" title="Games Back">GB</div>
+                            <div class="col-span-1 text-center" title="Point Differential">Diff</div>
+                            <div class="col-span-1 text-center" title="Points For">PF</div>
+                            <div class="col-span-1 text-center" title="Points Against">PA</div>
+                            <div class="col-span-1 text-center" title="Strength of Schedule">SOS</div>
+                            <div class="col-span-1 text-center" title="Strength of Victory">SOV</div>
                         </div>
 
                         <div class="space-y-1 mt-2">
                             {#each wildCardTeams as seed}
-                                <button class="w-full grid grid-cols-15 gap-2 px-2 py-2 rounded transition-colors cursor-pointer"
+                                <button class="w-full grid grid-cols-15 gap-1 px-2 py-2 rounded transition-colors cursor-pointer"
                                     on:mouseenter={(e) => handleMouseEnter(e, seed.team_primary_color)}
                                     on:mouseleave={handleMouseLeave}
                                     on:click={() => openTeamModal(seed)}
@@ -254,7 +287,7 @@
                                             {seed.seed}
                                         </span>
                                     </div>
-                                    <div class="col-span-3 flex items-center gap-2">
+                                    <div class="col-span-2 flex items-center gap-2">
                                         {#if seed.logo_url}
                                             <img 
                                                 src={seed.logo_url} 
@@ -266,7 +299,7 @@
                                             {seed.team_abbr}
                                         </div>
                                     </div>
-                                    <div class="col-span-2 text-center">
+                                    <div class="col-span-1 text-center">
                                         <span class="text-sm font-heading font-bold text-black">
                                             {formatRecord(seed.wins, seed.losses, seed.ties)}
                                         </span>
@@ -276,14 +309,24 @@
                                             {formatWinPct(seed.win_pct)}
                                         </span>
                                     </div>
-                                    <div class="col-span-2 text-center">
-                                        <span class="text-sm font-sans text-black">
+                                    <div class="col-span-1 text-center">
+                                        <span class="text-xs font-sans text-black">
                                             {formatRecord(seed.conference_wins, seed.conference_losses, seed.conference_ties)}
                                         </span>
                                     </div>
-                                    <div class="col-span-2 text-center">
-                                        <span class="text-sm font-sans text-black">
+                                    <div class="col-span-1 text-center">
+                                        <span class="text-xs font-sans text-black">
                                             {formatRecord(seed.division_wins, seed.division_losses, seed.division_ties)}
+                                        </span>
+                                    </div>
+                                    <div class="col-span-1 text-center">
+                                        <span class="text-xs font-sans text-black">
+                                            {formatRecord(seed.home_wins, seed.home_losses, seed.home_ties)}
+                                        </span>
+                                    </div>
+                                    <div class="col-span-1 text-center">
+                                        <span class="text-xs font-sans text-black">
+                                            {formatRecord(seed.away_wins, seed.away_losses, seed.away_ties)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
@@ -304,6 +347,16 @@
                                     <div class="col-span-1 text-center">
                                         <span class="text-sm font-sans text-black">
                                             {seed.points_against}
+                                        </span>
+                                    </div>
+                                    <div class="col-span-1 text-center">
+                                        <span class="text-sm font-sans text-black">
+                                            {formatWinPct(seed.strength_of_schedule)}
+                                        </span>
+                                    </div>
+                                    <div class="col-span-1 text-center">
+                                        <span class="text-sm font-sans text-black">
+                                            {formatWinPct(seed.strength_of_victory)}
                                         </span>
                                     </div>
                                 </button>
@@ -319,22 +372,26 @@
                             Out of Playoffs
                         </h3>
                         
-                        <div class="grid grid-cols-15 gap-2 px-2 border-b border-primary-700/30 text-sm font-sans font-bold text-black uppercase">
-                            <div class="col-span-1">Seed</div>
-                            <div class="col-span-3">Team</div>
-                            <div class="col-span-2 text-center">Record</div>
-                            <div class="col-span-1 text-center">PCT</div>
-                            <div class="col-span-2 text-center">Conf</div>
-                            <div class="col-span-2 text-center">Div</div>
-                            <div class="col-span-1 text-center">GB</div>
-                            <div class="col-span-1 text-center">Diff</div>
-                            <div class="col-span-1 text-center">PF</div>
-                            <div class="col-span-1 text-center">PA</div>
+                        <div class="grid grid-cols-15 gap-1 px-2 border-b border-primary-700/30 text-xs font-sans font-bold text-black uppercase">
+                            <div class="col-span-1" title="Playoff Seed">Seed</div>
+                            <div class="col-span-2" title="Team">Team</div>
+                            <div class="col-span-1 text-center" title="Overall Record">Record</div>
+                            <div class="col-span-1 text-center" title="Win Percentage">PCT</div>
+                            <div class="col-span-1 text-center" title="Conference Record">Conf</div>
+                            <div class="col-span-1 text-center" title="Division Record">Div</div>
+                            <div class="col-span-1 text-center" title="Home Record">Home</div>
+                            <div class="col-span-1 text-center" title="Away Record">Away</div>
+                            <div class="col-span-1 text-center" title="Games Back">GB</div>
+                            <div class="col-span-1 text-center" title="Point Differential">Diff</div>
+                            <div class="col-span-1 text-center" title="Points For">PF</div>
+                            <div class="col-span-1 text-center" title="Points Against">PA</div>
+                            <div class="col-span-1 text-center" title="Strength of Schedule">SOS</div>
+                            <div class="col-span-1 text-center" title="Strength of Victory">SOV</div>
                         </div>
 
                         <div class="space-y-1 mt-2">
                             {#each nonPlayoffTeams as seed}
-                                <button class="w-full grid grid-cols-15 gap-2 px-2 py-2 rounded transition-colors cursor-pointer"
+                                <button class="w-full grid grid-cols-15 gap-1 px-2 py-2 rounded transition-colors cursor-pointer"
                                     on:mouseenter={(e) => handleMouseEnter(e, seed.team_primary_color)}
                                     on:mouseleave={handleMouseLeave}
                                     on:click={() => openTeamModal(seed)}
@@ -344,7 +401,7 @@
                                             {seed.seed}
                                         </span>
                                     </div>
-                                    <div class="col-span-3 flex items-center gap-2">
+                                    <div class="col-span-2 flex items-center gap-2">
                                         {#if seed.logo_url}
                                             <img 
                                                 src={seed.logo_url} 
@@ -356,7 +413,7 @@
                                             {seed.team_abbr}
                                         </div>
                                     </div>
-                                    <div class="col-span-2 text-center">
+                                    <div class="col-span-1 text-center">
                                         <span class="text-sm font-heading font-bold text-black">
                                             {formatRecord(seed.wins, seed.losses, seed.ties)}
                                         </span>
@@ -366,14 +423,24 @@
                                             {formatWinPct(seed.win_pct)}
                                         </span>
                                     </div>
-                                    <div class="col-span-2 text-center">
-                                        <span class="text-sm font-sans text-black">
+                                    <div class="col-span-1 text-center">
+                                        <span class="text-xs font-sans text-black">
                                             {formatRecord(seed.conference_wins, seed.conference_losses, seed.conference_ties)}
                                         </span>
                                     </div>
-                                    <div class="col-span-2 text-center">
-                                        <span class="text-sm font-sans text-black">
+                                    <div class="col-span-1 text-center">
+                                        <span class="text-xs font-sans text-black">
                                             {formatRecord(seed.division_wins, seed.division_losses, seed.division_ties)}
+                                        </span>
+                                    </div>
+                                    <div class="col-span-1 text-center">
+                                        <span class="text-xs font-sans text-black">
+                                            {formatRecord(seed.home_wins, seed.home_losses, seed.home_ties)}
+                                        </span>
+                                    </div>
+                                    <div class="col-span-1 text-center">
+                                        <span class="text-xs font-sans text-black">
+                                            {formatRecord(seed.away_wins, seed.away_losses, seed.away_ties)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
@@ -396,6 +463,16 @@
                                             {seed.points_against}
                                         </span>
                                     </div>
+                                    <div class="col-span-1 text-center">
+                                        <span class="text-sm font-sans text-black">
+                                            {formatWinPct(seed.strength_of_schedule)}
+                                        </span>
+                                    </div>
+                                    <div class="col-span-1 text-center">
+                                        <span class="text-sm font-sans text-black">
+                                            {formatWinPct(seed.strength_of_victory)}
+                                        </span>
+                                    </div>
                                 </button>
                             {/each}
                         </div>
@@ -406,7 +483,7 @@
 
         <!-- Division View with Stats -->
         {#if viewMode === 'division'}
-            <div class="space-y-4 min-w-[500px]">
+            <div class="space-y-4 min-w-[800px]">
                 {#each orderedDivisions as divisionName}
                     {@const fullDivisionName = `${conference} ${divisionName}`}
                     {@const divisionTeams = standings.divisions[fullDivisionName] || []}
@@ -417,17 +494,21 @@
                         </h3>
 
                         <!-- Header Row -->
-                        <div class="grid grid-cols-15 gap-2 px-2 border-b border-primary-700/30 text-sm font-sans font-bold text-black uppercase">
-                            <div class="col-span-1">Seed</div>
-                            <div class="col-span-3">Team</div>
-                            <div class="col-span-2 text-center">Record</div>
-                            <div class="col-span-1 text-center">PCT</div>
-                            <div class="col-span-2 text-center">Conf</div>
-                            <div class="col-span-2 text-center">Div</div>
-                            <div class="col-span-1 text-center">GB</div>
-                            <div class="col-span-1 text-center">Diff</div>
-                            <div class="col-span-1 text-center">PF</div>
-                            <div class="col-span-1 text-center">PA</div>
+                        <div class="grid grid-cols-15 gap-1 px-2 border-b border-primary-700/30 text-xs font-sans font-bold text-black uppercase">
+                            <div class="col-span-1" title="Playoff Seed">Seed</div>
+                            <div class="col-span-2" title="Team">Team</div>
+                            <div class="col-span-1 text-center" title="Overall Record">Record</div>
+                            <div class="col-span-1 text-center" title="Win Percentage">PCT</div>
+                            <div class="col-span-1 text-center" title="Conference Record">Conf</div>
+                            <div class="col-span-1 text-center" title="Division Record">Div</div>
+                            <div class="col-span-1 text-center" title="Home Record">Home</div>
+                            <div class="col-span-1 text-center" title="Away Record">Away</div>
+                            <div class="col-span-1 text-center" title="Games Back">GB</div>
+                            <div class="col-span-1 text-center" title="Point Differential">Diff</div>
+                            <div class="col-span-1 text-center" title="Points For">PF</div>
+                            <div class="col-span-1 text-center" title="Points Against">PA</div>
+                            <div class="col-span-1 text-center" title="Strength of Schedule">SOS</div>
+                            <div class="col-span-1 text-center" title="Strength of Victory">SOV</div>
                         </div>
 
                         <!-- Data Rows -->
@@ -435,7 +516,7 @@
                             {#each divisionTeams as team}
                                 {@const teamSeed = getTeamSeed(team.team_id)}
                                 {@const isPlayoffTeam = teamSeed && teamSeed <= 7}
-                                <button class="w-full grid grid-cols-15 gap-2 px-2 py-2 rounded transition-colors cursor-pointer"
+                                <button class="w-full grid grid-cols-15 gap-1 px-2 py-2 rounded transition-colors cursor-pointer"
                                     class:opacity-60={!isPlayoffTeam}
                                     on:mouseenter={(e) => handleMouseEnter(e, team.team_primary_color)}
                                     on:mouseleave={handleMouseLeave}
@@ -446,7 +527,7 @@
                                             {teamSeed ?? '—'}
                                         </span>
                                     </div>
-                                    <div class="col-span-3 flex items-center gap-2">
+                                    <div class="col-span-2 flex items-center gap-2">
                                         {#if team.logo_url}
                                             <img 
                                                 src={team.logo_url} 
@@ -458,7 +539,7 @@
                                             {team.team_abbr}
                                         </div>
                                     </div>
-                                    <div class="col-span-2 text-center">
+                                    <div class="col-span-1 text-center">
                                         <span class="text-sm font-heading font-bold text-black">
                                             {formatRecord(team.wins, team.losses, team.ties)}
                                         </span>
@@ -468,14 +549,24 @@
                                             {formatWinPct(team.win_pct)}
                                         </span>
                                     </div>
-                                    <div class="col-span-2 text-center">
-                                        <span class="text-sm font-sans text-black">
+                                    <div class="col-span-1 text-center">
+                                        <span class="text-xs font-sans text-black">
                                             {formatRecord(team.conference_wins, team.conference_losses, team.conference_ties)}
                                         </span>
                                     </div>
-                                    <div class="col-span-2 text-center">
-                                        <span class="text-sm font-sans text-black">
+                                    <div class="col-span-1 text-center">
+                                        <span class="text-xs font-sans text-black">
                                             {formatRecord(team.division_wins, team.division_losses, team.division_ties)}
+                                        </span>
+                                    </div>
+                                    <div class="col-span-1 text-center">
+                                        <span class="text-xs font-sans text-black">
+                                            {formatRecord(team.home_wins, team.home_losses, team.home_ties)}
+                                        </span>
+                                    </div>
+                                    <div class="col-span-1 text-center">
+                                        <span class="text-xs font-sans text-black">
+                                            {formatRecord(team.away_wins, team.away_losses, team.away_ties)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
@@ -496,6 +587,16 @@
                                     <div class="col-span-1 text-center">
                                         <span class="text-sm font-sans text-black">
                                             {team.points_against}
+                                        </span>
+                                    </div>
+                                    <div class="col-span-1 text-center">
+                                        <span class="text-sm font-sans text-black">
+                                            {formatWinPct(team.strength_of_schedule)}
+                                        </span>
+                                    </div>
+                                    <div class="col-span-1 text-center">
+                                        <span class="text-sm font-sans text-black">
+                                            {formatWinPct(team.strength_of_victory)}
                                         </span>
                                     </div>
                                 </button>

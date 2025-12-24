@@ -11,8 +11,6 @@
 
     let predictedHomeScore = pick?.predicted_home_score?.toString() || '';
     let predictedAwayScore = pick?.predicted_away_score?.toString() || '';
-    let completed: boolean = game.status === 'final';
-    let hasPick: boolean = pick !== undefined;
     let showInfo = false;
     
     // Reference for positioning fixed tooltips
@@ -55,6 +53,15 @@
     $: highlightHomeButton = userMadePick ? isHomeTeamPicked : (isGameCompleted ? homeTeamWon : false);
     $: highlightAwayButton = userMadePick ? isAwayTeamPicked : (isGameCompleted ? awayTeamWon : false);
     $: highlightTieButton = userMadePick ? isTiePicked : (isGameCompleted ? isActualTie : false);
+
+    $: {
+        predictedHomeScore = pick?.predicted_home_score !== null && pick?.predicted_home_score !== undefined 
+            ? pick.predicted_home_score.toString() 
+            : '';
+        predictedAwayScore = pick?.predicted_away_score !== null && pick?.predicted_away_score !== undefined 
+            ? pick.predicted_away_score.toString() 
+            : '';
+    }
 
     $: homeTeamLogoURL = highlightHomeButton && game.home_team.alternate_logo_url 
         ? game.home_team.alternate_logo_url 
@@ -105,12 +112,12 @@
     }
 
     function handleScoreChange() {
-        if (pick || predictedHomeScore || predictedAwayScore) {
+        if (pick) {
             dispatch('pickChanged', {
                 gameId: game.id,
                 pickedTeamId: pick?.picked_team_id,
-                predictedHomeScore: predictedHomeScore ? parseInt(predictedHomeScore) : undefined,
-                predictedAwayScore: predictedAwayScore ? parseInt(predictedAwayScore) : undefined
+                predictedHomeScore: parseScoreInput(predictedHomeScore),
+                predictedAwayScore: parseScoreInput(predictedAwayScore)
             });
         }
     }
@@ -168,19 +175,17 @@
     }
 </style>
 
-<div class="flex items-center gap-2" class:z-50={showInfo} class:opacity-80={completed && !hasPick}>
+<div class="flex items-center gap-2" class:z-50={showInfo} class:opacity-80={isGameCompleted && !userMadePick}>
     <!-- Away Team Section -->
     <div class="flex-1 flex items-stretch">
         <!-- Away Score -->
         <div class="w-12 shrink-0">
-            {#if isGameCompleted && game.away_score !== null && !userMadePick}
-                <!-- Show actual score as non-editable -->
+            {#if isGameCompleted && (game.away_score !== null && game.away_score !== undefined) && !userMadePick}
                 <div class="h-full flex items-center justify-center font-heading text-xl font-bold rounded-l-lg border-2 border-r-0"
                      style={`background-color: #${game.away_team.primary_color}90; border-color: #${game.away_team.primary_color}; color: #${game.away_team.primary_color};`}>
                     {game.away_score}
                 </div>
             {:else}
-                <!-- Editable input - always enabled -->
                 <input
                     type="number"
                     min="0"
@@ -337,14 +342,12 @@
 
         <!-- Home Score -->
         <div class="w-12 shrink-0">
-            {#if isGameCompleted && game.home_score !== null && !userMadePick}
-                <!-- Show actual score as non-editable -->
+            {#if isGameCompleted && (game.home_score !== null && game.home_score !== undefined) && !userMadePick}
                 <div class="h-full flex items-center justify-center font-heading text-xl font-bold rounded-r-lg border-2 border-l-0"
                      style={`background-color: #${game.home_team.primary_color}90; border-color: #${game.home_team.primary_color}; color: #${game.home_team.primary_color};`}>
                     {game.home_score}
                 </div>
             {:else}
-                <!-- Editable input - always enabled -->
                 <input
                     type="number"
                     min="0"

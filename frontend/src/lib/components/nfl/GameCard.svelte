@@ -226,7 +226,7 @@
             <!-- Away Score (Left) -->
             <div class="w-12 shrink-0">
                 {#if isGameCompleted && (game.away_score !== null && game.away_score !== undefined) && !userMadePick}
-                    <div class="h-full flex items-center justify-center font-heading text-xl font-bold rounded-l-lg border-2 border-r-0 text-white"
+                    <div class="h-full flex items-center justify-center font-heading text-xl font-bold rounded-l-lg border-2 border-r-0"
                          style={`background-color: #${game.away_team.primary_color}90; border-color: #${game.away_team.primary_color}; color: #${game.away_team.primary_color};`}>
                         {game.away_score}
                     </div>

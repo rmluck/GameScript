@@ -17,6 +17,12 @@ type TeamRecord struct {
 	Wins         		int
 	Losses       		int
 	Ties         		int
+	HomeWins	 		int
+	HomeLosses 			int
+	HomeTies    		int
+	AwayWins	 		int
+	AwayLosses 			int
+	AwayTies    		int
 	DivisionWins 		int
 	DivisionLosses 		int
 	DivisionTies   		int
@@ -28,6 +34,8 @@ type TeamRecord struct {
 	WinPct       		float64
 	ConferenceGamesBack	float64
 	DivisionGamesBack	float64
+	StrengthOfSchedule	float64
+	StrengthOfVictory	float64
 	LogoURL	 			string
 	TeamPrimaryColor	string
 	TeamSecondaryColor	string
@@ -63,7 +71,6 @@ type GameResult struct {
 	HomeScore		int
 	AwayScore		int
 	Week 			int
-	IsPostseason	bool
 }
 
 func CalculateNFLStandings(db *database.DB, scenarioID int, seasonID int) (*NFLStandings, error) {
@@ -81,6 +88,9 @@ func CalculateNFLStandings(db *database.DB, scenarioID int, seasonID int) (*NFLS
 
 	// Calculate team records based on game results
 	records := calculateTeamRecords(teams, games)
+
+	// Calculate strength metrics for all teams
+	calculateStrengthMetrics(records, games)
 
 	// Separate by conference
 	afcTeams := filterByConference(records, "AFC")
@@ -141,7 +151,7 @@ func getTeams(db *database.DB, seasonID int) ([]TeamRecord, error) {
 func getGameResults(db *database.DB, scenarioID int, seasonID int) ([]GameResult, error) {
     query := `
         SELECT
-            game.id, game.home_team_id, game.away_team_id, game.week, game.is_postseason,
+            game.id, game.home_team_id, game.away_team_id, game.week,
             game.home_score AS actual_home_score,
             game.away_score AS actual_away_score,
             game.status,
@@ -151,7 +161,6 @@ func getGameResults(db *database.DB, scenarioID int, seasonID int) ([]GameResult
         FROM games game
         LEFT JOIN picks pick ON game.id = pick.game_id AND pick.scenario_id = $1
         WHERE game.season_id = $2
-        AND game.is_postseason = false
         ORDER BY game.week, game.start_time
     `
 
@@ -173,7 +182,6 @@ func getGameResults(db *database.DB, scenarioID int, seasonID int) ([]GameResult
             &game.HomeTeamID,
             &game.AwayTeamID,
             &game.Week,
-            &game.IsPostseason,
             &actualHomeScore,
             &actualAwayScore,
             &status,
@@ -215,13 +223,11 @@ func getGameResults(db *database.DB, scenarioID int, seasonID int) ([]GameResult
         }
 
         // Priority 2: No pick, but game is final - use actual scores
-        if status == "final" {
-            if actualHomeScore != nil && actualAwayScore != nil {
-                game.HomeScore = *actualHomeScore
-                game.AwayScore = *actualAwayScore
-                games = append(games, game)
-                continue
-            }
+        if status == "final" && actualHomeScore != nil && actualAwayScore != nil {
+			game.HomeScore = *actualHomeScore
+			game.AwayScore = *actualAwayScore
+			games = append(games, game)
+			continue
         }
 
         // Priority 3: No pick and game not final - skip this game
@@ -247,48 +253,57 @@ func calculateTeamRecords(teams []TeamRecord, games []GameResult) []TeamRecord {
 			continue
 		}
 
+		isDivisionGame := homeTeam.Division == awayTeam.Division
+		isConferenceGame := homeTeam.Conference == awayTeam.Conference
+
 		// Determine winner
 		if game.HomeScore > game.AwayScore {
 			// Home team wins
 			homeTeam.Wins++
+			homeTeam.HomeWins++
 			awayTeam.Losses++
+			awayTeam.AwayLosses++
 
 			// Check if division game
-			if homeTeam.Division == awayTeam.Division {
+			if isDivisionGame {
 				homeTeam.DivisionWins++
 				awayTeam.DivisionLosses++
 			}
 
 			// Check if conference game
-			if homeTeam.Conference == awayTeam.Conference {
+			if isConferenceGame {
 				homeTeam.ConferenceWins++
 				awayTeam.ConferenceLosses++
 			}
 		} else if game.AwayScore > game.HomeScore {
 			// Away team wins
 			awayTeam.Wins++
+			awayTeam.AwayWins++
 			homeTeam.Losses++
+			homeTeam.HomeLosses++
 
-			if homeTeam.Division == awayTeam.Division {
+			if isDivisionGame {
 				awayTeam.DivisionWins++
 				homeTeam.DivisionLosses++
 			}
 
-			if homeTeam.Conference == awayTeam.Conference {
+			if isConferenceGame {
 				awayTeam.ConferenceWins++
 				homeTeam.ConferenceLosses++
 			}
 		} else {
 			// Tie
 			homeTeam.Ties++
+			homeTeam.HomeTies++
 			awayTeam.Ties++
+			awayTeam.AwayTies++
 
-			if homeTeam.Division == awayTeam.Division {
+			if isDivisionGame {
 				homeTeam.DivisionTies++
 				awayTeam.DivisionTies++
 			}
 
-			if homeTeam.Conference == awayTeam.Conference {
+			if isConferenceGame {
 				homeTeam.ConferenceTies++
 				awayTeam.ConferenceTies++
 			}
@@ -307,6 +322,65 @@ func calculateTeamRecords(teams []TeamRecord, games []GameResult) []TeamRecord {
 	}
 
 	return teams
+}
+
+func calculateStrengthMetrics(teams []TeamRecord, games []GameResult) {
+	teamMap := make(map[int]*TeamRecord)
+	for i := range teams {
+		teamMap[teams[i].TeamID] = &teams[i]
+	}
+
+	// Calculate strength of schedule and strength of victory
+	for i := range teams {
+		team := &teams[i]
+
+		var opponentTotalWins, opponentTotalLosses, opponentTotalTies int
+		var opponentCount int
+		var defeatedOpponentWins, defeatedOpponentLosses, defeatedOpponentTies int
+		var defeatedCount int
+
+		for _, game := range games {
+			var opponentID int
+			var teamWon bool
+
+			if game.HomeTeamID == team.TeamID {
+				opponentID = game.AwayTeamID
+				teamWon = game.HomeScore > game.AwayScore
+			} else if game.AwayTeamID == team.TeamID {
+				opponentID = game.HomeTeamID
+				teamWon = game.AwayScore > game.HomeScore
+			} else {
+				continue
+			}
+
+			opponent := teamMap[opponentID]
+			if opponent == nil {
+				continue
+			}
+
+			// Strength of schedule: all opponents
+			opponentTotalWins += opponent.Wins
+			opponentTotalLosses += opponent.Losses
+			opponentTotalTies += opponent.Ties
+			opponentCount++
+
+			// Strength of victory: only defeated opponents
+			if teamWon {
+				defeatedOpponentWins += opponent.Wins
+				defeatedOpponentLosses += opponent.Losses
+				defeatedOpponentTies += opponent.Ties
+				defeatedCount++
+			}
+		}
+
+		// Calculate averages
+		if opponentCount > 0 {
+			team.StrengthOfSchedule = calculateWinPct(opponentTotalWins, opponentTotalLosses, opponentTotalTies)
+		}
+		if defeatedCount > 0 {
+			team.StrengthOfVictory = calculateWinPct(defeatedOpponentWins, defeatedOpponentLosses, defeatedOpponentTies)
+		}
+	}
 }
 
 func filterByConference(teams []TeamRecord, conference string) []TeamRecord {
@@ -351,10 +425,10 @@ func calculateConferenceStandings(teams []TeamRecord, games []GameResult) Confer
 	}
 
 	// Rank division winners (seeds 1-4)
-	divisionWinners = applyConferenceTiebreakers(divisionWinners, games)
+	divisionWinners = applyConferenceTiebreakers(divisionWinners, games, true)
 
 	// Rank non-division winners (seeds 5-16)
-	nonWinners = applyConferenceTiebreakers(nonWinners, games)
+	nonWinners = applyConferenceTiebreakers(nonWinners, games, false)
 
 	// Create playoff seeds
 	playoffSeeds := []PlayoffSeed{}
@@ -386,122 +460,276 @@ func calculateConferenceStandings(teams []TeamRecord, games []GameResult) Confer
 	}
 }
 
-// Only two-team tiebreakers implemented so far
-// TODO: Expand to multi-team tiebreakers
 func applyDivisionTiebreakers(teams []TeamRecord, games []GameResult) []TeamRecord {
-	sort.Slice(teams, func(i, j int) bool {
-		a, b := teams[i], teams[j]
-
-		// 1. Win percentage
+	return sortTeamsWithTiebreakers(teams, games, func(a, b TeamRecord) int {
+		// Step 1: Win percentage
 		if a.WinPct != b.WinPct {
-			return a.WinPct > b.WinPct
+			if a.WinPct > b.WinPct {
+				return -1
+			}
+			return 1
 		}
 
-		// 2. Head-to-head record (if they played)
-		h2hWinner := getHeadToHeadWinner(a, b, games)
-		if h2hWinner != 0 {
-			return h2hWinner == a.TeamID
+		// Step 2: Head-to-head record (if applicable)
+		h2hResult := compareHeadToHead([]TeamRecord{a, b}, games)
+		if len(h2hResult) == 1 {
+			if h2hResult[0].TeamID == a.TeamID {
+				return -1
+			}
+			return 1
 		}
 
-		// 3. Division record
+		// Step 3: Division record
 		aDivPct := calculateWinPct(a.DivisionWins, a.DivisionLosses, a.DivisionTies)
 		bDivPct := calculateWinPct(b.DivisionWins, b.DivisionLosses, b.DivisionTies)
 		if aDivPct != bDivPct {
-			return aDivPct > bDivPct
+			if aDivPct > bDivPct {
+				return -1
+			}
+			return 1
 		}
 
-		// 4. Common games record - Skipped right now
+		// Step 4: Common games
+		commonResult := compareCommonGames([]TeamRecord{a, b}, games, 0) // No minimum for division
+		if len(commonResult) == 1 {
+			if commonResult[0].TeamID == a.TeamID {
+				return -1
+			}
+			return 1
+		}
 
-		// 5. Conference record
+		// Step 5: Conference record
 		aConfPct := calculateWinPct(a.ConferenceWins, a.ConferenceLosses, a.ConferenceTies)
 		bConfPct := calculateWinPct(b.ConferenceWins, b.ConferenceLosses, b.ConferenceTies)
 		if aConfPct != bConfPct {
-			return aConfPct > bConfPct
+			if aConfPct > bConfPct {
+				return -1
+			}
+			return 1
 		}
 
-		// 6. Strength of victory - Skipped right now
+		// Step 6: Strength of victory
+		if a.StrengthOfVictory != b.StrengthOfVictory {
+			if a.StrengthOfVictory > b.StrengthOfVictory {
+				return -1
+			}
+			return 1
+		}
 
-		// 7. Strength of schedule - Skipped right now
+		// Step 7: Strength of schedule
+		if a.StrengthOfSchedule != b.StrengthOfSchedule {
+			if a.StrengthOfSchedule > b.StrengthOfSchedule {
+				return -1
+			}
+			return 1
+		}
 
-		// 8. Point differential
+		// Step 8: Point differential
 		aDiff := a.PointsFor - a.PointsAgainst
 		bDiff := b.PointsFor - b.PointsAgainst
 		if aDiff != bDiff {
-			return aDiff > bDiff
+			if aDiff > bDiff {
+				return -1
+			}
+			return 1
 		}
 
-		// 9. Points scored
+		// Step 9: Points scored
 		if a.PointsFor != b.PointsFor {
-			return a.PointsFor > b.PointsFor
+			if a.PointsFor > b.PointsFor {
+				return -1
+			}
+			return 1
 		}
 
-		// 10. Points allowed (fewer is better)
+		// Step 10: Points allowed (fewer is better)
 		if a.PointsAgainst != b.PointsAgainst {
-			return a.PointsAgainst < b.PointsAgainst
+			if a.PointsAgainst < b.PointsAgainst {
+				return -1
+			}
+			return 1
 		}
 
-		// 11. Coin toss - Skipped for now
-		return a.TeamID < b.TeamID // Arbitrary but consistent
+		// Step 11: Coin toss - not implemented, use TeamID for consistency
+		if a.TeamID < b.TeamID {
+			return -1
+		}
+		return 1
 	})
-
-	return teams
 }
 
-// Only two-team tiebreakers implemented so far
-// TODO: Expand to multi-team tiebreakers
-func applyConferenceTiebreakers(teams []TeamRecord, games []GameResult) []TeamRecord {
-	sort.Slice(teams, func(i, j int) bool {
-		a, b := teams[i], teams[j]
-
-		// 1. Win percentage
+func applyConferenceTiebreakers(teams []TeamRecord, games []GameResult, areDivisionWinners bool) []TeamRecord {
+	return sortTeamsWithTiebreakers(teams, games, func(a, b TeamRecord) int {
+		// Step 1: Win percentage
 		if a.WinPct != b.WinPct {
-			return a.WinPct > b.WinPct
+			if a.WinPct > b.WinPct {
+				return -1
+			}
+			return 1
 		}
 
-		// 2. Head-to-head record (if they played)
-		h2hWinner := getHeadToHeadWinner(a, b, games)
-		if h2hWinner != 0 {
-			return h2hWinner == a.TeamID
+		// Step 2: If same, division, skip to division tiebreakers
+		if a.Division == b.Division {
+			divResult := applyDivisionTiebreakers([]TeamRecord{a, b}, games)
+			if divResult[0].TeamID == a.TeamID {
+				return -1
+			}
+			return 1
 		}
 
-		// 3. Conference record
+		// Step 3: Head-to-head record (if applicable)
+		h2hResult := compareHeadToHead([]TeamRecord{a, b}, games)
+		if len(h2hResult) == 1 {
+			if h2hResult[0].TeamID == a.TeamID {
+				return -1
+			}
+			return 1
+		}
+
+		// Step 4: Conference record
 		aConfPct := calculateWinPct(a.ConferenceWins, a.ConferenceLosses, a.ConferenceTies)
 		bConfPct := calculateWinPct(b.ConferenceWins, b.ConferenceLosses, b.ConferenceTies)
 		if aConfPct != bConfPct {
-			return aConfPct > bConfPct
+			if aConfPct > bConfPct {
+				return -1
+			}
+			return 1
 		}
 
-		// 4. Common games record - Skipped right now
+		// Step 5: Common games (minimum 4 required)
+		commonResult := compareCommonGames([]TeamRecord{a, b}, games, 4)
+		if len(commonResult) == 1 {
+			if commonResult[0].TeamID == a.TeamID {
+				return -1
+			}
+			return 1
+		}
 
-		// 5. Strength of victory - Skipped right now
+		// Step 6: Strength of victory
+		if a.StrengthOfVictory != b.StrengthOfVictory {
+			if a.StrengthOfVictory > b.StrengthOfVictory {
+				return -1
+			}
+			return 1
+		}
 
-		// 6. Strength of schedule - Skipped right now
+		// Step 7: Strength of schedule
+		if a.StrengthOfSchedule != b.StrengthOfSchedule {
+			if a.StrengthOfSchedule > b.StrengthOfSchedule {
+				return -1
+			}
+			return 1
+		}
 
-		// 7. Point differential
+		// Step 8: Point differential
 		aDiff := a.PointsFor - a.PointsAgainst
 		bDiff := b.PointsFor - b.PointsAgainst
 		if aDiff != bDiff {
-			return aDiff > bDiff
+			if aDiff > bDiff {
+				return -1
+			}
+			return 1
 		}
 
-		// 8. Points scored
+		// Step 9: Points scored
 		if a.PointsFor != b.PointsFor {
-			return a.PointsFor > b.PointsFor
+			if a.PointsFor > b.PointsFor {
+				return -1
+			}
+			return 1
 		}
 
-		// 9. Points allowed (fewer is better)
+		// Step 10: Points allowed (fewer is better)
 		if a.PointsAgainst != b.PointsAgainst {
-			return a.PointsAgainst < b.PointsAgainst
+			if a.PointsAgainst < b.PointsAgainst {
+				return -1
+			}
+			return 1
 		}
 
-		// 10. Coin toss - Skipped for now
-		return a.TeamID < b.TeamID // Arbitrary but consistent
+		// Step 11: Coin toss - not implemented, use TeamID for consistency
+		if a.TeamID < b.TeamID {
+			return -1
+		}
+		return 1
 	})
-
-	return teams
 }
 
-func getHeadToHeadWinner(teamA TeamRecord, teamB TeamRecord, games []GameResult) int {
+// Helper function to sort teams with multi-team tiebreaker support
+func sortTeamsWithTiebreakers(teams []TeamRecord, games []GameResult, twoTeamCompare func(TeamRecord, TeamRecord) int) []TeamRecord {
+	if len(teams) <= 1 {
+		return teams
+	}
+
+	// Group teams by win percentage
+	pctGroups := make(map[float64][]TeamRecord)
+	for _, team := range teams {
+		pctGroups[team.WinPct] = append(pctGroups[team.WinPct], team)
+	}
+
+	var result []TeamRecord
+
+	// Sort each group
+	for _, group := range pctGroups {
+		if len(group) == 1{
+			result = append(result, group[0])
+		} else if len(group) == 2 {
+			// Use two-team tiebreakaer
+			if twoTeamCompare(group[0], group[1]) < 0 {
+				result = append(result, group[0], group[1])
+			} else {
+				result = append(result, group[1], group[0])
+			}
+		} else {
+			// Multi-team tiebreaker
+			sorted := resolveMultiTeamTie(group, games, twoTeamCompare)
+			result = append(result, sorted...)
+		}
+	}
+
+	// Sort groups by win percentage
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].WinPct > result[j].WinPct
+	})
+
+	return result
+}
+
+func resolveMultiTeamTie(teams []TeamRecord, games []GameResult, twoTeamCompare func(TeamRecord, TeamRecord) int) []TeamRecord {
+	// Try head-to-head sweep first
+	sweepWinner := checkHeadToHeadSweep(teams, games)
+	if sweepWinner != nil {
+		remaining := []TeamRecord{}
+		for _, team := range teams {
+			if team.TeamID != sweepWinner.TeamID {
+				remaining = append(remaining, team)
+			}
+		}
+
+		result := []TeamRecord{*sweepWinner}
+		if len(remaining) > 0 {
+			result = append(result, resolveMultiTeamTie(remaining, games, twoTeamCompare)...)
+		}
+		return result
+	}
+
+	// Fall back to sorting with two-team comparisons
+	sorted := make([]TeamRecord, len(teams))
+	copy(sorted, teams)
+
+	sort.Slice(sorted, func(i, j int) bool {
+		return twoTeamCompare(sorted[i], sorted[j]) < 0
+	})
+
+	return sorted
+}
+
+func compareHeadToHead(teams []TeamRecord, games []GameResult) []TeamRecord {
+	if len(teams) != 2 {
+		return teams
+	}
+
+	teamA, teamB := teams[0], teams[1]
 	aWins, bWins := 0, 0
 
 	// Find games between these two teams
@@ -532,11 +760,158 @@ func getHeadToHeadWinner(teamA TeamRecord, teamB TeamRecord, games []GameResult)
 
 	// Return winner or 0 if tied/no games
 	if aWins > bWins {
-		return teamA.TeamID
+		return []TeamRecord{teamA}
 	} else if bWins > aWins {
-		return teamB.TeamID
+		return []TeamRecord{teamB}
 	}
-	return 0
+
+	return teams
+}
+
+func checkHeadToHeadSweep(teams []TeamRecord, games []GameResult) *TeamRecord {
+	for _, candidate := range teams {
+		hasDefeatedAll := true
+
+		for _, opponent := range teams {
+			if candidate.TeamID == opponent.TeamID {
+				continue
+			}
+
+			defeatedOpponent := false
+			for _, game := range games {
+				isMatchup := (game.HomeTeamID == candidate.TeamID && game.AwayTeamID == opponent.TeamID) || (game.HomeTeamID == opponent.TeamID && game.AwayTeamID == candidate.TeamID)
+
+				if !isMatchup {
+					continue
+				}
+
+				var winner int
+				if game.HomeScore > game.AwayScore {
+					winner = game.HomeTeamID
+				} else if game.AwayScore > game.HomeScore {
+					winner = game.AwayTeamID
+				} else {
+					continue
+				}
+
+				if winner == candidate.TeamID {
+					defeatedOpponent = true
+					break
+				}
+			}
+
+			if !defeatedOpponent {
+				hasDefeatedAll = false
+				break
+			}
+		}
+
+		if hasDefeatedAll {
+			return &candidate
+		}
+	}
+
+	return nil
+}
+
+func compareCommonGames(teams []TeamRecord, games []GameResult, minCommonGames int) []TeamRecord {
+	if len(teams) != 2 {
+		return teams
+	}
+
+	teamA, teamB := teams[0], teams[1]
+
+	// Find common opponents (teams both have played)
+	aOpponents := make(map[int]bool)
+	bOpponents := make(map[int]bool)
+
+	for _, game := range games {
+		if game.HomeTeamID == teamA.TeamID {
+			aOpponents[game.AwayTeamID] = true
+		} else if game.AwayTeamID == teamA.TeamID {
+			aOpponents[game.HomeTeamID] = true
+		}
+
+		if game.HomeTeamID == teamB.TeamID {
+			bOpponents[game.AwayTeamID] = true
+		} else if game.AwayTeamID == teamB.TeamID {
+			bOpponents[game.HomeTeamID] = true
+		}
+	}
+
+	commonOpponents := []int{}
+	for oppID := range aOpponents {
+		if bOpponents[oppID] {
+			commonOpponents = append(commonOpponents, oppID)
+		}
+	}
+
+	// Check minimum common games requirement
+	if len(commonOpponents) < minCommonGames {
+		return teams
+	}
+
+	// Calculate records against common opponents
+	aWins, aLosses, aTies := 0, 0, 0
+	bWins, bLosses, bTies := 0, 0, 0
+
+	for _, game := range games {
+		// isCommon := false
+		for _, oppID := range commonOpponents {
+			if (game.HomeTeamID == teamA.TeamID && game.AwayTeamID == oppID) || (game.AwayTeamID == teamA.TeamID && game.HomeTeamID == oppID) {
+				// isCommon = true
+
+				if game.HomeScore > game.AwayScore {
+					if game.HomeTeamID == teamA.TeamID {
+						aWins++
+					} else {
+						aLosses++
+					}
+				} else if game.AwayScore > game.HomeScore {
+					if game.AwayTeamID == teamA.TeamID {
+						aWins++
+					} else {
+						aLosses++
+					}
+				} else {
+					aTies++
+				}
+				break
+			}
+
+			if (game.HomeTeamID == teamB.TeamID && game.AwayTeamID == oppID) || (game.AwayTeamID == teamB.TeamID && game.HomeTeamID == oppID) {
+				// isCommon = true
+
+				if game.HomeScore > game.AwayScore {
+					if game.HomeTeamID == teamB.TeamID {
+						bWins++
+					} else {
+						bLosses++
+					}
+				} else if game.AwayScore > game.HomeScore {
+					if game.AwayTeamID == teamB.TeamID {
+						bWins++
+					} else {
+						bLosses++
+					}
+				} else {
+					bTies++
+				}
+				break
+			}
+		}
+	}
+
+	aPct := calculateWinPct(aWins, aLosses, aTies)
+	bPct := calculateWinPct(bWins, bLosses, bTies)
+
+	if aPct > bPct {
+		return []TeamRecord{teamA}
+	} else if bPct > aPct {
+		return []TeamRecord{teamB}
+	}
+
+	return teams
 }
 
 func calculateDraftOrder(allTeams []TeamRecord, afc ConferenceStandings, nfc ConferenceStandings) []DraftPick {
@@ -615,17 +990,10 @@ func calculateDraftOrder(allTeams []TeamRecord, afc ConferenceStandings, nfc Con
 	return draftOrder
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 func calculateWinPct(wins, losses, ties int) float64 {
 	total := wins + losses + ties
 	if total == 0 {
-		return 0
+		return -1.0 // Treat 0-0 as worse than any actual record
 	}
 	return (float64(wins) + 0.5*float64(ties)) / float64(total)
 }
