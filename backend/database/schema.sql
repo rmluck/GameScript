@@ -51,7 +51,6 @@ CREATE TABLE games (
     home_score INTEGER,
     away_score INTEGER,
     status VARCHAR(50) DEFAULT 'upcoming',
-    is_postseason BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(season_id, espn_id)
 );

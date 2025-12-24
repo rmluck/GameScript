@@ -103,7 +103,7 @@
                 if (m.id === matchupId) {
                     return {
                         ...m,
-                        picked_team_id: pickedTeamId,
+                        picked_team_id: pickedTeamId === null ? undefined : pickedTeamId,
                         predicted_higher_seed_score: predictedHigherScore,
                         predicted_lower_seed_score: predictedLowerScore
                     };

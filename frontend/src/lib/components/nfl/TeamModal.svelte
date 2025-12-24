@@ -263,7 +263,7 @@
                         />
                     {/if}
                     <div>
-                        <p class="text-lg font-sans text-black/70">
+                        <p class="text-lg font-sans text-black/70 -mb-1">
                             {currentTeam.team_city}
                         </p>
                         <h2 class="text-3xl font-heading font-bold text-black mb-1">

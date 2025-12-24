@@ -271,10 +271,18 @@ func updatePick(db *database.DB) fiber.Handler {
 			_, err = db.Conn.Exec(`
 				DELETE FROM playoff_matchups WHERE playoff_state_id = $1
 			`, playoffStateID)
+			if err != nil {
+				// Log error but don't fail the request
+				c.Locals("playoff_matchup_delete_error", err.Error())
+			}
 
 			_, err = db.Conn.Exec(`
 				DELETE FROM playoff_states WHERE id = $1
 			`, playoffStateID)
+			if err != nil {
+				// Log error but don't fail the request
+				c.Locals("playoff_state_delete_error", err.Error())
+			}
 		}
 
 		query := `
