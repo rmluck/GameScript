@@ -71,6 +71,7 @@
                                 <li>Enter predicted scores for tiebreaker scenarios</li>
                                 <li>Changes are saved automatically</li>
                                 <li>View updated standings in real-time</li>
+                                <li>Simulate playoff scenarios</li>
                             </ul>
                         </div>
 
@@ -79,9 +80,76 @@
                             <ul class="list-disc list-inside space-y-1 text-neutral/95">
                                 <li>Seeds 1-7 represent playoff positions</li>
                                 <li>Seed 1 gets a first-round bye</li>
-                                <li>Top 4 seeds are division winners</li>
+                                <li>Seeds 1-4 are division winners</li>
                                 <li>Seeds 5-7 are wild card teams</li>
                             </ul>
+                        </div>
+
+                        <div class="space-y-3">
+                            <h4 class="text-lg font-sans font-semibold text-neutral mb-2">Tiebreakers</h4>
+
+                            <ul class="list-disc list-inside space-y-1 text-neutral/95">
+                                <li>Only one team advances in any tiebreaking step. Remaining tied teams revert back to first step of applicable procedure.</li>
+                                <li>In comparing records against common opponents amongst tied teams, best win percentage is deciding factor because the teams may have played an unequal number of games against common opponents.</li>
+                                <li>To determine tiebreakers among division winners, apply inter-conference tiebreakers.</li>
+                                <li>To determine tiebreakers among wild card teams, apply division tiebreakers if the involved teams are from the same division or conference tiebreakers otherwise.</li>
+                                <li>Treats a 0-0 record as less than 0.000. So, a team that is 0-0 will be lower than a team that is 0-1. This is particularly important early in the season when few games have been played.</li>
+                                <li>A game must have an outcome for it to count towards record against common opponents, as well as a team's strength of schedule and strength of victory.</li>
+                            </ul>
+
+                            <div>
+                                <h5 class="text-md font-sans font-semibold text-neutral mb-1">Inter-Division Tiebreakers</h5>
+                                <p class="text-neutral">If two teams in the same division have an identical win percentage, these are the tiebreaking steps to be taken until a winner is determined:</p>
+                                <ol class="list-decimal list-inside space-y-1 text-neutral/95 ml-5">
+                                    <li>Head-to-head record</li>
+                                    <li>Division record</li>
+                                    <li>Record vs. common opponents</li>
+                                    <li>Conference record</li>
+                                    <li>Strength of victory</li>
+                                    <li>Strength of schedule</li>
+                                    <li>Point differential</li>
+                                    <li>Points for</li>
+                                    <li>Points allowed</li>
+                                    <li>Coin toss (random choice)</li>
+                                </ol>
+                                <p class="text-neutral">If three or more teams in the same division have an identical win percentage, these are the tiebreaking steps to be taken until a winner is determined:</p>
+                                <ol class="list-decimal list-inside space-y-1 text-neutral/95 ml-5">
+                                    <p class="text-neutral">Note: If at some point during these steps, at least one team is eliminated and there are only two teams left that remain tied, the tiebreaker restarts at Step 1 of the two-team format above. If at some point during these steps, at least one team is eliminated but there are still at least three teams left that remain tied, the tiebreaker restarts at Step 1 of these steps.</p>
+                                    <li>Head-to-head record</li>
+                                    <li>Division record</li>
+                                    <li>Record vs. common opponents</li>
+                                    <li>Conference record</li>
+                                    <li>Strength of victory</li>
+                                    <li>Strength of schedule</li>
+                                    <li>Coin toss (random choice)</li>
+                                </ol>
+                            </div>
+
+                            <h5 class="text-md font-sans font-semibold text-neutral mb-1">Inter-Conference Tiebreakers</h5>
+                            <p class="text-neutral">If two teams in the same conference have an identical win percentage, these are the tiebreaking steps to be taken until a winner is determined:</p>
+                            <ol class="list-decimal list-inside space-y-1 text-neutral/95 ml-5">
+                                <p>If the tied teams are from the same division, apply the inter-division tiebreaker. Otherwise, continue with these steps.</p>
+                                <li>Head-to-head record</li>
+                                <li>Conference record</li>
+                                <li>Record vs. common opponents (minimum 4 games)</li>
+                                <li>Strength of victory</li>
+                                <li>Strength of schedule</li>
+                                <li>Point differential</li>
+                                <li>Points for</li>
+                                <li>Points allowed</li>
+                                <li>Coin toss (random choice)</li>
+                            </ol>
+                            <p class="text-neutral">If three or more teams in the same division have an identical win percentage, these are the tiebreaking steps to be taken until a winner is determined:</p>
+                            <ol class="list-decimal list-inside space-y-1 text-neutral/95 ml-5">
+                                <p class="text-neutral">Note: If at some point during these steps, at least one team is eliminated and there are only two teams left that remain tied, the tiebreaker restarts at Step 1 of the two-team format above. If at some point during these steps, at least one team is eliminated but there are still at least three teams left that remain tied, the tiebreaker restarts at Step 1 of these steps.</p>
+                                <li>Apply inter-division tiebreaker to eliminate all but the highest ranked team in each division involved in tiebreaker. The original seeding within the division upon application of the division tiebreaker remains the same for all subsequent applications of the procedure that are necessary.</li>
+                                <li>Head-to-head sweep (applicable only if one team has defeated each of the others or if one team has lost to each of the others)</li>
+                                <li>Conference record</li>
+                                <li>Record vs. common opponents (minimum 4 games)</li>
+                                <li>Strength of victory</li>
+                                <li>Strength of schedule</li>
+                                <li>Coin toss (random choice)</li>
+                            </ol>
                         </div>
                     </div>
                 {:else}
