@@ -1,6 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
     import type { Game, Pick } from '$types';
+    import ConfirmationModal from './ConfirmationModal.svelte';
 
     export let game: Game;
     export let pick: Pick | undefined = undefined;
@@ -13,6 +14,8 @@
     let showInfo = false;
     let showAwayTeamName = false;
     let showHomeTeamName = false;
+    let showConfirmation = false;
+    let pendingAction: (() => void) | null = null;
     
     // References for positioning fixed tooltips
     let infoButton: HTMLButtonElement;
@@ -87,10 +90,24 @@
     function selectTeam(teamId: number) {
         // Show warning if playoffs exist and user is trying to change a regular season pick
         if (hasPlayoffs) {
-            const confirmed = confirm(
-                'Warning: Changing this pick will reset all playoff picks and regenerate playoff matchups.'
-            );
-            if (!confirmed) return;
+            pendingAction = () => {
+                if (pick?.picked_team_id === teamId) {
+                    // DELETE the pick
+                    dispatch('pickChanged', {
+                        gameId: game.id,
+                        deletePick: true
+                    });
+                } else {
+                    dispatch('pickChanged', {
+                        gameId: game.id,
+                        pickedTeamId: teamId,
+                        predictedHomeScore: parseScoreInput(predictedHomeScore),
+                        predictedAwayScore: parseScoreInput(predictedAwayScore)
+                    });
+                }
+            };
+            showConfirmation = true;
+            return;
         }
 
         if (pick?.picked_team_id === teamId) {
@@ -110,12 +127,30 @@
     }
 
     function selectTie() {
+        if (hasPlayoffs) {
+            pendingAction = () => {
+                if (isTiePicked) {
+                    dispatch('pickChanged', {
+                        gameId: game.id,
+                        deletePick: true
+                    });
+                } else {
+                    dispatch('pickChanged', {
+                        gameId: game.id,
+                        pickedTeamId: 0,
+                        predictedHomeScore: parseScoreInput(predictedHomeScore),
+                        predictedAwayScore: parseScoreInput(predictedAwayScore)
+                    });
+                }
+            };
+            showConfirmation = true;
+            return;
+        }
+
         if (isTiePicked) {
             dispatch('pickChanged', {
                 gameId: game.id,
-                pickedTeamId: undefined,
-                predictedHomeScore: parseScoreInput(predictedHomeScore),
-                predictedAwayScore: parseScoreInput(predictedAwayScore)
+                deletePick: true
             });
         } else {
             dispatch('pickChanged', {
@@ -125,6 +160,19 @@
                 predictedAwayScore: parseScoreInput(predictedAwayScore)
             });
         }
+    }
+
+    function handleConfirm() {
+        showConfirmation = false;
+        if (pendingAction) {
+            pendingAction();
+            pendingAction = null;
+        }
+    }
+
+    function handleCancel() {
+        showConfirmation = false;
+        pendingAction = null;
     }
 
     function handleScoreChange() {
@@ -224,9 +272,9 @@
         <!-- Away Team Section (Score + Team Button) -->
         <div class="flex-1 flex items-stretch">
             <!-- Away Score (Left) -->
-            <div class="w-12 shrink-0">
+            <div class="w-10 shrink-0">
                 {#if isGameCompleted && (game.away_score !== null && game.away_score !== undefined) && !userMadePick}
-                    <div class="h-full flex items-center justify-center font-heading text-xl font-bold rounded-l-lg border-2 border-r-0"
+                    <div class="h-full flex items-center justify-center font-heading text-lg font-bold rounded-l-lg border-2 border-r-0"
                          style={`background-color: #${game.away_team.primary_color}90; border-color: #${game.away_team.primary_color}; color: #${game.away_team.primary_color};`}>
                         {game.away_score}
                     </div>
@@ -262,7 +310,7 @@
                 }}
                 on:focus={() => showAwayTeamName = true}
                 on:blur={() => showAwayTeamName = false}
-                class="relative flex-1 p-2 rounded-r-lg border-2 transition-all cursor-pointer"
+                class="relative flex-1 py-2 px-3 rounded-r-lg border-2 transition-all cursor-pointer"
                 class:border-primary-600={!highlightAwayButton}
                 class:hover:border-primary-400={!highlightAwayButton}
                 style={highlightAwayButton 
@@ -288,10 +336,10 @@
                 bind:this={infoButton}
                 on:mouseenter={() => showInfo = true}
                 on:mouseleave={() => showInfo = false}
-                class="p-1.5 rounded-full bg-primary-700/50 hover:bg-primary-600 transition-colors cursor-pointer"
+                class="p-1 rounded-full bg-primary-700/50 hover:bg-primary-600 transition-colors cursor-pointer"
                 title="Game Info"
             >
-                <svg class="w-4 h-4 text-neutral" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-3.5 h-3.5 text-neutral" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </button>
@@ -299,7 +347,7 @@
             <!-- Tie Button -->
             <button
                 on:click={selectTie}
-                class="px-2 py-0.5 rounded border text-xs font-sans font-semibold transition-all cursor-pointer"
+                class="px-1.5 py-0.5 rounded border text-xs font-sans font-semibold transition-all cursor-pointer"
                 class:bg-primary-600={highlightTieButton}
                 class:border-primary-500={highlightTieButton}
                 class:text-neutral={highlightTieButton}
@@ -331,7 +379,7 @@
                 }}
                 on:focus={() => showHomeTeamName = true}
                 on:blur={() => showHomeTeamName = false}
-                class="relative flex-1 p-2 rounded-l-lg border-2 transition-all cursor-pointer"
+                class="relative flex-1 py-2 px-3 rounded-l-lg border-2 transition-all cursor-pointer"
                 class:border-primary-600={!highlightHomeButton}
                 class:hover:border-primary-400={!highlightHomeButton}
                 style={highlightHomeButton 
@@ -350,9 +398,9 @@
             </button>
 
             <!-- Home Score (Right) -->
-            <div class="w-12 shrink-0">
+            <div class="w-10 shrink-0">
                 {#if isGameCompleted && (game.home_score !== null && game.home_score !== undefined) && !userMadePick}
-                    <div class="h-full flex items-center justify-center font-heading text-xl font-bold rounded-r-lg border-2 border-l-0 text-white"
+                    <div class="h-full flex items-center justify-center font-heading text-lg font-bold rounded-r-lg border-2 border-l-0 text-white"
                          style={`background-color: #${game.home_team.primary_color}80; border-color: #${game.home_team.primary_color}; color: #${game.home_team.primary_color};`}>
                         {game.home_score}
                     </div>
@@ -418,4 +466,16 @@
             {game.home_team.city} {game.home_team.name}
         </span>
     </div>
+{/if}
+
+{#if showConfirmation}
+    <ConfirmationModal
+        title="Reset Playoff Matchups?"
+        message="Changing this regular season pick will reset all playoff picks and regenerate playoff matchups. This action cannot be undone."
+        confirmText="Change Pick"
+        cancelText="Cancel"
+        warningType="regular"
+        on:confirm={handleConfirm}
+        on:cancel={handleCancel}
+    />
 {/if}

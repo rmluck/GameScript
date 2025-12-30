@@ -2,6 +2,7 @@
     import { createEventDispatcher } from 'svelte';
     import type { PlayoffMatchup } from '$types';
     import { PLAYOFF_ROUND_NAMES } from '$types';
+    import ConfirmationModal from './ConfirmationModal.svelte';
 
     export let matchup: PlayoffMatchup;
     export let hasLaterRounds: boolean = false;
@@ -10,6 +11,8 @@
 
     let predictedHigherScore = matchup.predicted_higher_seed_score?.toString() || '';
     let predictedLowerScore = matchup.predicted_lower_seed_score?.toString() || '';
+    let showConfirmation = false;
+    let pendingTeamId: number | null = null;
 
     // Update scores when matchup changes
     $: {
@@ -36,14 +39,17 @@
     function selectTeam(teamId: number) {
         // Show warning if later rounds exist
         if (hasLaterRounds && matchup.round < 4) {
-            const confirmed = confirm(
-                `Warning: Changing this ${PLAYOFF_ROUND_NAMES[matchup.round]} pick will reset all subsequent playoff rounds. Continue?`
-            );
-            if (!confirmed) return;
+            pendingTeamId = teamId;
+            showConfirmation = true;
+            return;
         }
 
+        executeTeamSelection(teamId);
+    }
+
+    function executeTeamSelection(teamId: number) {
         if (matchup.picked_team_id === teamId) {
-            // DELETE the pick - set to null
+            // DELETE the pick
             dispatch('pickChanged', {
                 matchupId: matchup.id,
                 pickedTeamId: null,
@@ -58,6 +64,19 @@
                 predictedLowerScore: parseScoreInput(predictedLowerScore)
             });
         }
+    }
+
+    function handleConfirm() {
+        showConfirmation = false;
+        if (pendingTeamId !== null) {
+            executeTeamSelection(pendingTeamId);
+            pendingTeamId = null;
+        }
+    }
+
+    function handleCancel() {
+        showConfirmation = false;
+        pendingTeamId = null;
     }
 
     function handleScoreChange() {
@@ -107,8 +126,23 @@
     class:z-50={showLowerSeedName || showHigherSeedName}
 >
     <div class="flex items-center gap-2">
-        <!-- Lower Seed Section -->
+        <!-- Lower Seed Section (Score on LEFT, Button on RIGHT like away team) -->
         <div class="flex-1 flex items-stretch">
+            <!-- Lower Seed Score -->
+            <div class="w-10 shrink-0">
+                <input
+                    type="number"
+                    min="0"
+                    max="99"
+                    bind:value={predictedLowerScore}
+                    on:change={handleScoreChange}
+                    placeholder="--"
+                    class="h-full w-full text-center border-2 border-r-0 rounded-l-lg px-1 py-2 font-heading text-lg font-bold placeholder-neutral/40 transition-colors focus:outline-none"
+                    style={`background-color: #${matchup.lower_seed_team?.primary_color}90; border-color: #${matchup.lower_seed_team?.primary_color}; color: #${matchup.lower_seed_team?.primary_color};`}
+                />
+            </div>
+
+            <!-- Lower Seed Button -->
             <button
                 bind:this={lowerSeedButton}
                 on:click={() => selectTeam(matchup.lower_seed_team_id)}
@@ -126,7 +160,7 @@
                 }}
                 on:focus={() => showLowerSeedName = true}
                 on:blur={() => showLowerSeedName = false}
-                class="flex-1 p-2 rounded-l-lg border-2 transition-all cursor-pointer relative"
+                class="flex-1 py-2 px-3 rounded-r-lg border-2 transition-all cursor-pointer relative"
                 class:border-primary-600={!isLowerSeedPicked}
                 class:hover:border-primary-400={!isLowerSeedPicked}
                 style={isLowerSeedPicked 
@@ -135,7 +169,7 @@
             >
                 <!-- Seed Badge -->
                 <div
-                    class="absolute top-1 right-1 text-xs font-bold px-1.5 py-0 rounded"
+                    class="absolute top-0.5 right-0 text-xs font-bold px-1.5 py-0 rounded"
                     style={isLowerSeedPicked 
                         ? `color: white;` 
                         : `color: #${matchup.lower_seed_team?.primary_color};`}
@@ -153,35 +187,14 @@
                     {/if}
                 </div>
             </button>
-
-            <input
-                type="number"
-                min="0"
-                max="99"
-                bind:value={predictedLowerScore}
-                on:change={handleScoreChange}
-                placeholder="--"
-                class="w-12 text-center border-2 border-l-0 rounded-r-lg px-1 py-2 font-heading text-lg font-bold placeholder-neutral/40 transition-colors focus:outline-none"
-                style={`background-color: #${matchup.lower_seed_team?.primary_color}90; border-color: #${matchup.lower_seed_team?.primary_color}; color: #${matchup.lower_seed_team?.primary_color};`}
-            />
         </div>
 
         <!-- VS Divider -->
-        <div class="text-xs font-sans font-bold text-black/50">VS</div>
+        <div class="text-xs font-sans font-bold text-black/50 shrink-0">VS</div>
 
-        <!-- Higher Seed Section -->
+        <!-- Higher Seed Section (Button on LEFT, Score on RIGHT like home team) -->
         <div class="flex-1 flex items-stretch">
-            <input
-                type="number"
-                min="0"
-                max="99"
-                bind:value={predictedHigherScore}
-                on:change={handleScoreChange}
-                placeholder="--"
-                class="w-12 text-center border-2 border-r-0 rounded-l-lg px-1 py-2 font-heading text-lg font-bold placeholder-neutral/40 transition-colors focus:outline-none"
-                style={`background-color: #${matchup.higher_seed_team?.primary_color}90; border-color: #${matchup.higher_seed_team?.primary_color}; color: #${matchup.higher_seed_team?.primary_color};`}
-            />
-
+            <!-- Higher Seed Button -->
             <button
                 bind:this={higherSeedButton}
                 on:click={() => selectTeam(matchup.higher_seed_team_id)}
@@ -199,7 +212,7 @@
                 }}
                 on:focus={() => showHigherSeedName = true}
                 on:blur={() => showHigherSeedName = false}
-                class="flex-1 p-2 rounded-r-lg border-2 transition-all cursor-pointer relative"
+                class="flex-1 py-2 px-3 rounded-l-lg border-2 transition-all cursor-pointer relative"
                 class:border-primary-600={!isHigherSeedPicked}
                 class:hover:border-primary-400={!isHigherSeedPicked}
                 style={isHigherSeedPicked 
@@ -208,7 +221,7 @@
             >
                 <!-- Seed Badge -->
                 <div
-                    class="absolute top-1 right-1 text-xs font-bold px-1.5 py-0 rounded"
+                    class="absolute top-0.5 left-0 text-xs font-bold px-1.5 py-0 rounded"
                     style={isHigherSeedPicked 
                         ? `color: white;` 
                         : `color: #${matchup.higher_seed_team?.primary_color};`}
@@ -226,6 +239,20 @@
                     {/if}
                 </div>
             </button>
+
+            <!-- Higher Seed Score -->
+            <div class="w-10 shrink-0">
+                <input
+                    type="number"
+                    min="0"
+                    max="99"
+                    bind:value={predictedHigherScore}
+                    on:change={handleScoreChange}
+                    placeholder="--"
+                    class="h-full w-full text-center border-2 border-l-0 rounded-r-lg px-1 py-2 font-heading text-lg font-bold placeholder-neutral/40 transition-colors focus:outline-none"
+                    style={`background-color: #${matchup.higher_seed_team?.primary_color}90; border-color: #${matchup.higher_seed_team?.primary_color}; color: #${matchup.higher_seed_team?.primary_color};`}
+                />
+            </div>
         </div>
     </div>
 </div>
@@ -251,4 +278,16 @@
             {matchup.higher_seed_team.city} {matchup.higher_seed_team.name}
         </span>
     </div>
+{/if}
+
+{#if showConfirmation}
+    <ConfirmationModal
+        title="Reset Later Playoff Rounds?"
+        message={`Changing this ${PLAYOFF_ROUND_NAMES[matchup.round]} pick will reset all subsequent playoff rounds and regenerate future matchups. This action cannot be undone.`}
+        warningType="playoff"
+        confirmText="Change Pick"
+        cancelText="Cancel"
+        on:confirm={handleConfirm}
+        on:cancel={handleCancel}
+    />
 {/if}

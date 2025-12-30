@@ -74,7 +74,7 @@
         <button
             type="button"
             on:click={() => weekDropdownOpen = !weekDropdownOpen}
-            class="w-full text-center text-xl sm:text-2xl font-heading font-bold bg-primary-800 border-2 border-primary-600 rounded-lg px-3 sm:px-4 py-2 text-neutral transition-colors hover:bg-primary-600 flex justify-between items-center cursor-pointer"
+            class="w-full text-center text-md sm:text-2xl font-heading font-bold bg-primary-800 border-2 border-primary-600 rounded-lg px-3 sm:px-4 py-2 text-neutral transition-colors hover:bg-primary-600 flex justify-between items-center cursor-pointer"
             class:border-primary-400={weekDropdownOpen}
         >
             <span class="flex-1 truncate">{currentLabel}</span>

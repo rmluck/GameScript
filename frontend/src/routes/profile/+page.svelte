@@ -170,29 +170,29 @@
     on:created={handleScenarioCreated}
 />
 
-<div class="max-w-6xl mx-auto">
+<div class="max-w-6xl mx-auto px-4 sm:px-0">
     <!-- Profile Header -->
-    <div class="rounded-lg p-6 mb-6">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
+    <div class="rounded-lg p-4 sm:p-6 mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex items-center gap-3 sm:gap-4">
                 {#if user?.avatar_url}
                     <img 
                         src={user.avatar_url} 
                         alt={user.username}
-                        class="w-20 h-20 rounded-full object-cover border-2 border-primary-600"
+                        class="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-primary-600"
                     />
                 {:else}
-                    <div class="w-20 h-20 rounded-full bg-primary-700 flex items-center justify-center border-2 border-primary-600">
-                        <span class="text-3xl font-heading font-bold text-neutral">
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary-700 flex items-center justify-center border-2 border-primary-600">
+                        <span class="text-2xl sm:text-3xl font-heading font-bold text-neutral">
                             {user?.username.charAt(0).toUpperCase()}
                         </span>
                     </div>
                 {/if}
                 <div>
-                    <h1 class="text-3xl font-heading font-bold text-neutral">
+                    <h1 class="text-2xl sm:text-3xl font-heading font-bold text-neutral">
                         {user?.username}
                     </h1>
-                    <p class="text-neutral/70">{user?.email}</p>
+                    <p class="text-sm sm:text-base text-neutral/70">{user?.email}</p>
                     {#if user?.is_admin}
                         <span class="inline-block mt-1 px-2 py-1 bg-primary-600 text-neutral text-xs font-sans font-semibold rounded">
                             ADMIN
@@ -202,7 +202,7 @@
             </div>
             <button
                 on:click={() => showSettings = !showSettings}
-                class="px-4 py-2 bg-primary-700 hover:bg-primary-600 text-neutral font-sans font-semibold rounded-lg transition-colors cursor-pointer"
+                class="w-full sm:w-auto px-4 py-2 bg-primary-700 hover:bg-primary-600 text-neutral font-sans font-semibold rounded-lg transition-colors cursor-pointer"
             >
                 {showSettings ? 'Cancel' : 'Edit Profile'}
             </button>
@@ -211,17 +211,17 @@
 
     <!-- Settings Panel -->
     {#if showSettings}
-        <div class="border-2 border-primary-700 rounded-lg p-6 mb-6">
-            <h2 class="text-2xl font-heading font-bold text-neutral mb-4">Profile Settings</h2>
+        <div class="border-2 border-primary-700 rounded-lg p-4 sm:p-6 mb-6">
+            <h2 class="text-xl sm:text-2xl font-heading font-bold text-neutral mb-4">Profile Settings</h2>
             
             {#if settingsError}
-                <div class="mb-4 p-3 bg-red-500/20 border border-red-500 rounded text-red-400">
+                <div class="mb-4 p-3 bg-red-500/20 border border-red-500 rounded text-sm sm:text-base text-red-400">
                     {settingsError}
                 </div>
             {/if}
             
             {#if settingsSuccess}
-                <div class="mb-4 p-3 bg-green-500/20 border border-green-500 rounded text-green-400">
+                <div class="mb-4 p-3 bg-green-500/20 border border-green-500 rounded text-sm sm:text-base text-green-400">
                     {settingsSuccess}
                 </div>
             {/if}
@@ -236,7 +236,7 @@
                         id="username"
                         type="text"
                         bind:value={username}
-                        class="w-full px-4 py-2 bg-primary-900 border border-primary-700 rounded-lg text-neutral focus:outline-none focus:border-primary-500"
+                        class="w-full px-3 sm:px-4 py-2 bg-primary-900 border border-primary-700 rounded-lg text-neutral text-sm sm:text-base focus:outline-none focus:border-primary-500"
                         required
                     />
                 </div>
@@ -250,14 +250,14 @@
                         id="email"
                         type="email"
                         bind:value={email}
-                        class="w-full px-4 py-2 bg-primary-900 border border-primary-700 rounded-lg text-neutral focus:outline-none focus:border-primary-500"
+                        class="w-full px-3 sm:px-4 py-2 bg-primary-900 border border-primary-700 rounded-lg text-neutral text-sm sm:text-base focus:outline-none focus:border-primary-500"
                         required
                     />
                 </div>
 
                 <!-- Change Password Section -->
                 <div class="pt-4 border-t border-primary-700">
-                    <h3 class="text-lg font-heading font-bold text-neutral mb-3">Change Password</h3>
+                    <h3 class="text-base sm:text-lg font-heading font-bold text-neutral mb-3">Change Password</h3>
                     
                     <div class="space-y-4">
                         <div>
@@ -268,7 +268,7 @@
                                 id="current-password"
                                 type="password"
                                 bind:value={currentPassword}
-                                class="w-full px-4 py-2 bg-primary-900 border border-primary-700 rounded-lg text-neutral focus:outline-none focus:border-primary-500"
+                                class="w-full px-3 sm:px-4 py-2 bg-primary-900 border border-primary-700 rounded-lg text-neutral text-sm sm:text-base focus:outline-none focus:border-primary-500"
                                 placeholder="Leave blank to keep current password"
                             />
                         </div>
@@ -281,7 +281,7 @@
                                 id="new-password"
                                 type="password"
                                 bind:value={newPassword}
-                                class="w-full px-4 py-2 bg-primary-900 border border-primary-700 rounded-lg text-neutral focus:outline-none focus:border-primary-500"
+                                class="w-full px-3 sm:px-4 py-2 bg-primary-900 border border-primary-700 rounded-lg text-neutral text-sm sm:text-base focus:outline-none focus:border-primary-500"
                                 placeholder="Leave blank to keep current password"
                             />
                         </div>
@@ -294,7 +294,7 @@
                                 id="confirm-password"
                                 type="password"
                                 bind:value={confirmPassword}
-                                class="w-full px-4 py-2 bg-primary-900 border border-primary-700 rounded-lg text-neutral focus:outline-none focus:border-primary-500"
+                                class="w-full px-3 sm:px-4 py-2 bg-primary-900 border border-primary-700 rounded-lg text-neutral text-sm sm:text-base focus:outline-none focus:border-primary-500"
                                 placeholder="Leave blank to keep current password"
                             />
                         </div>
@@ -302,18 +302,18 @@
                 </div>
 
                 <!-- Submit Button -->
-                <div class="flex justify-end gap-3 pt-4">
+                <div class="flex flex-col sm:flex-row justify-end gap-3 pt-4">
                     <button
                         type="button"
                         on:click={() => showSettings = false}
-                        class="px-6 py-2 bg-primary-800 hover:bg-primary-700 text-neutral font-sans font-semibold rounded-lg transition-colors cursor-pointer"
+                        class="w-full sm:w-auto px-6 py-2 bg-primary-800 hover:bg-primary-700 text-neutral font-sans font-semibold rounded-lg transition-colors cursor-pointer"
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
                         disabled={settingsSaving}
-                        class="px-6 py-2 bg-primary-600 hover:bg-primary-500 text-neutral font-sans font-semibold rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        class="w-full sm:w-auto px-6 py-2 bg-primary-600 hover:bg-primary-500 text-neutral font-sans font-semibold rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {settingsSaving ? 'Saving...' : 'Save Changes'}
                     </button>
@@ -323,12 +323,12 @@
     {/if}
 
     <!-- Scenarios Section -->
-    <div class="border-2 border-primary-700 rounded-lg p-6">
-        <div class="flex items-center justify-between mb-6">
-            <h2 class="text-2xl font-heading font-bold text-neutral">My Scenarios</h2>
+    <div class="border-2 border-primary-700 rounded-lg p-4 sm:p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <h2 class="text-xl sm:text-2xl font-heading font-bold text-neutral">My Scenarios</h2>
             <button 
                 on:click={() => showCreateModal = true}
-                class="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-neutral font-sans font-semibold rounded-lg transition-colors cursor-pointer"
+                class="w-full sm:w-auto px-4 py-2 bg-primary-600 hover:bg-primary-500 text-neutral font-sans font-semibold rounded-lg transition-colors cursor-pointer"
             >
                 Create New Scenario
             </button>
@@ -340,11 +340,11 @@
             </div>
         {:else if error}
             <div class="text-center py-8">
-                <p class="text-red-400 text-lg">{error}</p>
+                <p class="text-red-400 text-base sm:text-lg">{error}</p>
             </div>
         {:else if scenarios.length === 0}
             <div class="text-center py-12">
-                <p class="text-neutral/70 text-lg mb-4">You haven't created any scenarios yet.</p>
+                <p class="text-neutral/70 text-base sm:text-lg mb-4">You haven't created any scenarios yet.</p>
                 <a 
                     href="/scenarios/create"
                     class="inline-block px-6 py-3 bg-primary-600 hover:bg-primary-500 text-neutral font-sans font-semibold rounded-lg transition-colors"
@@ -358,10 +358,10 @@
                     <div class="bg-primary-900/30 border border-primary-700 rounded-lg p-4 hover:border-primary-500 transition-colors">
                         <div class="flex items-start justify-between mb-1">
                             <div class="flex-1">
-                                <h3 class="text-lg font-heading font-bold text-neutral mb-1">
+                                <h3 class="text-base sm:text-lg font-heading font-bold text-neutral mb-1">
                                     {scenario.name}
                                 </h3>
-                                <div class="flex items-center gap-1 text-sm text-neutral/70">
+                                <div class="flex items-center gap-1 text-xs sm:text-sm text-neutral/70">
                                     <span class="uppercase font-sans font-semibold">{scenario.sport_short_name}</span>
                                     <span>-</span>
                                     <span>{getScenarioSeasonLabel(scenario)} Season</span>
@@ -395,14 +395,14 @@
                         <div class="flex gap-2">
                             <a
                                 href="/scenarios/{scenario.sport_short_name?.toLowerCase()}/{scenario.id}"
-                                class="flex-1 px-3 py-2 bg-primary-700 hover:bg-primary-600 text-neutral text-center font-sans font-semibold rounded transition-colors"
+                                class="flex-1 px-3 py-2 bg-primary-700 hover:bg-primary-600 text-neutral text-center text-sm sm:text-base font-sans font-semibold rounded transition-colors"
                             >
                                 Open
                             </a>
                             <button
                                 on:click={() => handleDeleteScenario(scenario.id)}
                                 disabled={deletingScenarioId === scenario.id}
-                                class="px-3 py-2 bg-red-900/80 hover:bg-red-800 text-neutral border border-red-600 font-sans font-semibold rounded transition-colors cursor-pointer disabled:opacity-50"
+                                class="px-3 py-2 bg-red-900/80 hover:bg-red-800 text-neutral border border-red-600 text-sm sm:text-base font-sans font-semibold rounded transition-colors cursor-pointer disabled:opacity-50"
                             >
                                 {deletingScenarioId === scenario.id ? '...' : 'Delete'}
                             </button>

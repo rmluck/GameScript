@@ -189,19 +189,19 @@
 
     <!-- Enable Playoffs Banner -->
     {#if canEnablePlayoffs && !playoffState?.is_enabled}
-        <div class="mt-4 bg-primary-600 border-2 border-primary-500 rounded-lg p-4">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h3 class="text-lg font-heading font-bold text-neutral mb-1">
+        <div class="mt-4 bg-primary-600 border-2 border-primary-500 rounded-lg p-3 sm:p-4">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-base sm:text-lg font-heading font-bold text-neutral mb-1">
                         Regular Season Complete!
                     </h3>
-                    <p class="text-neutral/80 font-sans">
+                    <p class="text-sm sm:text-base text-neutral/80 font-sans">
                         All regular season games have been completed. Ready to start the playoffs?
                     </p>
                 </div>
                 <button
                     on:click={handleEnablePlayoffs}
-                    class="px-6 py-3 bg-neutral hover:bg-neutral/90 text-primary-950 font-heading font-bold text-lg rounded-lg transition-colors cursor-pointer"
+                    class="w-full sm:w-auto shrink-0 px-4 sm:px-6 py-2 sm:py-3 bg-neutral hover:bg-neutral/90 text-primary-950 font-heading font-bold text-base sm:text-lg rounded-lg transition-colors cursor-pointer whitespace-nowrap"
                 >
                     Start Playoffs
                 </button>
@@ -211,10 +211,10 @@
 
     <!-- Main Content - Responsive Grid -->
     <div class="mt-6 space-y-6 lg:space-y-0">
-        <!-- Desktop: 3-column layout -->
-        <div class="hidden lg:grid lg:grid-cols-[minmax(200px,1fr)_minmax(700px,2fr)_minmax(200px,1fr)] lg:gap-6">
-            <!-- Left: AFC Standings -->
-            <div class="min-w-0">
+        <!-- Desktop: 3-column layout with fixed-width standings -->
+        <div class="hidden lg:grid lg:grid-cols-[200px_1fr_200px] lg:gap-6">
+            <!-- Left: AFC Standings (Fixed width) -->
+            <div class="w-[200px]">
                 {#if standings && scenario.season_id}
                     <StandingsBox 
                         standings={standings.afc} 
@@ -225,8 +225,8 @@
                 {/if}
             </div>
 
-            <!-- Center: Picks (Regular Season or Playoffs) -->
-            <div class="min-w-0">
+            <!-- Center: Picks (Flexible, shrinks as needed) -->
+            <div class="min-w-[500px]">
                 {#key viewKey}
                     {#if viewKey.startsWith('playoff-') && playoffState?.is_enabled && scenario.season_id}
                         <PlayoffPicksBox
@@ -252,8 +252,8 @@
                 {/key}
             </div>
 
-            <!-- Right: NFC Standings -->
-            <div class="min-w-0">
+            <!-- Right: NFC Standings (Fixed width) -->
+            <div class="w-[200px]">
                 {#if standings && scenario.season_id}
                     <StandingsBox 
                         standings={standings.nfc} 

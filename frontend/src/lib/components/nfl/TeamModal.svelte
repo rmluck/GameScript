@@ -21,7 +21,6 @@
     let byeWeek: number | null = null;
     let gamesWithBye: Array<Game | { isByeWeek: true; week: number }> = [];
 
-    // Add this to store updated team data
     let currentTeam: PlayoffSeed = team;
     let teamDivision: string = '';
 
@@ -243,7 +242,7 @@
     tabindex="-1"
 >
     <section
-        class="bg-neutral border-4 rounded-lg max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+        class="bg-neutral border-2 sm:border-4 rounded-lg max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col"
         style="border-color: #{currentTeam.team_primary_color};"
         role="document"
         tabindex="-1"
@@ -251,23 +250,23 @@
     >
         <!-- Header -->
         <div
-            class="border-b-4 p-6"
+            class="border-b-4 p-4 sm:p-6"
             style={`background-color: #${currentTeam.team_primary_color}70; border-color: #${currentTeam.team_primary_color};`}
         >
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-4">
+            <div class="flex items-center justify-between mb-3 sm:mb-4">
+                <div class="flex items-center gap-3 sm:gap-4">
                     {#if currentTeam.logo_url}
                         <img 
                             src={currentTeam.logo_url} 
                             alt={currentTeam.team_abbr}
-                            class="w-16 h-16 object-contain"
+                            class="w-12 sm:w-16 h-12 sm:h-16 object-contain"
                         />
                     {/if}
                     <div>
-                        <p class="text-lg font-sans text-black/70 -mb-1">
+                        <p class="text-md sm:text-lg font-sans text-black/70 -mb-1">
                             {currentTeam.team_city}
                         </p>
-                        <h2 class="text-3xl font-heading font-bold text-black mb-1">
+                        <h2 class="text-2xl sm:text-3xl font-heading font-bold text-black mb-1">
                             {currentTeam.team_name}
                         </h2>
                         {#if teamDivision}
@@ -293,84 +292,84 @@
             </div>
 
             <!-- Team Stats - 2 rows of 6 -->
-            <div class="grid grid-cols-4 md:grid-cols-6 gap-3">
-                <div class="rounded-lg p-3 bg-white/50">
+            <div class="grid grid-cols-4 sm:grid-cols-6 gap-2 sm:gap-3">
+                <div class="rounded-lg p-2 sm:p-3 bg-white/50">
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase">Record</div>
-                    <div class="text-xl font-heading font-bold text-black">
+                    <div class="text-sm sm:text-xl font-heading font-bold text-black">
                         {formatRecord(currentTeam.wins, currentTeam.losses, currentTeam.ties)}
                     </div>
                 </div>
-                <div class="bg-white/50 rounded-lg p-3">
+                <div class="bg-white/50 rounded-lg p-2 sm:p-3">
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase">Seed</div>
-                    <div class="text-xl font-heading font-bold text-black">#{currentTeam.seed}</div>
+                    <div class="text-sm sm:text-xl font-heading font-bold text-black">#{currentTeam.seed}</div>
                 </div>
-                <div class="bg-white/50 rounded-lg p-3">
+                <div class="bg-white/50 rounded-lg p-2 sm:p-3">
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase">Conf Record</div>
-                    <div class="flex flex-row items-baseline gap-1">
-                        <div class="text-lg font-heading font-bold text-black">
+                    <div class="flex flex-row items-baseline gap-0.5 sm:gap-1">
+                        <div class="text-sm sm:text-xl font-heading font-bold text-black">
                             {formatRecord(currentTeam.conference_wins, currentTeam.conference_losses, currentTeam.conference_ties)}
                         </div>
-                        <div class="text-xs font-sans text-black/60">
+                        <div class="text-[10px] sm:text-xs font-sans text-black/60">
                             ({formatGamesBack(currentTeam.conference_games_back)} GB)
                         </div>
                     </div>
                 </div>
-                <div class="bg-white/50 rounded-lg p-3">
+                <div class="bg-white/50 rounded-lg p-2 sm:p-3">
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase">Div Record</div>
-                    <div class="flex flex-row items-baseline gap-1">
-                        <div class="text-lg font-heading font-bold text-black">
+                    <div class="flex flex-row items-baseline gap-0.5 sm:gap-1">
+                        <div class="text-sm sm:text-xl font-heading font-bold text-black">
                             {formatRecord(currentTeam.division_wins, currentTeam.division_losses, currentTeam.division_ties)}
                         </div>
-                        <div class="text-xs font-sans text-black/60">
+                        <div class="text-[10px] sm:text-xs font-sans text-black/60">
                             ({formatGamesBack(currentTeam.division_games_back)} GB)
                         </div>
                     </div>
                 </div>
-                <div class="bg-white/50 rounded-lg p-3">
+                <div class="bg-white/50 rounded-lg p-2 sm:p-3">
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase">Home Record</div>
-                    <div class="text-xl font-heading font-bold text-black">
+                    <div class="text-sm sm:text-xl font-heading font-bold text-black">
                         {formatRecord(currentTeam.home_wins, currentTeam.home_losses, currentTeam.home_ties)}
                     </div>
                 </div>
-                <div class="bg-white/50 rounded-lg p-3">
+                <div class="bg-white/50 rounded-lg p-2 sm:p-3">
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase">Away Record</div>
-                    <div class="text-xl font-heading font-bold text-black">
+                    <div class="text-sm sm:text-xl font-heading font-bold text-black">
                         {formatRecord(currentTeam.away_wins, currentTeam.away_losses, currentTeam.away_ties)}
                     </div>
                 </div>
-                <div class="bg-white/50 rounded-lg p-3">
+                <div class="bg-white/50 rounded-lg p-2 sm:p-3">
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase">Win %</div>
-                    <div class="text-xl font-heading font-bold text-black">
+                    <div class="text-sm sm:text-xl font-heading font-bold text-black">
                         {formatWinPct(currentTeam.win_pct)}
                     </div>
                 </div>
-                <div class="bg-white/50 rounded-lg p-3">
+                <div class="bg-white/50 rounded-lg p-2 sm:p-3">
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase">Point Diff</div>
-                    <div class="text-xl font-heading font-bold text-black">
+                    <div class="text-sm sm:text-xl font-heading font-bold text-black">
                         {formatPointDiff(currentTeam.point_diff)}
                     </div>
                 </div>
-                <div class="bg-white/50 rounded-lg p-3">
+                <div class="bg-white/50 rounded-lg p-2 sm:p-3">
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase">Points For</div>
-                    <div class="text-xl font-heading font-bold text-black">
+                    <div class="text-sm sm:text-xl font-heading font-bold text-black">
                         {currentTeam.points_for}
                     </div>
                 </div>
-                <div class="bg-white/50 rounded-lg p-3">
+                <div class="bg-white/50 rounded-lg p-2 sm:p-3">
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase">Points Against</div>
-                    <div class="text-xl font-heading font-bold text-black">
+                    <div class="text-sm sm:text-xl font-heading font-bold text-black">
                         {currentTeam.points_against}
                     </div>
                 </div>
-                <div class="bg-white/50 rounded-lg p-3">
+                <div class="bg-white/50 rounded-lg p-2 sm:p-3">
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase" title="Strength of Schedule">SOS</div>
-                    <div class="text-xl font-heading font-bold text-black">
+                    <div class="text-sm sm:text-xl font-heading font-bold text-black">
                         {formatWinPct(currentTeam.strength_of_schedule)}
                     </div>
                 </div>
-                <div class="bg-white/50 rounded-lg p-3">
+                <div class="bg-white/50 rounded-lg p-2 sm:p-3">
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase" title="Strength of Victory">SOV</div>
-                    <div class="text-xl font-heading font-bold text-black">
+                    <div class="text-sm sm:text-xl font-heading font-bold text-black">
                         {formatWinPct(currentTeam.strength_of_victory)}
                     </div>
                 </div>

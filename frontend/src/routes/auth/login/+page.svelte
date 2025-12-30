@@ -29,9 +29,9 @@
 </svelte:head>
 
 <div class="flex flex-1 items-center justify-center min-h-full">
-    <div class="max-w-md min-w-lg">
-        <div class="bg-primary-900/60 border-2 border-primary-700 py-12 px-6 shadow rounded-lg">
-            <h2 class="text-4xl font-heading font-bold text-neutral mb-6 text-center">LOGIN</h2>
+    <div class="min-w-xs sm:min-w-lg">
+        <div class="bg-primary-900/60 border-2 border-primary-700 py-8 sm:py-12 px-6 shadow rounded-lg">
+            <h2 class="text-3xl sm:text-4xl font-heading font-bold text-neutral mb-4 sm:mb-6 text-center">LOGIN</h2>
 
             {#if error}
                 <div class="mb-4 p-4 bg-red-900/50 border-2 border-red-600 rounded-md">
@@ -39,7 +39,7 @@
                 </div>
             {/if}
 
-            <form on:submit|preventDefault={handleLogin} class="space-y-6">
+            <form on:submit|preventDefault={handleLogin} class="space-y-4 sm:space-y-6">
                 <div>
                     <label for="email" class="block text-lg font-semibold font-sans text-neutral mb-2">Email</label>
                     <input
@@ -67,7 +67,7 @@
                 <button
                     type="submit"
                     disabled={loading}
-                    class="w-full bg-primary-600 hover:bg-primary-500 border-2 border-primary-500 hover:border-primary-400 rounded-lg shadow-lg transition-all hover:scale-105 py-3 font-sans font-semibold text-xl text-neutral disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 justify-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                    class="w-full bg-primary-600 hover:bg-primary-500 border-2 border-primary-500 hover:border-primary-400 rounded-lg shadow-lg transition-all hover:scale-105 py-2 sm:py-3 font-sans font-semibold text-lg sm:text-xl text-neutral disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 justify-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 cursor-pointer"
                 >
                     {loading ? 'LOGGING IN...' : 'LOGIN'}
                 </button>

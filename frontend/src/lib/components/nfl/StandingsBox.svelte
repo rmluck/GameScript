@@ -95,7 +95,7 @@
 <div class="bg-neutral border-2 border-primary-700 rounded-lg px-4 py-6 w-full">
     <!-- Header -->
     <div class="flex items-center justify-between pb-6 mb-4 border-b-2 border-primary-700">
-        <h2 class="text-2xl font-heading font-bold uppercase tracking-wide"
+        <h2 class="text-xl font-heading font-bold uppercase tracking-wide"
             style="color: {conference === 'AFC' ? '#C8102E' : '#013369'}">
             {conference}
         </h2>
@@ -104,7 +104,7 @@
         <div class="flex bg-primary-800 border-2 border-primary-600 rounded-lg p-1 gap-1">
             <button
                 on:click={() => viewMode = 'conference'}
-                class="px-3 py-1.5 text-xs sm:text-sm font-sans font-semibold text-neutral rounded transition-colors cursor-pointer"
+                class="p-1.5 text-xs sm:text-sm font-sans font-semibold text-neutral rounded transition-colors cursor-pointer"
                 class:bg-primary-600={viewMode === 'conference'}
                 class:hover:bg-primary-700={viewMode !== 'conference'}
             >
@@ -112,7 +112,7 @@
             </button>
             <button
                 on:click={() => viewMode = 'division'}
-                class="px-3 py-1.5 text-xs sm:text-sm font-sans font-semibold text-neutral rounded transition-colors cursor-pointer"
+                class="p-1.5 text-xs sm:text-sm font-sans font-semibold text-neutral rounded transition-colors cursor-pointer"
                 class:bg-primary-600={viewMode === 'division'}
                 class:hover:bg-primary-700={viewMode !== 'division'}
             >
@@ -200,7 +200,7 @@
                     </h3>
                     <div class="space-y-1">
                         {#each nonPlayoffTeams as seed}
-                            <button class="w-full flex items-center gap-2 px-2 py-2 rounded transition-colors cursor-pointer"
+                            <button class="w-full flex items-center gap-1 px-1 py-2 rounded transition-colors cursor-pointer"
                                 on:mouseenter={(e) => handleMouseEnter(e, seed.team_primary_color)}
                                 on:mouseleave={handleMouseLeave}
                                 on:click={() => openTeamModal(seed)}

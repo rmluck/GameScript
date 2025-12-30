@@ -187,14 +187,14 @@
         </div>
     {:else}
         <!-- Games List -->
-        <div class="mt-4 md:mt-6 space-y-4 md:space-y-6">
+        <div class="mt-4 md:mt-6 space-y-4">
             {#each [...gamesByDay.entries()] as [day, dayGames]}
                 <div>
                     <h3 class="text-lg sm:text-xl font-heading font-bold text-primary-700 mb-2 md:mb-3 uppercase tracking-wide">
                         {day}
                     </h3>
                     
-                    <div class="grid grid-cols-2 gap-2 md:gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 space-y-2 sm:space-y-3">
                         {#each dayGames as game (game.id)}
                             <GameCard 
                                 {game}
