@@ -79,16 +79,24 @@
             pendingAction = () => {
                 if (pick?.picked_team_id === teamId) {
                     // DELETE the pick
+                    predictedHomeScore = '';
+                    predictedAwayScore = '';
                     dispatch('pickChanged', {
                         gameId: game.id,
                         deletePick: true
                     });
                 } else {
+                    // SWITCHING teams - clear scores
+                    const wasPickMade = pick !== undefined && pick.picked_team_id !== null;
+                    if (wasPickMade) {
+                        predictedHomeScore = '';
+                        predictedAwayScore = '';
+                    }
                     dispatch('pickChanged', {
                         gameId: game.id,
                         pickedTeamId: teamId,
-                        predictedHomeScore: parseScoreInput(predictedHomeScore),
-                        predictedAwayScore: parseScoreInput(predictedAwayScore)
+                        predictedHomeScore: undefined,
+                        predictedAwayScore: undefined
                     });
                 }
             };
@@ -98,16 +106,24 @@
 
         if (pick?.picked_team_id === teamId) {
             // Instead of setting to undefined, DELETE the pick
+            predictedHomeScore = '';
+            predictedAwayScore = '';
             dispatch('pickChanged', {
                 gameId: game.id,
                 deletePick: true
             });
         } else {
+            // SWITCHING teams - clear scores
+            const wasPickMade = pick !== undefined && pick.picked_team_id !== null;
+            if (wasPickMade) {
+                predictedHomeScore = '';
+                predictedAwayScore = '';
+            }
             dispatch('pickChanged', {
                 gameId: game.id,
                 pickedTeamId: teamId,
-                predictedHomeScore: parseScoreInput(predictedHomeScore),
-                predictedAwayScore: parseScoreInput(predictedAwayScore)
+                predictedHomeScore: undefined,
+                predictedAwayScore: undefined
             });
         }
     }
@@ -117,16 +133,24 @@
             pendingAction = () => {
                 if (isTiePicked) {
                     // DELETE the pick
+                    predictedHomeScore = '';
+                    predictedAwayScore = '';
                     dispatch('pickChanged', {
                         gameId: game.id,
                         deletePick: true
                     });
                 } else {
+                    // SWITCHING to tie - clear scores
+                    const wasPickMade = pick !== undefined && pick.picked_team_id !== null;
+                    if (wasPickMade) {
+                        predictedHomeScore = '';
+                        predictedAwayScore = '';
+                    }
                     dispatch('pickChanged', {
                         gameId: game.id,
                         pickedTeamId: 0,
-                        predictedHomeScore: parseScoreInput(predictedHomeScore),
-                        predictedAwayScore: parseScoreInput(predictedAwayScore)
+                        predictedHomeScore: undefined,
+                        predictedAwayScore: undefined
                     });
                 }
             };
@@ -135,16 +159,25 @@
         }
 
         if (isTiePicked) {
+            // DELETE the pick
+            predictedHomeScore = '';
+            predictedAwayScore = '';
             dispatch('pickChanged', {
                 gameId: game.id,
                 deletePick: true
             });
         } else {
+            // SWITCHING to tie - clear scores
+            const wasPickMade = pick !== undefined && pick.picked_team_id !== null;
+            if (wasPickMade) {
+                predictedHomeScore = '';
+                predictedAwayScore = '';
+            }
             dispatch('pickChanged', {
                 gameId: game.id,
                 pickedTeamId: 0,
-                predictedHomeScore: predictedHomeScore ? parseInt(predictedHomeScore) : undefined,
-                predictedAwayScore: predictedAwayScore ? parseInt(predictedAwayScore) : undefined
+                predictedHomeScore: undefined,
+                predictedAwayScore: undefined
             });
         }
     }
@@ -164,11 +197,28 @@
 
     function handleScoreChange() {
         if (pick) {
+            const homeScore = parseScoreInput(predictedHomeScore);
+            const awayScore = parseScoreInput(predictedAwayScore);
+
+            let newPickedTeamId = pick.picked_team_id;
+
+            // Determine winner based on scores if both are defined
+            if (homeScore !== undefined && awayScore !== undefined) {
+                if (homeScore > awayScore) {
+                    newPickedTeamId = game.home_team_id;
+                } else if (awayScore > homeScore) {
+                    newPickedTeamId = game.away_team_id;
+                } else {
+                    newPickedTeamId = 0; // Tie
+                }
+            }
+            // If scores are not both defined, keep existing pick
+
             dispatch('pickChanged', {
                 gameId: game.id,
-                pickedTeamId: pick?.picked_team_id,
-                predictedHomeScore: parseScoreInput(predictedHomeScore),
-                predictedAwayScore: parseScoreInput(predictedAwayScore)
+                pickedTeamId: newPickedTeamId,
+                predictedHomeScore: homeScore,
+                predictedAwayScore: awayScore
             });
         }
     }

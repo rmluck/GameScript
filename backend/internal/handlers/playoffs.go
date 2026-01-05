@@ -243,6 +243,32 @@ func updatePlayoffPick(db *database.DB) fiber.Handler {
 			return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
 		}
 
+		// If both scores are provided, validate that picked team id matches the winning team
+		if req.PredictedHigherSeedScore != nil && req.PredictedLowerSeedScore != nil && req.PickedTeamID != nil {
+			// Get matchup details to determine higher and lower seed team IDs
+			var higherSeedTeamID, lowerSeedTeamID int
+			err := db.Conn.QueryRow(`
+				SELECT higher_seed_team_id, lower_seed_team_id
+				FROM playoff_matchups
+				WHERE id = $1
+			`, matchupID).Scan(&higherSeedTeamID, &lowerSeedTeamID)
+
+			if err != nil {
+				return c.Status(404).JSON(fiber.Map{"error": "Matchup not found"})
+			}
+
+			// Determine winner based on scores
+			var expectedTeamID int
+			if *req.PredictedHigherSeedScore > *req.PredictedLowerSeedScore {
+				expectedTeamID = higherSeedTeamID
+			} else {
+				expectedTeamID = lowerSeedTeamID
+			}
+
+			// Override the picked team ID with calculated winner
+			req.PickedTeamID = &expectedTeamID
+		}
+
 		mID, _ := strconv.Atoi(matchupID)
 		sID, _ := strconv.Atoi(scenarioID)
 

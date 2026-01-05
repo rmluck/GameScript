@@ -50,18 +50,26 @@
     function executeTeamSelection(teamId: number) {
         if (matchup.picked_team_id === teamId) {
             // DELETE the pick
+            predictedHigherScore = '';
+            predictedLowerScore = '';
             dispatch('pickChanged', {
                 matchupId: matchup.id,
                 pickedTeamId: null,
-                predictedHigherScore: parseScoreInput(predictedHigherScore),
-                predictedLowerScore: parseScoreInput(predictedLowerScore)
+                predictedHigherScore: undefined,
+                predictedLowerScore: undefined
             });
         } else {
+            // SWITCHING teams - clear scores
+            const wasPickMade = matchup.picked_team_id !== undefined && matchup.picked_team_id !== null;
+            if (wasPickMade) {
+                predictedHigherScore = '';
+                predictedLowerScore = '';
+            }
             dispatch('pickChanged', {
                 matchupId: matchup.id,
                 pickedTeamId: teamId,
-                predictedHigherScore: parseScoreInput(predictedHigherScore),
-                predictedLowerScore: parseScoreInput(predictedLowerScore)
+                predictedHigherScore: undefined,
+                predictedLowerScore: undefined
             });
         }
     }
@@ -81,11 +89,26 @@
 
     function handleScoreChange() {
         if (matchup.picked_team_id) {
+            const higherScore = parseScoreInput(predictedHigherScore);
+            const lowerScore = parseScoreInput(predictedLowerScore);
+
+            // Determine winner based on scores
+            let newPickedTeamId = matchup.picked_team_id;
+
+            if (higherScore !== undefined && lowerScore !== undefined) {
+                if (higherScore > lowerScore) {
+                    newPickedTeamId = matchup.higher_seed_team_id;
+                } else if (lowerScore > higherScore) {
+                    newPickedTeamId = matchup.lower_seed_team_id;
+                }
+            }
+            // If scores are incomplete, keep current pick
+
             dispatch('pickChanged', {
                 matchupId: matchup.id,
-                pickedTeamId: matchup.picked_team_id,
-                predictedHigherScore: parseScoreInput(predictedHigherScore),
-                predictedLowerScore: parseScoreInput(predictedLowerScore)
+                pickedTeamId: newPickedTeamId,
+                predictedHigherScore: higherScore,
+                predictedLowerScore: lowerScore
             });
         }
     }

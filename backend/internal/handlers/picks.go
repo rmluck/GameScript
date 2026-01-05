@@ -193,6 +193,35 @@ func createPick(db *database.DB) fiber.Handler {
 			return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
 		}
 
+		// If both scores are provided, validate that picked team id matches winning team
+		if req.PredictedHomeScore != nil && req.PredictedAwayScore != nil && req.PickedTeamID != nil {
+			// Get game details to determine home and away team IDs
+			var homeTeamID, awayTeamID int
+			err := db.Conn.QueryRow(`
+				SELECT home_team_id, away_team_id
+				FROM games
+				WHERE id = $1
+			`, gameID).Scan(&homeTeamID, &awayTeamID)
+
+			if err != nil {
+				return c.Status(500).JSON(fiber.Map{"error": "Failed to retrieve game details"})
+			}
+
+			// Determine winner based on scores
+			var expectedPickedTeamID int
+			if *req.PredictedHomeScore > *req.PredictedAwayScore {
+				expectedPickedTeamID = homeTeamID
+			} else if *req.PredictedAwayScore > *req.PredictedHomeScore {
+				expectedPickedTeamID = awayTeamID
+			} else {
+				// Tie scenario - no winner
+				expectedPickedTeamID = 0
+			}
+
+			// Override picked team ID with calculated winner
+			req.PickedTeamID = &expectedPickedTeamID
+		}
+
 		query := `
 			INSERT INTO picks (scenario_id, game_id, picked_team_id, predicted_home_score, predicted_away_score, status)
 			VALUES ($1, $2, $3, $4, $5, 'pending')
@@ -259,6 +288,35 @@ func updatePick(db *database.DB) fiber.Handler {
 		var req UpdatePickRequest
 		if err := c.BodyParser(&req); err != nil {
 			return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
+		}
+
+		// If both scores are provided, validate that picked team id matches winning team
+		if req.PredictedHomeScore != nil && req.PredictedAwayScore != nil && req.PickedTeamID != nil {
+			// Get game details to determine home and away team IDs
+			var homeTeamID, awayTeamID int
+			err := db.Conn.QueryRow(`
+				SELECT home_team_id, away_team_id
+				FROM games
+				WHERE id = $1
+			`, gameID).Scan(&homeTeamID, &awayTeamID)
+
+			if err != nil {
+				return c.Status(500).JSON(fiber.Map{"error": "Failed to retrieve game details"})
+			}
+
+			// Determine winner based on scores
+			var expectedPickedTeamID int
+			if *req.PredictedHomeScore > *req.PredictedAwayScore {
+				expectedPickedTeamID = homeTeamID
+			} else if *req.PredictedAwayScore > *req.PredictedHomeScore {
+				expectedPickedTeamID = awayTeamID
+			} else {
+				// Tie scenario - no winner
+				expectedPickedTeamID = 0
+			}
+
+			// Override picked team ID with calculated winner
+			req.PickedTeamID = &expectedPickedTeamID
 		}
 
 		// Check if playoffs exist for this scenario
