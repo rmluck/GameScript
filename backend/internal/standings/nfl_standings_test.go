@@ -80,21 +80,21 @@ func TestGetHeadToHeadWinner(t *testing.T) {
     tests := []struct {
         name     string
         games    []GameResult
-        expected int
+        expected []TeamRecord
     }{
         {
             name: "Team A wins head-to-head",
             games: []GameResult{
                 {HomeTeamID: 1, AwayTeamID: 2, HomeScore: 24, AwayScore: 17},
             },
-            expected: 1,
+            expected: []TeamRecord{teamA},
         },
         {
             name: "Team B wins head-to-head",
             games: []GameResult{
                 {HomeTeamID: 2, AwayTeamID: 1, HomeScore: 30, AwayScore: 20},
             },
-            expected: 2,
+            expected: []TeamRecord{teamB},
         },
         {
             name: "Split series (tie)",
@@ -102,30 +102,43 @@ func TestGetHeadToHeadWinner(t *testing.T) {
                 {HomeTeamID: 1, AwayTeamID: 2, HomeScore: 24, AwayScore: 17},
                 {HomeTeamID: 2, AwayTeamID: 1, HomeScore: 30, AwayScore: 20},
             },
-            expected: 0,
+            expected: []TeamRecord{},
         },
         {
             name: "No games played",
             games: []GameResult{},
-            expected: 0,
+            expected: []TeamRecord{},
         },
         {
             name: "Tie game doesn't count",
             games: []GameResult{
                 {HomeTeamID: 1, AwayTeamID: 2, HomeScore: 24, AwayScore: 24},
             },
-            expected: 0,
+            expected: []TeamRecord{},
         },
     }
 
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
-            result := getHeadToHeadWinner(teamA, teamB, tt.games)
-            if result != tt.expected {
-                t.Errorf("getHeadToHeadWinner() = %d; want %d", result, tt.expected)
+            teams := []TeamRecord{teamA, teamB}
+            result := compareHeadToHead(teams, tt.games)
+            if !equalTeamRecordSlices(result, tt.expected) {
+                t.Errorf("compareHeadToHead() = %v; want %v", result, tt.expected)
             }
         })
     }
+}
+
+func equalTeamRecordSlices(a, b []TeamRecord) bool {
+    if len(a) != len(b) {
+        return false
+    }
+    for i := range a {
+        if a[i] != b[i] {
+            return false
+        }
+    }
+    return true
 }
 
 func TestFilterByConference(t *testing.T) {

@@ -62,7 +62,6 @@ type PlayoffSeed struct {
 type DraftPick struct {
 	Pick 		int
 	Team		TeamRecord
-	Reason 		string // e.g., "Non-playoff", "Wild card loss", etc.
 }
 
 type GameResult struct {
@@ -1864,11 +1863,15 @@ func removeTeam(teams []TeamRecord, teamID int) []TeamRecord {
 func calculateDraftOrder(allTeams []TeamRecord, afc ConferenceStandings, nfc ConferenceStandings) []DraftPick {
 	// Get playoff teams (first 7 from each conference)
 	playoffTeamIDs := make(map[int]bool)
-	for i := 0; i < 7 && i < len(afc.PlayoffSeeds); i++ {
-		playoffTeamIDs[afc.PlayoffSeeds[i].Team.TeamID] = true
+	for _, seed := range afc.PlayoffSeeds {
+		if seed.Seed <= 7 {
+			playoffTeamIDs[seed.Team.TeamID] = true
+		}
 	}
-	for i := 0; i < 7 && i < len(nfc.PlayoffSeeds); i++ {
-		playoffTeamIDs[nfc.PlayoffSeeds[i].Team.TeamID] = true
+	for _, seed := range nfc.PlayoffSeeds {
+		if seed.Seed <= 7 {
+			playoffTeamIDs[seed.Team.TeamID] = true
+		}
 	}
 
 	// Get non-playoff teams
@@ -1880,61 +1883,362 @@ func calculateDraftOrder(allTeams []TeamRecord, afc ConferenceStandings, nfc Con
 	}
 
 	// Sort non-playoff teams by record (worst to best)
-	sort.Slice(nonPlayoffTeams, func(i, j int) bool {
-		a, b := nonPlayoffTeams[i], nonPlayoffTeams[j]
-		if a.WinPct != b.WinPct {
-			return a.WinPct < b.WinPct // Worst teams first
-		}
-		// Tiebreaker: worse point differential picks first
-		aDiff := a.PointsFor - a.PointsAgainst
-		bDiff := b.PointsFor - b.PointsAgainst
-
-		return aDiff < bDiff
-	})
+	sortedNonPlayoff := applyDraftOrderTiebreakers(nonPlayoffTeams, []GameResult{}, afc, nfc)
 
 	// Build draft order
 	draftOrder := []DraftPick{}
 	pickNum := 1
 
 	// Picks 1-18: Non-playoff teams
-	for _, team := range nonPlayoffTeams {
+	for i := len(sortedNonPlayoff) - 1; i >= 0; i-- {
+		team := sortedNonPlayoff[i]
 		draftOrder = append(draftOrder, DraftPick{
 			Pick: pickNum,
 			Team: team,
-			Reason: "Non-playoff",
 		})
 		pickNum++
 	}
 
 	// Picks 19-32: Playoff teams (ordered by seed, worst to best)
-	// Note: In real NFL, this is determined by playoff results
-	// For now, we'll just reverse the playoff seeding
+	// TODO: NEEDS TO BE UPDATED AS PLAYOFFS PROGRESS
+	playoffTeams := make([]PlayoffSeed, 0)
 
 	// Combine both conferences' playoff teams and sort by seed (descending)
-	var playoffTeams []PlayoffSeed
-	playoffTeams = append(playoffTeams, afc.PlayoffSeeds[:7]...)
-	playoffTeams = append(playoffTeams, nfc.PlayoffSeeds[:7]...)
+	for _, seed := range afc.PlayoffSeeds {
+		if seed.Seed <= 7 {
+			playoffTeams = append(playoffTeams, seed)
+		}
+	}
+	for _, seed := range nfc.PlayoffSeeds {
+		if seed.Seed <= 7 {
+			playoffTeams = append(playoffTeams, seed)
+		}
+	}
 
 	// Sort by seed (7 seed picks before 6 seed, etc.)
 	sort.Slice(playoffTeams, func(i, j int) bool {
-		// If different seeds, higher seed picks first
-		if playoffTeams[i].Seed != playoffTeams[j].Seed {
-			return playoffTeams[i].Seed > playoffTeams[j].Seed
-		}
-		// If same seed, worse record picks first
-		return playoffTeams[i].Team.WinPct < playoffTeams[j].Team.WinPct
+		return playoffTeams[i].Seed > playoffTeams[j].Seed
 	})
 
+	// Add playoff teams to draft order
 	for _, seed := range playoffTeams {
 		draftOrder = append(draftOrder, DraftPick{
 			Pick: pickNum,
 			Team: seed.Team,
-			Reason: fmt.Sprintf("Playoff seed %d", seed.Seed),
 		})
 		pickNum++
 	}
 
 	return draftOrder
+}
+
+func applyDraftOrderTiebreakers(teams []TeamRecord, games []GameResult, afc ConferenceStandings, nfc ConferenceStandings) []TeamRecord {
+	if len(teams) <= 1 {
+		return teams
+	}
+
+	// Group teams by win percentage
+	pctGroups := make(map[float64][]TeamRecord)
+	for _, team := range teams {
+		pctGroups[team.WinPct] = append(pctGroups[team.WinPct], team)
+	}
+
+	var result []TeamRecord
+
+	// Sort each group
+	for _, group := range pctGroups {
+		if len(group) == 1 {
+			result = append(result, group[0])
+		} else if len(group) == 2 {
+			sorted := resolveTwoTeamDraftTie(group, games, afc, nfc)
+			result = append(result, sorted...)
+		} else {
+			sorted := resolveMultiTeamDraftTie(group, games, afc, nfc)
+			result = append(result, sorted...)
+		}
+	}
+
+	// Sort groups by win percentage
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].WinPct > result[j].WinPct
+	})
+
+	return result
+}
+
+func resolveTwoTeamDraftTie(teams []TeamRecord, games []GameResult, afc ConferenceStandings, nfc ConferenceStandings) []TeamRecord {
+	a, b := teams[0], teams[1]
+
+	// Step 1: Strength of schedule (worse gets earlier pick)
+	if a.StrengthOfSchedule != b.StrengthOfSchedule {
+		if a.StrengthOfSchedule < b.StrengthOfSchedule {
+			return []TeamRecord{a, b}
+		}
+		return []TeamRecord{b, a}
+	}
+
+	// If same division, use division rank (lower rank = earlier pick)
+	if a.Division == b.Division {
+		var divTeams []TeamRecord
+		conf := a.Conference
+		div := a.Division
+
+		if conf == "AFC" {
+			divTeams = afc.Divisions[div]
+		} else {
+			divTeams = nfc.Divisions[div]
+		}
+
+		// Find ranks
+		aRank, bRank := -1, -1
+		for i, team := range divTeams {
+			if team.TeamID == a.TeamID {
+				aRank = i + 1
+			}
+			if team.TeamID == b.TeamID {
+				bRank = i + 1
+			}
+		}
+
+		if aRank != bRank && aRank != -1 && bRank != -1 {
+			if aRank > bRank { // Higher rank number = worse record = earlier pick
+				return []TeamRecord{a, b}
+			}
+			return []TeamRecord{b, a}
+		}
+	}
+
+	// If same conference (but different division), use conference rank
+	if a.Conference == b.Conference {
+		var confSeeds []PlayoffSeed
+		if a.Conference == "AFC" {
+			confSeeds = afc.PlayoffSeeds
+		} else {
+			confSeeds = nfc.PlayoffSeeds
+		}
+
+		aRank, bRank := -1, -1
+		for _, seed := range confSeeds {
+			if seed.Team.TeamID == a.TeamID {
+				aRank = seed.Seed
+			}
+			if seed.Team.TeamID == b.TeamID {
+				bRank = seed.Seed
+			}
+		}
+
+		if aRank != bRank && aRank != -1 && bRank != -1 {
+			if aRank > bRank {
+				return []TeamRecord{a, b}
+			}
+			return []TeamRecord{b, a}
+		}
+	}
+
+	// Inter-conference tiebreakers (reversed for draft order)
+
+	// Step 1: Head-to-head (if applicable) (loser gets earlier pick)
+	h2hResult := compareHeadToHead(teams, games)
+	if len(h2hResult) == 1 {
+		if h2hResult[0].TeamID == a.TeamID {
+			return []TeamRecord{b, a}
+		}
+		return []TeamRecord{a, b}
+	}
+
+	// Step 2: Worst win percentage in common games (minimum of 4)
+	commonResults := compareCommonGames(teams, games, 4)
+	if len(commonResults) == 1 {
+		if commonResults[0].TeamID == a.TeamID {
+			return []TeamRecord{b, a}
+		}
+		return []TeamRecord{a, b}
+	}
+
+	// Step 3: Strength of victory (lower gets earlier pick)
+	if a.StrengthOfVictory != b.StrengthOfVictory {
+		if a.StrengthOfVictory < b.StrengthOfVictory {
+			return []TeamRecord{a, b}
+		}
+		return []TeamRecord{b, a}
+	}
+
+	// Step 4: Worst point differential
+	aDiff := a.PointsFor - a.PointsAgainst
+	bDiff := b.PointsFor - b.PointsAgainst
+	if aDiff != bDiff {
+		if aDiff < bDiff {
+			return []TeamRecord{a, b}
+		}
+		return []TeamRecord{b, a}
+	}
+
+	// Coin toss - not implemented, use TeamID for consistency
+	if a.TeamID < b.TeamID {
+		return []TeamRecord{a, b}
+	}
+	return []TeamRecord{b, a}
+}
+
+func resolveMultiTeamDraftTie(teams []TeamRecord, games []GameResult, afc ConferenceStandings, nfc ConferenceStandings) []TeamRecord {
+	if len(teams) == 1 {
+		return teams
+	}
+	if len(teams) == 2 {
+		return resolveTwoTeamDraftTie(teams, games, afc, nfc)
+	}
+
+	// Check if all same division
+	allSameDivision := true
+	firstDiv := teams[0].Division
+	for _, team := range teams {
+		if team.Division != firstDiv {
+			allSameDivision = false
+			break
+		}
+	}
+	if allSameDivision {
+		conf := teams[0].Conference
+		div := teams[0].Division
+
+		var divTeams []TeamRecord
+		if conf == "AFC" {
+			divTeams = afc.Divisions[div]
+		} else {
+			divTeams = nfc.Divisions[div]
+		}
+
+		// Sort by division rank
+		var result []TeamRecord
+		for _, divTeam := range divTeams {
+			for _, team := range teams {
+				if team.TeamID == divTeam.TeamID {
+					result = append(result, team)
+					break
+				}
+			}
+		}
+
+		// Reverse for draft order
+		for i, j := 0, len(result) - 1; i < j; i, j = i + 1, j - 1 {
+			result[i], result[j] = result[j], result[i]
+		}
+		
+		return result
+	}
+
+	// Check if all same conference
+	allSameConference := true
+	firstConference := teams[0].Conference
+	for _, team := range teams[1:] {
+		if team.Conference != firstConference {
+			allSameConference = false
+			break
+		}
+	}
+
+	// If all same conference, use conference rank
+	if allSameConference {
+		var confSeeds []PlayoffSeed
+		if firstConference == "AFC" {
+			confSeeds = afc.PlayoffSeeds
+		} else {
+			confSeeds = nfc.PlayoffSeeds
+		}
+
+		// Sort by conference rank
+		sort.Slice(teams, func(i, j int) bool {
+			iSeed, jSeed := -1, -1
+			for _, seed := range confSeeds {
+				if seed.Team.TeamID == teams[i].TeamID {
+					iSeed = seed.Seed
+				}
+				if seed.Team.TeamID == teams[j].TeamID {
+					jSeed = seed.Seed
+				}
+			}
+			return iSeed > jSeed // Higher seed number = worse record = earlier pick
+		})
+		return teams
+	}
+
+	// Inter-conference
+	// Group by division
+	divisionGroups := make(map[string][]TeamRecord)
+	for _, team := range teams {
+		key := team.Conference + " " + team.Division
+		divisionGroups[key] = append(divisionGroups[key], team)
+	}
+
+	// Determine lowest-ranked team in each division
+	var divRepresentatives []TeamRecord
+	for _, divTeams := range divisionGroups {
+		if len(divTeams) == 1 {
+			divRepresentatives = append(divRepresentatives, divTeams[0])
+		} else {
+			sorted := applyDivisionTiebreakers(divTeams, games)
+			divRepresentatives = append(divRepresentatives, sorted[len(sorted) - 1])
+		}
+	}
+
+	// If only 2 teams remain, use two-team inter-conference tiebreakers
+	if len(divRepresentatives) == 2 {
+		return resolveTwoTeamDraftTie(divRepresentatives, games, afc, nfc)
+	}
+
+	// Group remaining teams by conference
+	confGroups := make(map[string][]TeamRecord)
+	for _, team := range divRepresentatives {
+		confGroups[team.Conference] = append(confGroups[team.Conference], team)
+	}
+
+	// Determine lowest-ranked team in each conference
+	var finalRepresentatives []TeamRecord
+	for conf, confTeams := range confGroups {
+		if len(confTeams) == 1 {
+			finalRepresentatives = append(finalRepresentatives, confTeams[0])
+		} else {
+			var confSeeds []PlayoffSeed
+			if conf == "AFC" {
+				confSeeds = afc.PlayoffSeeds
+			} else {
+				confSeeds = nfc.PlayoffSeeds
+			}
+
+			// Find lowest-ranked team
+			lowestRanked := confTeams[0]
+			lowestSeed := -1
+			for _, seed := range confSeeds {
+				if seed.Team.TeamID == lowestRanked.TeamID {
+					lowestSeed = seed.Seed
+					break
+				}
+			}
+
+			for _, team := range confTeams[1:] {
+				for _, seed := range confSeeds {
+					if seed.Team.TeamID == team.TeamID {
+						if seed.Seed > lowestSeed {
+							lowestRanked = team
+						}
+						break
+					}
+				}
+			}
+			finalRepresentatives = append(finalRepresentatives, lowestRanked)
+		}
+	}
+
+	// Now should have max 2 inter-conference teams
+	if len(finalRepresentatives) <= 2 {
+		return resolveTwoTeamDraftTie(finalRepresentatives, games, afc, nfc)
+	}
+
+	// Fallback: sort by strength of schedule
+	sort.Slice(teams, func(i, j int) bool {
+		return teams[i].StrengthOfSchedule < teams[j].StrengthOfSchedule
+	})
+	return teams
 }
 
 func calculateWinPct(wins, losses, ties int) float64 {

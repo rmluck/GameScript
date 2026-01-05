@@ -312,9 +312,13 @@
         </div>
 
         <!-- Draft Order -->
-        <div class="w-full">
-            <DraftOrderBox />
-        </div>
+        {#if standings}
+            <div class="w-full mt-6">
+                <DraftOrderBox 
+                    draftOrder={standings.draft_order}
+                />
+            </div>
+        {/if}
     </div>
 {/if}
 

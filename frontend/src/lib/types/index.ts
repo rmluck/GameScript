@@ -147,7 +147,6 @@ export interface DraftPick {
     team_name: string;
     team_abbr: string;
     record: string;
-    reason: string;
     logo_url: string;
     team_primary_color: string;
     team_secondary_color: string;

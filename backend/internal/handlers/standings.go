@@ -170,7 +170,6 @@ func formatDraftOrder(picks []standings.DraftPick) []map[string]interface{} {
 			"team_name": pick.Team.TeamName,
 			"team_abbr": pick.Team.TeamAbbr,
 			"record": fmt.Sprintf("%d-%d-%d", pick.Team.Wins, pick.Team.Losses, pick.Team.Ties),
-			"reason": pick.Reason,
 			"logo_url": pick.Team.LogoURL,
 			"team_primary_color": pick.Team.TeamPrimaryColor,
 			"team_secondary_color": pick.Team.TeamSecondaryColor,
