@@ -1,32 +1,58 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
-    import { getWeekDateRangesFromGames, formatDateRange, type WeekDateRange } from '$lib/utils/nfl/dates';
-    import { PLAYOFF_ROUNDS, PLAYOFF_ROUND_NAMES } from '$types';
+    import { getNFLWeekDateRangesFromGames, formatNFLDateRange, type NFLWeekDateRange } from '$lib/utils/nfl/dates';
+    import { getNBAWeekDateRangesFromGames, formatNBADateRange, type NBAWeekDateRange } from '$lib/utils/nba/dates';
+    import { NFL_PLAYOFF_ROUND_NAMES, NBA_PLAYOFF_ROUND_NAMES } from '$types';
     import type { Game, PlayoffState } from '$types';
 
     export let currentWeek: number;
     export let allGames: Game[] = [];
     export let playoffState: PlayoffState | null = null;
     export let canEnablePlayoffs: boolean = false;
+    export let sportId: number | null = null;
+    export let isCurrentRoundComplete: boolean = false;
 
     const dispatch = createEventDispatcher();
     
     let weekDropdownOpen = false;
-    let weekDateRanges: Map<number, WeekDateRange> = new Map();
+    let weekDateRanges: Map<number, NFLWeekDateRange | NBAWeekDateRange> = new Map();
 
-    $: weekDateRanges = getWeekDateRangesFromGames(allGames);
-    $: maxAvailableWeek = getMaxAvailableWeek();
+    $: if (sportId && allGames.length > 0) {
+        weekDateRanges = sportId === 1
+            ? getNFLWeekDateRangesFromGames(allGames)
+            : getNBAWeekDateRangesFromGames(allGames);
+    }
 
-    // Make currentLabel properly reactive to currentWeek changes
-    $: currentLabel = currentWeek > 18 
-        ? (PLAYOFF_ROUND_NAMES[currentWeek - 18] || `Playoff Round ${currentWeek - 18}`)
+    $: NUM_WEEKS = sportId === 1 ? 18 : sportId === 2 ? 25 : 0;
+    $: FINAL_PLAYOFF_ROUND = sportId === 1 ? 4 : sportId === 2 ? 6 : 0;
+
+    $: maxAvailableWeek = getMaxAvailableWeek(sportId, playoffState, isCurrentRoundComplete, currentWeek);
+    $: console.log(maxAvailableWeek);
+
+    $: playoffRound = currentWeek > NUM_WEEKS ? currentWeek - NUM_WEEKS : 0;
+
+    $: currentLabel = playoffRound > 0
+        ? (sportId === 1 ? NFL_PLAYOFF_ROUND_NAMES[playoffRound] : NBA_PLAYOFF_ROUND_NAMES[playoffRound]) || `Playoff Round ${playoffRound}`
         : `Week ${currentWeek}`;
 
-    function getMaxAvailableWeek(): number {
-        if (!playoffState?.is_enabled) {
-            return 18;
+    function getMaxAvailableWeek(sport: number | null, playoffs: PlayoffState | null, roundComplete: boolean, week: number): number {
+        if (!sport) return 1000;
+        
+        if (!playoffs?.is_enabled) {
+            return NUM_WEEKS;
         }
-        return 18 + playoffState.current_round;
+
+        // Don't allow going past final round
+        if (playoffs.current_round >= FINAL_PLAYOFF_ROUND) {
+            return NUM_WEEKS + FINAL_PLAYOFF_ROUND;
+        }
+
+        if (roundComplete && week === NUM_WEEKS + playoffs.current_round) {
+            console.log('Round complete! Enabling next round: ', NUM_WEEKS + playoffs.current_round + 1);
+            return NUM_WEEKS + playoffs.current_round + 1;
+        }
+
+        return NUM_WEEKS + playoffs.current_round;
     }
 
     function previousWeek() {
@@ -47,17 +73,23 @@
     }
 
     function getWeekLabel(week: number): string {
-        if (week > 18) {
-            const round = week - 18;
-            return PLAYOFF_ROUND_NAMES[round] || `Playoff Round ${round}`;
+        if (!sportId) return `WEEK ${week}`;
+        
+        const round = week > NUM_WEEKS ? week - NUM_WEEKS : 0;
+
+        if (round > 0) {
+            return sportId === 1
+                ? NFL_PLAYOFF_ROUND_NAMES[round] || `Playoff Round ${round}`
+                : NBA_PLAYOFF_ROUND_NAMES[round] || `Playoff Round ${round}`;
         }
 
         const dateRange = weekDateRanges.get(week);
         if (!dateRange) return `WEEK ${week}`;
-        return `WEEK ${week} (${formatDateRange(dateRange.startDate, dateRange.endDate)})`;
+        return `WEEK ${week} (${sportId === 1 ? formatNFLDateRange(dateRange.startDate, dateRange.endDate) : formatNBADateRange(dateRange.startDate, dateRange.endDate)})`;
     }
 </script>
 
+<!-- Rest of template stays the same -->
 <div class="flex items-center justify-between gap-4 pb-4 border-b-2 border-primary-700">
     <button
         on:click={previousWeek}
@@ -86,22 +118,24 @@
         {#if weekDropdownOpen}
             <div class="absolute z-10 w-full mt-1 bg-primary-800 border-2 border-primary-600 rounded-md shadow-lg max-h-60 overflow-auto">
                 <!-- Regular Season Weeks -->
-                {#each Array(18) as _, i}
-                    <button
-                        type="button"
-                        on:click={() => selectWeek(i + 1)}
-                        class="w-full px-4 py-3 text-center text-neutral hover:bg-primary-700 transition-colors font-heading font-bold text-base sm:text-lg cursor-pointer"
-                        class:bg-primary-700={currentWeek === i + 1}
-                    >
-                        {getWeekLabel(i + 1)}
-                    </button>
-                {/each}
+                {#if sportId}
+                    {#each Array(NUM_WEEKS) as _, i}
+                        <button
+                            type="button"
+                            on:click={() => selectWeek(i + 1)}
+                            class="w-full px-4 py-3 text-center text-neutral hover:bg-primary-700 transition-colors font-heading font-bold text-base sm:text-lg cursor-pointer"
+                            class:bg-primary-700={currentWeek === i + 1}
+                        >
+                            {getWeekLabel(i + 1)}
+                        </button>
+                    {/each}
+                {/if}
 
                 <!-- Playoff Rounds (if enabled) -->
-                {#if playoffState?.is_enabled}
+                {#if playoffState?.is_enabled && sportId}
                     <div class="border-t-2 border-primary-600 my-1"></div>
                     {#each Array(playoffState.current_round) as _, i}
-                        {@const week = 19 + i}
+                        {@const week = NUM_WEEKS + 1 + i}
                         <button
                             type="button"
                             on:click={() => selectWeek(week)}
@@ -126,7 +160,7 @@
 
     <button
         on:click={nextWeek}
-        disabled={currentWeek === maxAvailableWeek}
+        disabled={sportId !== null && currentWeek >= maxAvailableWeek}
         class="p-2 rounded-lg bg-primary-800 hover:bg-primary-600 border-2 border-primary-600 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
         title="Next Week"
     >

@@ -9,33 +9,33 @@ import (
 	"gamescript/internal/services/espn"
 )
 
-func (s *Scheduler) startNFLScheduler() {
-	log.Println("Starting NFL scheduler...")
+func (s *Scheduler) startNBAScheduler() {
+	log.Println("Starting NBA scheduler...")
 
 	// Calculate next midnight PST
-	ticker := s.getNextMidnightPSTTickerForNFL()
+	ticker := s.getNextMidnightPSTTickerForNBA()
 
 	// Optional: Run immediately on startup
-	// s.updateNFLSchedule()
+	// s.updateNBASchedule()
 
 	for {
 		select {
 		case <-ticker.C:
-			s.updateNFLSchedule()
+			s.updateNBASchedule()
 
 			// Reset ticker for next midnight PST
 			ticker.Stop()
-			ticker = s.getNextMidnightPSTTickerForNFL()
+			ticker = s.getNextMidnightPSTTickerForNBA()
 		
 		case <-s.quit:
 			ticker.Stop()
-			log.Println("NFL scheduler stopped.")
+			log.Println("NBA scheduler stopped.")
 			return
 		}
 	}
 }
 
-func (s *Scheduler) getNextMidnightPSTTickerForNFL() *time.Ticker {
+func (s *Scheduler) getNextMidnightPSTTickerForNBA() *time.Ticker {
 	pstLocation, err := time.LoadLocation("America/Los_Angeles")
 	if err != nil {
 		log.Printf("Error loading PST timezone: %v, using UTC", err)
@@ -46,28 +46,28 @@ func (s *Scheduler) getNextMidnightPSTTickerForNFL() *time.Ticker {
 	nextMidnight := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, pstLocation)
 	durationUntilMidnight := time.Until(nextMidnight)
 
-	log.Printf("Next NFL update scheduled for: %v (in %v)", nextMidnight, durationUntilMidnight)
+	log.Printf("Next NBA update scheduled for: %v (in %v)", nextMidnight, durationUntilMidnight)
 
 	return time.NewTicker(durationUntilMidnight)
 }
 
-func (s *Scheduler) updateNFLSchedule() {
-	log.Println("Starting NFL schedule update...")
+func (s *Scheduler) updateNBASchedule() {
+	log.Println("Starting NBA schedule update...")
 	startTime := time.Now()
 
 	client := espn.NewClient()
-	
-	// Determine NFL season year
+
+	// Determine NBA season year
 	now := time.Now()
 	seasonYear := now.Year()
-	if now.Month() <= 2 {
+	if now.Month() <= 6 {
 		seasonYear = now.Year() - 1
 	}
 
-	// Fetch entire NFL season
-	games, err := client.FetchEntireNFLSeason(seasonYear)
+	// Fetch entire NBA season
+	games, err := client.FetchEntireNBASeason(seasonYear)
 	if err != nil {
-		log.Printf("Error fetching NFL schedule: %v", err)
+		log.Printf("Error fetching NBA schedule: %v", err)
 		return
 	}
 
@@ -76,8 +76,8 @@ func (s *Scheduler) updateNFLSchedule() {
 	errors := 0
 
 	for _, game := range games {
-		if err := s.updateNFLGame(game); err != nil {
-			log.Printf("Error updating NFL game %s: %v", game.ESPNID, err)
+		if err := s.updateNBAGame(game); err != nil {
+			log.Printf("Error updating NBA game %s: %v", game.ESPNID, err)
 			errors++
 			continue
 		}
@@ -85,10 +85,10 @@ func (s *Scheduler) updateNFLSchedule() {
 	}
 
 	duration := time.Since(startTime)
-	log.Printf("NFL schedule update completed in %v: %d games updated, %d errors", duration, updated, errors)
+	log.Printf("NBA schedule update completed in %v: %d games updated, %d errors", duration, updated, errors)
 }
 
-func (s *Scheduler) updateNFLGame(game models.Game) error {
+func (s *Scheduler) updateNBAGame(game models.Game) error {
     stmt := `
         INSERT INTO games (
             season_id, espn_id, home_team_id, away_team_id, start_time,
@@ -153,6 +153,6 @@ func (s *Scheduler) updateNFLGame(game models.Game) error {
 }
 
 // Public method for manual triggering
-func (s *Scheduler) UpdateNFLSchedule() {
-	go s.updateNFLSchedule()
+func (s *Scheduler) UpdateNBASchedule() {
+	go s.updateNBASchedule()
 }

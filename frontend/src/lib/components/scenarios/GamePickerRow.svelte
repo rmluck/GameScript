@@ -7,6 +7,7 @@
     export let pick: Pick | undefined = undefined;
     export let compact: boolean = false;
     export let hasPlayoffs: boolean = false;
+    export let sportId: number | null = null;
 
     const dispatch = createEventDispatcher();
 
@@ -366,18 +367,20 @@
         </button>
 
         <!-- Tie Button -->
-        <button
-            on:click={selectTie}
-            class="px-1.5 sm:px-2 py-0.5 rounded border text-xs font-sans font-semibold transition-all cursor-pointer"
-            class:bg-primary-600={highlightTieButton}
-            class:border-primary-500={highlightTieButton}
-            class:text-neutral={highlightTieButton}
-            class:bg-transparent={!highlightTieButton}
-            class:border-primary-600={!highlightTieButton}
-            class:hover:border-primary-400={!highlightTieButton}
-        >
-            TIE
-        </button>
+        {#if sportId === 1}
+            <button
+                on:click={selectTie}
+                class="px-1.5 sm:px-2 py-0.5 rounded border text-xs font-sans font-semibold transition-all cursor-pointer"
+                class:bg-primary-600={highlightTieButton}
+                class:border-primary-500={highlightTieButton}
+                class:text-neutral={highlightTieButton}
+                class:bg-transparent={!highlightTieButton}
+                class:border-primary-600={!highlightTieButton}
+                class:hover:border-primary-400={!highlightTieButton}
+            >
+                TIE
+            </button>
+        {/if}
     </div>
 
     <!-- Home Team Section -->

@@ -2,115 +2,114 @@ package standings
 
 import (
 	"fmt"
-	"log"
 	"sort"
 
 	"gamescript/internal/database"
 )
 
-type TeamRecord struct {
-	TeamID       		int
-	TeamCity   			string
-	TeamName     		string
-	TeamAbbr	 		string
-	Conference   		string
-	Division     		string
-	Wins         		int
-	Losses       		int
-	Ties         		int
-	HomeWins	 		int
-	HomeLosses 			int
-	HomeTies    		int
-	AwayWins	 		int
-	AwayLosses 			int
-	AwayTies    		int
-	DivisionWins 		int
-	DivisionLosses 		int
-	DivisionTies   		int
-	ConferenceWins 		int
-	ConferenceLosses 	int
-	ConferenceTies   	int
-	PointsFor    		int
-	PointsAgainst 		int
-	WinPct       		float64
-	ConferenceGamesBack	float64
-	DivisionGamesBack	float64
-	StrengthOfSchedule	float64
-	StrengthOfVictory	float64
-	LogoURL	 			string
-	TeamPrimaryColor	string
-	TeamSecondaryColor	string
+type NFLTeamRecord struct {
+	TeamID              int
+	TeamCity            string
+	TeamName            string
+	TeamAbbr            string
+	Conference          string
+	Division            string
+	Wins                int
+	Losses              int
+	Ties                int
+	HomeWins            int
+	HomeLosses          int
+	HomeTies            int
+	AwayWins            int
+	AwayLosses          int
+	AwayTies            int
+	DivisionWins        int
+	DivisionLosses      int
+	DivisionTies        int
+	ConferenceWins      int
+	ConferenceLosses    int
+	ConferenceTies      int
+	PointsFor           int
+	PointsAgainst       int
+	WinPct              float64
+	ConferenceGamesBack float64
+	DivisionGamesBack   float64
+	StrengthOfSchedule  float64
+	StrengthOfVictory   float64
+	LogoURL             string
+	TeamPrimaryColor    string
+	TeamSecondaryColor  string
 }
 
 type NFLStandings struct {
-	AFC 		ConferenceStandings
-	NFC 		ConferenceStandings
-	DraftOrder 	[]DraftPick
+	AFC        NFLConferenceStandings
+	NFC        NFLConferenceStandings
+	DraftOrder []NFLDraftPick
 }
 
-type ConferenceStandings struct {
-	Divisions 		map[string][]TeamRecord // Keyed by division name
-	PlayoffSeeds 	[]PlayoffSeed
+type NFLConferenceStandings struct {
+	Divisions    map[string][]NFLTeamRecord // Keyed by division name
+	PlayoffSeeds []NFLPlayoffSeed
 }
 
-type PlayoffSeed struct {
-	Seed				int
-	Team				TeamRecord
-	IsDivisionWinner	bool
+type NFLPlayoffSeed struct {
+	Seed             int
+	Team             NFLTeamRecord
+	IsDivisionWinner bool
 }
 
-type DraftPick struct {
-	Pick 		int
-	Team		TeamRecord
+type NFLDraftPick struct {
+	Pick int
+	Team NFLTeamRecord
 }
 
-type GameResult struct {
-	GameID			int
-	HomeTeamID		int
-	AwayTeamID		int
-	HomeScore		int
-	AwayScore		int
-	Week 			int
+type NFLGameResult struct {
+	GameID     int
+	HomeTeamID int
+	AwayTeamID int
+	HomeScore  int
+	AwayScore  int
+	Week       int
 }
 
 func CalculateNFLStandings(db *database.DB, scenarioID int, seasonID int) (*NFLStandings, error) {
 	// Get all teams for the season
-	teams, err := getTeams(db, seasonID)
+	teams, err := getNFLTeams(db, seasonID)
 	if err != nil {
 		return nil, fmt.Errorf("error getting teams: %w", err)
 	}
 
 	// Get all game results for the scenario (actual + picks)
-	games, err := getGameResults(db, scenarioID, seasonID)
+	games, err := getNFLGameResults(db, scenarioID, seasonID)
 	if err != nil {
 		return nil, fmt.Errorf("error getting game rsults: %w", err)
 	}
 
 	// Calculate team records based on game results
-	records := calculateTeamRecords(teams, games)
+	records := calculateNFLTeamRecords(teams, games)
 
 	// Calculate strength metrics for all teams
-	calculateStrengthMetrics(records, games)
+	calculateNFLStrengthMetrics(records, games)
 
 	// Separate by conference
-	afcTeams := filterByConference(records, "AFC")
-	nfcTeams := filterByConference(records, "NFC")
+	afcTeams := filterByNFLConference(records, "AFC")
+	nfcTeams := filterByNFLConference(records, "NFC")
 
 	// Calculate playoff seeds for each conference
-	afcStandings := calculateConferenceStandings(afcTeams, games)
-	nfcStandings := calculateConferenceStandings(nfcTeams, games)
+	afcStandings := calculateNFLConferenceStandings(afcTeams, games)
+	nfcStandings := calculateNFLConferenceStandings(nfcTeams, games)
 
 	// Calculate draft order
-	draftOrder := calculateDraftOrder(records, afcStandings, nfcStandings)
+	draftOrder := calculateNFLDraftOrder(records, afcStandings, nfcStandings)
 
 	return &NFLStandings{
-		AFC: afcStandings,
-		NFC: nfcStandings,
+		AFC:        afcStandings,
+		NFC:        nfcStandings,
 		DraftOrder: draftOrder,
 	}, nil
 }
 
-func getTeams(db *database.DB, seasonID int) ([]TeamRecord, error) {
+func getNFLTeams(db *database.DB, seasonID int) ([]NFLTeamRecord, error) {
 	query := `
 		SELECT
 			id, city, name, abbreviation, conference, division, logo_url, primary_color, secondary_color
@@ -125,9 +124,9 @@ func getTeams(db *database.DB, seasonID int) ([]TeamRecord, error) {
 	}
 	defer rows.Close()
 
-	var teams []TeamRecord
+	var teams []NFLTeamRecord
 	for rows.Next() {
-		var team TeamRecord
+		var team NFLTeamRecord
 		err := rows.Scan(
 			&team.TeamID,
 			&team.TeamCity,
@@ -148,8 +147,8 @@ func getTeams(db *database.DB, seasonID int) ([]TeamRecord, error) {
 	return teams, nil
 }
 
-func getGameResults(db *database.DB, scenarioID int, seasonID int) ([]GameResult, error) {
-    query := `
+func getNFLGameResults(db *database.DB, scenarioID int, seasonID int) ([]NFLGameResult, error) {
+	query := `
         SELECT
             game.id, game.home_team_id, game.away_team_id, game.week,
             game.home_score AS actual_home_score,
@@ -164,82 +163,82 @@ func getGameResults(db *database.DB, scenarioID int, seasonID int) ([]GameResult
         ORDER BY game.week, game.start_time
     `
 
-    rows, err := db.Query(query, scenarioID, seasonID)
-    if err != nil {
-        return nil, err
-    }
-    defer rows.Close()
+	rows, err := db.Query(query, scenarioID, seasonID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-    var games []GameResult
-    for rows.Next() {
-        var game GameResult
-        var actualHomeScore, actualAwayScore *int
-        var status string
-        var pickedTeamID, predictedHomeScore, predictedAwayScore *int
+	var games []NFLGameResult
+	for rows.Next() {
+		var game NFLGameResult
+		var actualHomeScore, actualAwayScore *int
+		var status string
+		var pickedTeamID, predictedHomeScore, predictedAwayScore *int
 
-        err := rows.Scan(
-            &game.GameID,
-            &game.HomeTeamID,
-            &game.AwayTeamID,
-            &game.Week,
-            &actualHomeScore,
-            &actualAwayScore,
-            &status,
-            &pickedTeamID,
-            &predictedHomeScore,
-            &predictedAwayScore,
-        )
-        if err != nil {
-            continue
-        }
+		err := rows.Scan(
+			&game.GameID,
+			&game.HomeTeamID,
+			&game.AwayTeamID,
+			&game.Week,
+			&actualHomeScore,
+			&actualAwayScore,
+			&status,
+			&pickedTeamID,
+			&predictedHomeScore,
+			&predictedAwayScore,
+		)
+		if err != nil {
+			continue
+		}
 
-        // Priority 1: User has made a pick - always use the pick
-        if pickedTeamID != nil {
-            // If user provided predicted scores, use those
-            if predictedHomeScore != nil && predictedAwayScore != nil {
-                game.HomeScore = *predictedHomeScore
-                game.AwayScore = *predictedAwayScore
-            } else {
-                // No predicted scores, use dummy scores based on picked winner
-                if *pickedTeamID == game.HomeTeamID {
-                    // Home team picked to win
-                    game.HomeScore = 1
-                    game.AwayScore = 0
-                } else if *pickedTeamID == game.AwayTeamID {
-                    // Away team picked to win
-                    game.HomeScore = 0
-                    game.AwayScore = 1
-                } else if *pickedTeamID == 0 {
-                    // Tie picked
-                    game.HomeScore = 0
-                    game.AwayScore = 0
-                } else {
-                    // Invalid picked_team_id, skip this game
-                    continue
-                }
-            }
-            games = append(games, game)
-            continue
-        }
+		// Priority 1: User has made a pick - always use the pick
+		if pickedTeamID != nil {
+			// If user provided predicted scores, use those
+			if predictedHomeScore != nil && predictedAwayScore != nil {
+				game.HomeScore = *predictedHomeScore
+				game.AwayScore = *predictedAwayScore
+			} else {
+				// No predicted scores, use dummy scores based on picked winner
+				if *pickedTeamID == game.HomeTeamID {
+					// Home team picked to win
+					game.HomeScore = 1
+					game.AwayScore = 0
+				} else if *pickedTeamID == game.AwayTeamID {
+					// Away team picked to win
+					game.HomeScore = 0
+					game.AwayScore = 1
+				} else if *pickedTeamID == 0 {
+					// Tie picked
+					game.HomeScore = 0
+					game.AwayScore = 0
+				} else {
+					// Invalid picked_team_id, skip this game
+					continue
+				}
+			}
+			games = append(games, game)
+			continue
+		}
 
-        // Priority 2: No pick, but game is final - use actual scores
-        if status == "final" && actualHomeScore != nil && actualAwayScore != nil {
+		// Priority 2: No pick, but game is final - use actual scores
+		if status == "final" && actualHomeScore != nil && actualAwayScore != nil {
 			game.HomeScore = *actualHomeScore
 			game.AwayScore = *actualAwayScore
 			games = append(games, game)
 			continue
-        }
+		}
 
-        // Priority 3: No pick and game not final - skip this game
-        // (don't add to games slice)
-    }
+		// Priority 3: No pick and game not final - skip this game
+		// (don't add to games slice)
+	}
 
-    return games, nil
+	return games, nil
 }
 
-func calculateTeamRecords(teams []TeamRecord, games []GameResult) []TeamRecord {
+func calculateNFLTeamRecords(teams []NFLTeamRecord, games []NFLGameResult) []NFLTeamRecord {
 	// Create map for quick lookup
-	recordMap := make(map[int]*TeamRecord)
+	recordMap := make(map[int]*NFLTeamRecord)
 	for i := range teams {
 		recordMap[teams[i].TeamID] = &teams[i]
 	}
@@ -318,14 +317,14 @@ func calculateTeamRecords(teams []TeamRecord, games []GameResult) []TeamRecord {
 
 	// Calculate win percentages
 	for _, team := range recordMap {
-		team.WinPct = calculateWinPct(team.Wins, team.Losses, team.Ties)
+		team.WinPct = calculateNFLWinPct(team.Wins, team.Losses, team.Ties)
 	}
 
 	return teams
 }
 
-func calculateStrengthMetrics(teams []TeamRecord, games []GameResult) {
-	teamMap := make(map[int]*TeamRecord)
+func calculateNFLStrengthMetrics(teams []NFLTeamRecord, games []NFLGameResult) {
+	teamMap := make(map[int]*NFLTeamRecord)
 	for i := range teams {
 		teamMap[teams[i].TeamID] = &teams[i]
 	}
@@ -375,16 +374,16 @@ func calculateStrengthMetrics(teams []TeamRecord, games []GameResult) {
 
 		// Calculate averages
 		if opponentCount > 0 {
-			team.StrengthOfSchedule = calculateWinPct(opponentTotalWins, opponentTotalLosses, opponentTotalTies)
+			team.StrengthOfSchedule = calculateNFLWinPct(opponentTotalWins, opponentTotalLosses, opponentTotalTies)
 		}
 		if defeatedCount > 0 {
-			team.StrengthOfVictory = calculateWinPct(defeatedOpponentWins, defeatedOpponentLosses, defeatedOpponentTies)
+			team.StrengthOfVictory = calculateNFLWinPct(defeatedOpponentWins, defeatedOpponentLosses, defeatedOpponentTies)
 		}
 	}
 }
 
-func filterByConference(teams []TeamRecord, conference string) []TeamRecord {
-	var filtered []TeamRecord
+func filterByNFLConference(teams []NFLTeamRecord, conference string) []NFLTeamRecord {
+	var filtered []NFLTeamRecord
 	for _, team := range teams {
 		if team.Conference == conference {
 			filtered = append(filtered, team)
@@ -393,25 +392,25 @@ func filterByConference(teams []TeamRecord, conference string) []TeamRecord {
 	return filtered
 }
 
-func calculateConferenceStandings(teams []TeamRecord, games []GameResult) ConferenceStandings {
+func calculateNFLConferenceStandings(teams []NFLTeamRecord, games []NFLGameResult) NFLConferenceStandings {
 	// Group teams by division
-	divisions := make(map[string][]TeamRecord)
+	divisions := make(map[string][]NFLTeamRecord)
 	for _, team := range teams {
 		divisions[team.Division] = append(divisions[team.Division], team)
 	}
 
 	// Determine division winners
-	divisionWinners := []TeamRecord{}
-	nonWinners := []TeamRecord{}
+	divisionWinners := []NFLTeamRecord{}
+	nonWinners := []NFLTeamRecord{}
 
 	for divName, divTeams := range divisions {
 		// Sort division teams
-		sortedDiv := applyDivisionTiebreakers(divTeams, games)
+		sortedDiv := applyNFLDivisionTiebreakers(divTeams, games)
 
 		// Calculate division games back
 		divLeader := sortedDiv[0]
 		for i := range sortedDiv {
-			sortedDiv[i].DivisionGamesBack = calculateGamesBack(divLeader, sortedDiv[i])
+			sortedDiv[i].DivisionGamesBack = calculateNFLGamesBack(divLeader, sortedDiv[i])
 		}
 
 		// First place is division winner
@@ -425,25 +424,25 @@ func calculateConferenceStandings(teams []TeamRecord, games []GameResult) Confer
 	}
 
 	// Rank division winners (seeds 1-4)
-	divisionWinners = applyConferenceTiebreakers(divisionWinners, games, true)
+	divisionWinners = applyNFLConferenceTiebreakers(divisionWinners, games, true)
 
 	// Rank non-division winners (seeds 5-16)
-	nonWinners = applyConferenceTiebreakers(nonWinners, games, false)
+	nonWinners = applyNFLConferenceTiebreakers(nonWinners, games, false)
 
 	// Create playoff seeds
-	playoffSeeds := []PlayoffSeed{}
+	playoffSeeds := []NFLPlayoffSeed{}
 	for i, team := range divisionWinners {
-		playoffSeeds = append(playoffSeeds, PlayoffSeed{
-			Seed: i + 1,
-			Team: team,
+		playoffSeeds = append(playoffSeeds, NFLPlayoffSeed{
+			Seed:             i + 1,
+			Team:             team,
 			IsDivisionWinner: true,
 		})
 	}
 
 	for i, team := range nonWinners {
-		playoffSeeds = append(playoffSeeds, PlayoffSeed{
-			Seed: i + 5,
-			Team: team,
+		playoffSeeds = append(playoffSeeds, NFLPlayoffSeed{
+			Seed:             i + 5,
+			Team:             team,
 			IsDivisionWinner: false,
 		})
 	}
@@ -451,34 +450,34 @@ func calculateConferenceStandings(teams []TeamRecord, games []GameResult) Confer
 	// Calculate conference games back
 	conferenceLeader := playoffSeeds[0].Team
 	for i := range playoffSeeds {
-		playoffSeeds[i].Team.ConferenceGamesBack = calculateGamesBack(conferenceLeader, playoffSeeds[i].Team)
+		playoffSeeds[i].Team.ConferenceGamesBack = calculateNFLGamesBack(conferenceLeader, playoffSeeds[i].Team)
 	}
 
-	return ConferenceStandings{
-		Divisions: divisions,
+	return NFLConferenceStandings{
+		Divisions:    divisions,
 		PlayoffSeeds: playoffSeeds,
 	}
 }
 
-func applyDivisionTiebreakers(teams []TeamRecord, games []GameResult) []TeamRecord {
+func applyNFLDivisionTiebreakers(teams []NFLTeamRecord, games []NFLGameResult) []NFLTeamRecord {
 	if len(teams) <= 1 {
 		return teams
 	}
 
 	// Group by win percentage
-	pctGroups := make(map[float64][]TeamRecord)
+	pctGroups := make(map[float64][]NFLTeamRecord)
 	for _, team := range teams {
 		pctGroups[team.WinPct] = append(pctGroups[team.WinPct], team)
 	}
 
-	var result []TeamRecord
+	var result []NFLTeamRecord
 	for _, group := range pctGroups {
 		if len(group) == 1 {
 			result = append(result, group[0])
 		} else if len(group) == 2 {
-			result = append(result, resolveTwoTeamDivisionTie(group, games)...)
+			result = append(result, resolveNFLTwoTeamDivisionTie(group, games)...)
 		} else {
-			result = append(result, resolveMultiTeamDivisionTie(group, games)...)
+			result = append(result, resolveNFLMultiTeamDivisionTie(group, games)...)
 		}
 	}
 
@@ -490,63 +489,63 @@ func applyDivisionTiebreakers(teams []TeamRecord, games []GameResult) []TeamReco
 	return result
 }
 
-func resolveTwoTeamDivisionTie(teams []TeamRecord, games []GameResult) []TeamRecord {
+func resolveNFLTwoTeamDivisionTie(teams []NFLTeamRecord, games []NFLGameResult) []NFLTeamRecord {
 	a, b := teams[0], teams[1]
 
 	// Step 1: Win percentage - already tied
 
 	// Step 2: Head-to-head
-	h2h := compareHeadToHead(teams, games)
+	h2h := compareNFLHeadToHead(teams, games)
 	if len(h2h) == 1 {
 		if h2h[0].TeamID == a.TeamID {
-			return []TeamRecord{a, b}
+			return []NFLTeamRecord{a, b}
 		}
-		return []TeamRecord{b, a}
+		return []NFLTeamRecord{b, a}
 	}
 
 	// Step 3: Division record
-	aDivPct := calculateWinPct(a.DivisionWins, a.DivisionLosses, a.DivisionTies)
-	bDivPct := calculateWinPct(b.DivisionWins, b.DivisionLosses, b.DivisionTies)
+	aDivPct := calculateNFLWinPct(a.DivisionWins, a.DivisionLosses, a.DivisionTies)
+	bDivPct := calculateNFLWinPct(b.DivisionWins, b.DivisionLosses, b.DivisionTies)
 	if aDivPct != bDivPct {
 		if aDivPct > bDivPct {
-			return []TeamRecord{a, b}
+			return []NFLTeamRecord{a, b}
 		}
-		return []TeamRecord{b, a}
+		return []NFLTeamRecord{b, a}
 	}
 
 	// Step 4: Common games
-	commonResults := compareCommonGames(teams, games, 0)
+	commonResults := compareNFLCommonGames(teams, games, 0)
 	if len(commonResults) == 1 {
 		if commonResults[0].TeamID == a.TeamID {
-			return []TeamRecord{a, b}
+			return []NFLTeamRecord{a, b}
 		}
-		return []TeamRecord{b, a}
+		return []NFLTeamRecord{b, a}
 	}
 
 	// Step 5: Conference record
-	aConfPct := calculateWinPct(a.ConferenceWins, a.ConferenceLosses, a.ConferenceTies)
-	bConfPct := calculateWinPct(b.ConferenceWins, b.ConferenceLosses, b.ConferenceTies)
+	aConfPct := calculateNFLWinPct(a.ConferenceWins, a.ConferenceLosses, a.ConferenceTies)
+	bConfPct := calculateNFLWinPct(b.ConferenceWins, b.ConferenceLosses, b.ConferenceTies)
 	if aConfPct != bConfPct {
 		if aConfPct > bConfPct {
-			return []TeamRecord{a, b}
+			return []NFLTeamRecord{a, b}
 		}
-		return []TeamRecord{b, a}
+		return []NFLTeamRecord{b, a}
 	}
 
 	// Step 6: Strength of victory
 	if a.StrengthOfVictory != b.StrengthOfVictory {
 		if a.StrengthOfVictory > b.StrengthOfVictory {
-			return []TeamRecord{a, b}
+			return []NFLTeamRecord{a, b}
 		}
-		return []TeamRecord{b, a}
+		return []NFLTeamRecord{b, a}
 	}
 
 	// Step 7: Strength of schedule
 	if a.StrengthOfSchedule != b.StrengthOfSchedule {
 		if a.StrengthOfSchedule > b.StrengthOfSchedule {
-			return []TeamRecord{a, b}
+			return []NFLTeamRecord{a, b}
 		}
-		return []TeamRecord{b, a}
+		return []NFLTeamRecord{b, a}
 	}
 
 	// Step 8: Point differential
@@ -554,130 +553,130 @@ func resolveTwoTeamDivisionTie(teams []TeamRecord, games []GameResult) []TeamRec
 	bDiff := b.PointsFor - b.PointsAgainst
 	if aDiff != bDiff {
 		if aDiff > bDiff {
-			return []TeamRecord{a, b}
+			return []NFLTeamRecord{a, b}
 		}
-		return []TeamRecord{b, a}
+		return []NFLTeamRecord{b, a}
 	}
 
 	// Step 9: Points scored
 	if a.PointsFor != b.PointsFor {
 		if a.PointsFor > b.PointsFor {
-			return []TeamRecord{a, b}
+			return []NFLTeamRecord{a, b}
 		}
-		return []TeamRecord{b, a}
+		return []NFLTeamRecord{b, a}
 	}
 
 	// Step 10: Points allowed (fewer is better)
 	if a.PointsAgainst != b.PointsAgainst {
 		if a.PointsAgainst < b.PointsAgainst {
-			return []TeamRecord{a, b}
+			return []NFLTeamRecord{a, b}
 		}
-		return []TeamRecord{b, a}
+		return []NFLTeamRecord{b, a}
 	}
 
 	// Step 11: Coin toss - not implemented, use TeamID for consistency
 	if a.TeamID < b.TeamID {
-		return []TeamRecord{a, b}
+		return []NFLTeamRecord{a, b}
 	}
-	return []TeamRecord{b, a}
+	return []NFLTeamRecord{b, a}
 }
 
-func resolveMultiTeamDivisionTie(teams []TeamRecord, games []GameResult) []TeamRecord {
+func resolveNFLMultiTeamDivisionTie(teams []NFLTeamRecord, games []NFLGameResult) []NFLTeamRecord {
 	// Step 1: Head-to-head (best win pct in games among tied teams)
-	h2hWinner := findHeadToHeadWinner(teams, games)
+	h2hWinner := findNFLHeadToHeadWinner(teams, games)
 	if h2hWinner != nil {
-		remaining := removeTeam(teams, h2hWinner.TeamID)
-		result := []TeamRecord{*h2hWinner}
+		remaining := removeNFLTeam(teams, h2hWinner.TeamID)
+		result := []NFLTeamRecord{*h2hWinner}
 		if len(remaining) > 0 {
-			result = append(result, resolveMultiTeamDivisionTie(remaining, games)...)
+			result = append(result, resolveNFLMultiTeamDivisionTie(remaining, games)...)
 		}
 		return result
 	}
 
 	// Step 2: Division record
-	divWinner := findBestDivisionRecord(teams)
+	divWinner := findBestNFLDivisionRecord(teams)
 	if divWinner != nil {
-		remaining := removeTeam(teams, divWinner.TeamID)
-		result := []TeamRecord{*divWinner}
+		remaining := removeNFLTeam(teams, divWinner.TeamID)
+		result := []NFLTeamRecord{*divWinner}
 		if len(remaining) > 0 {
-			result = append(result, resolveMultiTeamDivisionTie(remaining, games)...)
+			result = append(result, resolveNFLMultiTeamDivisionTie(remaining, games)...)
 		}
 		return result
 	}
 
 	// Step 3: Common games
-	commonWinner := findBestCommonGamesRecord(teams, games, 0)
+	commonWinner := findBestNFLCommonGamesRecord(teams, games, 0)
 	if commonWinner != nil {
-		remaining := removeTeam(teams, commonWinner.TeamID)
-		result := []TeamRecord{*commonWinner}
+		remaining := removeNFLTeam(teams, commonWinner.TeamID)
+		result := []NFLTeamRecord{*commonWinner}
 		if len(remaining) > 0 {
-			result = append(result, resolveMultiTeamDivisionTie(remaining, games)...)
+			result = append(result, resolveNFLMultiTeamDivisionTie(remaining, games)...)
 		}
 		return result
 	}
 
 	// Step 4: Conference record
-	confWinner := findBestConferenceRecord(teams)
+	confWinner := findBestNFLConferenceRecord(teams)
 	if confWinner != nil {
-		remaining := removeTeam(teams, confWinner.TeamID)
-		result := []TeamRecord{*confWinner}
+		remaining := removeNFLTeam(teams, confWinner.TeamID)
+		result := []NFLTeamRecord{*confWinner}
 		if len(remaining) > 0 {
-			result = append(result, resolveMultiTeamDivisionTie(remaining, games)...)
+			result = append(result, resolveNFLMultiTeamDivisionTie(remaining, games)...)
 		}
 		return result
 	}
 
 	// Step 5: Strength of victory
-	sovWinner := findBestStrengthOfVictory(teams)
+	sovWinner := findBestNFLStrengthOfVictory(teams)
 	if sovWinner != nil {
-		remaining := removeTeam(teams, sovWinner.TeamID)
-		result := []TeamRecord{*sovWinner}
+		remaining := removeNFLTeam(teams, sovWinner.TeamID)
+		result := []NFLTeamRecord{*sovWinner}
 		if len(remaining) > 0 {
-			result = append(result, resolveMultiTeamDivisionTie(remaining, games)...)
+			result = append(result, resolveNFLMultiTeamDivisionTie(remaining, games)...)
 		}
 		return result
 	}
 
 	// Step 6: Strength of schedule
-	sosWinner := findBestStrengthOfSchedule(teams)
+	sosWinner := findBestNFLStrengthOfSchedule(teams)
 	if sosWinner != nil {
-		remaining := removeTeam(teams, sosWinner.TeamID)
-		result := []TeamRecord{*sosWinner}
+		remaining := removeNFLTeam(teams, sosWinner.TeamID)
+		result := []NFLTeamRecord{*sosWinner}
 		if len(remaining) > 0 {
-			result = append(result, resolveMultiTeamDivisionTie(remaining, games)...)
+			result = append(result, resolveNFLMultiTeamDivisionTie(remaining, games)...)
 		}
 		return result
 	}
 
 	// Step 7: Point differential
-	pdWinner := findBestPointDifferential(teams)
+	pdWinner := findBestNFLPointDifferential(teams)
 	if pdWinner != nil {
-		remaining := removeTeam(teams, pdWinner.TeamID)
-		result := []TeamRecord{*pdWinner}
+		remaining := removeNFLTeam(teams, pdWinner.TeamID)
+		result := []NFLTeamRecord{*pdWinner}
 		if len(remaining) > 0 {
-			result = append(result, resolveMultiTeamDivisionTie(remaining, games)...)
+			result = append(result, resolveNFLMultiTeamDivisionTie(remaining, games)...)
 		}
 		return result
 	}
 
 	// Step 8: Points scored
-	psWinner := findBestPointsScored(teams)
+	psWinner := findBestNFLPointsScored(teams)
 	if psWinner != nil {
-		remaining := removeTeam(teams, psWinner.TeamID)
-		result := []TeamRecord{*psWinner}
+		remaining := removeNFLTeam(teams, psWinner.TeamID)
+		result := []NFLTeamRecord{*psWinner}
 		if len(remaining) > 0 {
-			result = append(result, resolveMultiTeamDivisionTie(remaining, games)...)
+			result = append(result, resolveNFLMultiTeamDivisionTie(remaining, games)...)
 		}
 		return result
 	}
 
 	// Step 9: Points allowed (fewer is better)
-	paWinner := findBestPointsAllowed(teams)
+	paWinner := findBestNFLPointsAllowed(teams)
 	if paWinner != nil {
-		remaining := removeTeam(teams, paWinner.TeamID)
-		result := []TeamRecord{*paWinner}
+		remaining := removeNFLTeam(teams, paWinner.TeamID)
+		result := []NFLTeamRecord{*paWinner}
 		if len(remaining) > 0 {
-			result = append(result, resolveMultiTeamDivisionTie(remaining, games)...)
+			result = append(result, resolveNFLMultiTeamDivisionTie(remaining, games)...)
 		}
 		return result
 	}
@@ -689,47 +688,26 @@ func resolveMultiTeamDivisionTie(teams []TeamRecord, games []GameResult) []TeamR
 	return teams
 }
 
-func applyConferenceTiebreakers(teams []TeamRecord, games []GameResult, areDivisionWinners bool) []TeamRecord {
+func applyNFLConferenceTiebreakers(teams []NFLTeamRecord, games []NFLGameResult, areDivisionWinners bool) []NFLTeamRecord {
 	if len(teams) <= 1 {
 		return teams
 	}
 
-	// DEBUG
-	log.Printf("=== applyConferenceTiebreakers called with %d teams ===", len(teams))
-	for _, t := range teams {
-		log.Printf("  - %s %s: %d-%d (%.3f)", t.TeamAbbr, t.Division, t.Wins, t.Losses, t.WinPct)
-	}
-
 	// Group by win percentage
-	pctGroups := make(map[float64][]TeamRecord)
+	pctGroups := make(map[float64][]NFLTeamRecord)
 	for _, team := range teams {
 		pctGroups[team.WinPct] = append(pctGroups[team.WinPct], team)
 	}
 
-	var result []TeamRecord
-	for pct, group := range pctGroups {
-		// DEBUG
-		log.Printf("Processing win pct group %.3f with %d teams:", pct, len(group))
-		for _, t := range group {
-			log.Printf("  - %s", t.TeamAbbr)
-		}
-
+	var result []NFLTeamRecord
+	for _, group := range pctGroups {
 		if len(group) == 1 {
 			result = append(result, group[0])
-			// DEBUG
-			log.Printf("  -> Single team, added %s", group[0].TeamAbbr)
 		} else if len(group) == 2 {
-			resolved := resolveTwoTeamConferenceTie(group, games)
-			// DEBUG
-			log.Printf("  --> Two teams resolved to: %s, %s", resolved[0].TeamAbbr, resolved[1].TeamAbbr)
+			resolved := resolveNFLTwoTeamConferenceTie(group, games)
 			result = append(result, resolved...)
 		} else {
-			resolved := resolveMultiTeamConferenceTie(group, games)
-			// DEBUG
-			log.Printf("  -> Multi-team resolved to %d teams:", len(resolved))
-			for _, t := range resolved {
-				log.Printf("   - %s", t.TeamAbbr)
-			}
+			resolved := resolveNFLMultiTeamConferenceTie(group, games)
 			result = append(result, resolved...)
 		}
 	}
@@ -738,65 +716,59 @@ func applyConferenceTiebreakers(teams []TeamRecord, games []GameResult, areDivis
 		return result[i].WinPct > result[j].WinPct
 	})
 
-	// DEBUG
-	log.Printf("=== Final result has %d teams ===", len(result))
-	for i, t := range result {
-		log.Printf("  %d. %s %s: %d-%d", i+1, t.TeamAbbr, t.Division, t.Wins, t.Losses)
-	}
-
 	return result
 }
 
-func resolveTwoTeamConferenceTie(teams []TeamRecord, games []GameResult) []TeamRecord {
+func resolveNFLTwoTeamConferenceTie(teams []NFLTeamRecord, games []NFLGameResult) []NFLTeamRecord {
 	a, b := teams[0], teams[1]
 
 	// If same division, use division tiebreakers
 	if a.Division == b.Division {
-		return resolveTwoTeamDivisionTie(teams, games)
+		return resolveNFLTwoTeamDivisionTie(teams, games)
 	}
 
 	// Step 2: Head-to-head
-	h2h := compareHeadToHead(teams, games)
+	h2h := compareNFLHeadToHead(teams, games)
 	if len(h2h) == 1 {
 		if h2h[0].TeamID == a.TeamID {
-			return []TeamRecord{a, b}
+			return []NFLTeamRecord{a, b}
 		}
-		return []TeamRecord{b, a}
+		return []NFLTeamRecord{b, a}
 	}
 
 	// Step 3: Conference record
-	aConfPct := calculateWinPct(a.ConferenceWins, a.ConferenceLosses, a.ConferenceTies)
-	bConfPct := calculateWinPct(b.ConferenceWins, b.ConferenceLosses, b.ConferenceTies)
+	aConfPct := calculateNFLWinPct(a.ConferenceWins, a.ConferenceLosses, a.ConferenceTies)
+	bConfPct := calculateNFLWinPct(b.ConferenceWins, b.ConferenceLosses, b.ConferenceTies)
 	if aConfPct != bConfPct {
 		if aConfPct > bConfPct {
-			return []TeamRecord{a, b}
+			return []NFLTeamRecord{a, b}
 		}
-		return []TeamRecord{b, a}
+		return []NFLTeamRecord{b, a}
 	}
 
 	// Step 4: Common games (minimum of 4)
-	commonResults := compareCommonGames(teams, games, 4)
+	commonResults := compareNFLCommonGames(teams, games, 4)
 	if len(commonResults) == 1 {
 		if commonResults[0].TeamID == a.TeamID {
-			return []TeamRecord{a, b}
+			return []NFLTeamRecord{a, b}
 		}
-		return []TeamRecord{b, a}
+		return []NFLTeamRecord{b, a}
 	}
 
 	// Step 5: Strength of victory
 	if a.StrengthOfVictory != b.StrengthOfVictory {
 		if a.StrengthOfVictory > b.StrengthOfVictory {
-			return []TeamRecord{a, b}
+			return []NFLTeamRecord{a, b}
 		}
-		return []TeamRecord{b, a}
+		return []NFLTeamRecord{b, a}
 	}
 
 	// Step 6: Strength of schedule
 	if a.StrengthOfSchedule != b.StrengthOfSchedule {
 		if a.StrengthOfSchedule > b.StrengthOfSchedule {
-			return []TeamRecord{a, b}
+			return []NFLTeamRecord{a, b}
 		}
-		return []TeamRecord{b, a}
+		return []NFLTeamRecord{b, a}
 	}
 
 	// Step 7: Point differential
@@ -804,50 +776,40 @@ func resolveTwoTeamConferenceTie(teams []TeamRecord, games []GameResult) []TeamR
 	bDiff := b.PointsFor - b.PointsAgainst
 	if aDiff != bDiff {
 		if aDiff > bDiff {
-			return []TeamRecord{a, b}
+			return []NFLTeamRecord{a, b}
 		}
-		return []TeamRecord{b, a}
+		return []NFLTeamRecord{b, a}
 	}
 
 	// Step 8: Points scored
 	if a.PointsFor != b.PointsFor {
 		if a.PointsFor > b.PointsFor {
-			return []TeamRecord{a, b}
+			return []NFLTeamRecord{a, b}
 		}
-		return []TeamRecord{b, a}
+		return []NFLTeamRecord{b, a}
 	}
 
 	// Step 9: Points allowed (fewer is better)
 	if a.PointsAgainst != b.PointsAgainst {
 		if a.PointsAgainst < b.PointsAgainst {
-			return []TeamRecord{a, b}
+			return []NFLTeamRecord{a, b}
 		}
-		return []TeamRecord{b, a}
+		return []NFLTeamRecord{b, a}
 	}
 
 	// Step 10: Coin toss - not implemented, use TeamID for consistency
 	if a.TeamID < b.TeamID {
-		return []TeamRecord{a, b}
+		return []NFLTeamRecord{a, b}
 	}
-	return []TeamRecord{b, a}
+	return []NFLTeamRecord{b, a}
 }
 
-func resolveMultiTeamConferenceTie(teams []TeamRecord, games []GameResult) []TeamRecord {
-	// DEBUG
-	log.Printf("   >>> resolveMultiTeamConferenceTie called with %d teams", len(teams))
-	for _, t := range teams {
-		log.Printf("        - %s (%s)", t.TeamAbbr, t.Division)
-	}
-
+func resolveNFLMultiTeamConferenceTie(teams []NFLTeamRecord, games []NFLGameResult) []NFLTeamRecord {
 	if len(teams) == 1 {
-		// DEBUG
-		log.Printf("   >>> Only one team, returning %s", teams[0].TeamAbbr)
 		return teams
 	}
 	if len(teams) == 2 {
-		// DEBUG
-		log.Printf("   >>> Two teams, deferring to resolveTwoTeamConferenceTie")
-		return resolveTwoTeamConferenceTie(teams, games)
+		return resolveNFLTwoTeamConferenceTie(teams, games)
 	}
 
 	// Check if all teams are from the same division
@@ -862,194 +824,115 @@ func resolveMultiTeamConferenceTie(teams []TeamRecord, games []GameResult) []Tea
 
 	// If all from same division, use division tiebreakers
 	if allSameDivision {
-		// DEBUG
-		log.Printf("   >>> All teams from same division (%s), deferring to resolveMultiTeamDivisionTie", firstDivision)
-		return resolveMultiTeamDivisionTie(teams, games)
+		return resolveNFLMultiTeamDivisionTie(teams, games)
 	}
 
 	// Step 1: Apply division tiebreaker to get best from each division
-	// DEBUG
-	log.Printf("   >>> Applying division tiebreakers to get best from each division")
-	divGroups := make(map[string][]TeamRecord)
+	divGroups := make(map[string][]NFLTeamRecord)
 
 	for _, team := range teams {
 		divGroups[team.Division] = append(divGroups[team.Division], team)
 	}
 
-	// DEBUG
-	log.Printf("   >>> Found %d divisions in tie", len(divGroups))
-	for div, divTeams := range divGroups {
-		log.Printf("        - Division %s has %d teams", div, len(divTeams))
-		for _, t := range divTeams {
-			log.Printf("            %s", t.TeamAbbr)
-		}
-	}
-
-	var filtered []TeamRecord
-	for div, divTeams := range divGroups {
+	var filtered []NFLTeamRecord
+	for _, divTeams := range divGroups {
 		if len(divTeams) == 1 {
 			filtered = append(filtered, divTeams[0])
-			// DEBUG
-			log.Printf("        - Division %s has single team %s, added to filtered", div, divTeams[0].TeamAbbr)
 		} else {
-			sorted := applyDivisionTiebreakers(divTeams, games)
+			sorted := applyNFLDivisionTiebreakers(divTeams, games)
 			filtered = append(filtered, sorted[0])
-			// DEBUG
-			log.Printf("        - Division %s has multiple teams, added best team %s to filtered", div, sorted[0].TeamAbbr)
 		}
-	}
-
-	// DEBUG
-	log.Printf("   >>> After division tiebreakers, %d teams remain:", len(filtered))
-	for _, t := range filtered {
-		log.Printf("        - %s (%s)", t.TeamAbbr, t.Division)
 	}
 
 	if len(filtered) == 1 {
-		// DEBUG
-		log.Printf("   >>> Only one team after division tiebreakers, returning %s", filtered[0].TeamAbbr)
 		winner := filtered[0]
-		remaining := removeTeam(teams, winner.TeamID)
-		result := []TeamRecord{winner}
+		remaining := removeNFLTeam(teams, winner.TeamID)
+		result := []NFLTeamRecord{winner}
 		if len(remaining) > 0 {
-			result = append(result, resolveMultiTeamConferenceTie(remaining, games)...)
+			result = append(result, resolveNFLMultiTeamConferenceTie(remaining, games)...)
 		}
 		return result
 	}
-
-	// if len(filtered) == 2 {
-	// 	// DEBUG
-	// 	log.Printf("   >>> Two teams after division tiebreakers, deferring to resolveTwoTeamConferenceTie")
-	// 	return resolveTwoTeamConferenceTie(filtered, games)
-	// }
 
 	// Step 2: Head-to-head sweep
-	// DEBUG
-	log.Printf("   >>> Checking for head-to-head sweep among %d teams", len(filtered))
-	sweepWinner := checkHeadToHeadSweep(filtered, games)
+	sweepWinner := checkNFLHeadToHeadSweep(filtered, games)
 	if sweepWinner != nil {
-		// DEBUG
-		log.Printf("   >>> Found head-to-head sweep winner: %s", sweepWinner.TeamAbbr)
-		remaining := removeTeam(teams, sweepWinner.TeamID)
-		// DEBUG
-		log.Printf("   >>> %d teams remain after removing sweep winner", len(remaining))
-		result := []TeamRecord{*sweepWinner}
+		remaining := removeNFLTeam(teams, sweepWinner.TeamID)
+		result := []NFLTeamRecord{*sweepWinner}
 		if len(remaining) > 0 {
-			result = append(result, resolveMultiTeamConferenceTie(remaining, games)...)
+			result = append(result, resolveNFLMultiTeamConferenceTie(remaining, games)...)
 		}
 		return result
 	}
-	// DEBUG
-	log.Printf("   >>> No head-to-head sweep winner found")
 
 	// Step 3: Conference record
-	// DEBUG
-	log.Printf("   >>> Checking conference records among %d teams", len(filtered))
-	confWinner := findBestConferenceRecord(filtered)
+	confWinner := findBestNFLConferenceRecord(filtered)
 	if confWinner != nil {
-		// DEBUG
-		log.Printf("   >>> Found conference record winner: %s", confWinner.TeamAbbr)
-		remaining := removeTeam(teams, confWinner.TeamID)
-		// DEBUG
-		log.Printf("   >>> %d teams remain after removing conference record winner", len(remaining))
-		result := []TeamRecord{*confWinner}
+		remaining := removeNFLTeam(teams, confWinner.TeamID)
+		result := []NFLTeamRecord{*confWinner}
 		if len(remaining) > 0 {
-			result = append(result, resolveMultiTeamConferenceTie(remaining, games)...)
+			result = append(result, resolveNFLMultiTeamConferenceTie(remaining, games)...)
 		}
 		return result
 	}
-	// DEBUG
-	log.Printf("   >>> No conference record winner found")
 
 	// Step 4: Common games (minimum of 4)
-	// DEBUG
-	log.Printf("   >>> Checking common games among %d teams", len(filtered))
-	commonWinner := findBestCommonGamesRecord(filtered, games, 4)
+	commonWinner := findBestNFLCommonGamesRecord(filtered, games, 4)
 	if commonWinner != nil {
-		// DEBUG
-		log.Printf("   >>> Found common games winner: %s", commonWinner.TeamAbbr)
-		remaining := removeTeam(teams, commonWinner.TeamID)
-		// DEBUG
-		log.Printf("   >>> %d teams remain after removing common games winner", len(remaining))
-		result := []TeamRecord{*commonWinner}
+		remaining := removeNFLTeam(teams, commonWinner.TeamID)
+		result := []NFLTeamRecord{*commonWinner}
 		if len(remaining) > 0 {
-			result = append(result, resolveMultiTeamConferenceTie(remaining, games)...)
+			result = append(result, resolveNFLMultiTeamConferenceTie(remaining, games)...)
 		}
 		return result
 	}
-	// DEBUG
-	log.Printf("   >>> No common games winner found")
 
 	// Step 5: Strength of victory
-	// DEBUG
-	log.Printf("   >>> Checking strength of victory among %d teams", len(filtered))
-	if sovWinner := findBestStrengthOfVictory(filtered); sovWinner != nil {
-		// DEBUG
-		log.Printf("   >>> Found strength of victory winner: %s", sovWinner.TeamAbbr)
-		remaining := removeTeam(teams, sovWinner.TeamID)
-		// DEBUG
-		log.Printf("   >>> %d teams remain after removing strength of victory winner", len(remaining))
-		result := []TeamRecord{*sovWinner}
+	if sovWinner := findBestNFLStrengthOfVictory(filtered); sovWinner != nil {
+		remaining := removeNFLTeam(teams, sovWinner.TeamID)
+		result := []NFLTeamRecord{*sovWinner}
 		if len(remaining) > 0 {
-			result = append(result, resolveMultiTeamConferenceTie(remaining, games)...)
+			result = append(result, resolveNFLMultiTeamConferenceTie(remaining, games)...)
 		}
 		return result
 	}
-	// DEBUG
-	log.Printf("   >>> No strength of victory winner found")
 
 	// Step 6: Strength of schedule
-	// DEBUG
-	log.Printf("   >>> Checking strength of schedule among %d teams", len(filtered))
-	if sosWinner := findBestStrengthOfSchedule(filtered); sosWinner != nil {
-		// DEBUG
-		log.Printf("   >>> Found strength of schedule winner: %s", sosWinner.TeamAbbr)
-		remaining := removeTeam(teams, sosWinner.TeamID)
-		// DEBUG
-		log.Printf("   >>> %d teams remain after removing strength of schedule winner", len(remaining))
-		result := []TeamRecord{*sosWinner}
+	if sosWinner := findBestNFLStrengthOfSchedule(filtered); sosWinner != nil {
+		remaining := removeNFLTeam(teams, sosWinner.TeamID)
+		result := []NFLTeamRecord{*sosWinner}
 		if len(remaining) > 0 {
-			result = append(result, resolveMultiTeamConferenceTie(remaining, games)...)
+			result = append(result, resolveNFLMultiTeamConferenceTie(remaining, games)...)
 		}
 		return result
 	}
-	// DEBUG
-	log.Printf("   >>> No strength of schedule winner found")
 
 	// Point differential
-	// DEBUG
-	log.Printf("   >>> Checking point differential among %d teams", len(filtered))
-	if pdWinner := findBestPointDifferential(filtered); pdWinner != nil {
-		// DEBUG
-		log.Printf("   >>> Found point differential winner: %s", pdWinner.TeamAbbr)
-		remaining := removeTeam(teams, pdWinner.TeamID)
-		// DEBUG
-		log.Printf("   >>> %d teams remain after removing point differential winner", len(remaining))
-		result := []TeamRecord{*pdWinner}
+	if pdWinner := findBestNFLPointDifferential(filtered); pdWinner != nil {
+		remaining := removeNFLTeam(teams, pdWinner.TeamID)
+		result := []NFLTeamRecord{*pdWinner}
 		if len(remaining) > 0 {
-			result = append(result, resolveMultiTeamConferenceTie(remaining, games)...)
+			result = append(result, resolveNFLMultiTeamConferenceTie(remaining, games)...)
 		}
 		return result
 	}
-	// DEBUG
-	log.Printf("   >>> No point differential winner found")
 
 	// Points scored
-	if psWinner := findBestPointsScored(filtered); psWinner != nil {
-		remaining := removeTeam(teams, psWinner.TeamID)
-		result := []TeamRecord{*psWinner}
+	if psWinner := findBestNFLPointsScored(filtered); psWinner != nil {
+		remaining := removeNFLTeam(teams, psWinner.TeamID)
+		result := []NFLTeamRecord{*psWinner}
 		if len(remaining) > 0 {
-			result = append(result, resolveMultiTeamConferenceTie(remaining, games)...)
+			result = append(result, resolveNFLMultiTeamConferenceTie(remaining, games)...)
 		}
 		return result
 	}
 
 	// Points allowed
-	if paWinner := findBestPointsAllowed(filtered); paWinner != nil {
-		remaining := removeTeam(teams, paWinner.TeamID)
-		result := []TeamRecord{*paWinner}
+	if paWinner := findBestNFLPointsAllowed(filtered); paWinner != nil {
+		remaining := removeNFLTeam(teams, paWinner.TeamID)
+		result := []NFLTeamRecord{*paWinner}
 		if len(remaining) > 0 {
-			result = append(result, resolveMultiTeamConferenceTie(remaining, games)...)
+			result = append(result, resolveNFLMultiTeamConferenceTie(remaining, games)...)
 		}
 		return result
 	}
@@ -1058,22 +941,22 @@ func resolveMultiTeamConferenceTie(teams []TeamRecord, games []GameResult) []Tea
 	sort.Slice(filtered, func(i, j int) bool {
 		return filtered[i].TeamID < filtered[j].TeamID
 	})
-	
+
 	winner := filtered[0]
-	remaining := removeTeam(teams, winner.TeamID)
-	result := []TeamRecord{winner}
+	remaining := removeNFLTeam(teams, winner.TeamID)
+	result := []NFLTeamRecord{winner}
 	if len(remaining) > 0 {
-		result = append(result, resolveMultiTeamConferenceTie(remaining, games)...)
+		result = append(result, resolveNFLMultiTeamConferenceTie(remaining, games)...)
 	}
 	return result
 }
 
-func findHeadToHeadWinner(teams []TeamRecord, games []GameResult) *TeamRecord {
+func findNFLHeadToHeadWinner(teams []NFLTeamRecord, games []NFLGameResult) *NFLTeamRecord {
 	type h2hRecord struct {
 		teamID int
-		wins int
+		wins   int
 		losses int
-		ties int
+		ties   int
 	}
 
 	records := make(map[int]*h2hRecord)
@@ -1105,7 +988,7 @@ func findHeadToHeadWinner(teams []TeamRecord, games []GameResult) *TeamRecord {
 	var tie bool
 
 	for _, rec := range records {
-		pct := calculateWinPct(rec.wins, rec.losses, rec.ties)
+		pct := calculateNFLWinPct(rec.wins, rec.losses, rec.ties)
 		if pct > bestPct {
 			bestPct = pct
 			bestTeamID = rec.teamID
@@ -1127,13 +1010,13 @@ func findHeadToHeadWinner(teams []TeamRecord, games []GameResult) *TeamRecord {
 	return nil
 }
 
-func findBestDivisionRecord(teams []TeamRecord) *TeamRecord {
+func findBestNFLDivisionRecord(teams []NFLTeamRecord) *NFLTeamRecord {
 	var bestPct float64 = -2.0
-	var bestTeam *TeamRecord
+	var bestTeam *NFLTeamRecord
 	var tie bool
 
 	for i := range teams {
-		pct := calculateWinPct(teams[i].DivisionWins, teams[i].DivisionLosses, teams[i].DivisionTies)
+		pct := calculateNFLWinPct(teams[i].DivisionWins, teams[i].DivisionLosses, teams[i].DivisionTies)
 		if pct > bestPct {
 			bestPct = pct
 			bestTeam = &teams[i]
@@ -1149,13 +1032,13 @@ func findBestDivisionRecord(teams []TeamRecord) *TeamRecord {
 	return bestTeam
 }
 
-func findBestConferenceRecord(teams []TeamRecord) *TeamRecord {
+func findBestNFLConferenceRecord(teams []NFLTeamRecord) *NFLTeamRecord {
 	var bestPct float64 = -2.0
-	var bestTeam *TeamRecord
+	var bestTeam *NFLTeamRecord
 	var tie bool
 
 	for i := range teams {
-		pct := calculateWinPct(teams[i].ConferenceWins, teams[i].ConferenceLosses, teams[i].ConferenceTies)
+		pct := calculateNFLWinPct(teams[i].ConferenceWins, teams[i].ConferenceLosses, teams[i].ConferenceTies)
 		if pct > bestPct {
 			bestPct = pct
 			bestTeam = &teams[i]
@@ -1171,7 +1054,7 @@ func findBestConferenceRecord(teams []TeamRecord) *TeamRecord {
 	return bestTeam
 }
 
-func findBestCommonGamesRecord(teams []TeamRecord, games []GameResult, minGames int) *TeamRecord {
+func findBestNFLCommonGamesRecord(teams []NFLTeamRecord, games []NFLGameResult, minGames int) *NFLTeamRecord {
 	teamIDs := make(map[int]bool)
 	for _, team := range teams {
 		teamIDs[team.TeamID] = true
@@ -1206,9 +1089,9 @@ func findBestCommonGamesRecord(teams []TeamRecord, games []GameResult, minGames 
 
 	type record struct {
 		teamID int
-		wins int
+		wins   int
 		losses int
-		ties int
+		ties   int
 	}
 
 	records := make(map[int]*record)
@@ -1266,7 +1149,7 @@ func findBestCommonGamesRecord(teams []TeamRecord, games []GameResult, minGames 
 	var tie bool
 
 	for _, rec := range records {
-		pct := calculateWinPct(rec.wins, rec.losses, rec.ties)
+		pct := calculateNFLWinPct(rec.wins, rec.losses, rec.ties)
 		if pct > bestPct {
 			bestPct = pct
 			bestTeamID = rec.teamID
@@ -1288,9 +1171,9 @@ func findBestCommonGamesRecord(teams []TeamRecord, games []GameResult, minGames 
 	return nil
 }
 
-func findBestStrengthOfVictory(teams []TeamRecord) *TeamRecord {
+func findBestNFLStrengthOfVictory(teams []NFLTeamRecord) *NFLTeamRecord {
 	var best float64 = -2.0
-	var bestTeam *TeamRecord
+	var bestTeam *NFLTeamRecord
 	var tie bool
 
 	for i := range teams {
@@ -1309,9 +1192,9 @@ func findBestStrengthOfVictory(teams []TeamRecord) *TeamRecord {
 	return bestTeam
 }
 
-func findBestStrengthOfSchedule(teams []TeamRecord) *TeamRecord {
+func findBestNFLStrengthOfSchedule(teams []NFLTeamRecord) *NFLTeamRecord {
 	var best float64 = -2.0
-	var bestTeam *TeamRecord
+	var bestTeam *NFLTeamRecord
 	var tie bool
 
 	for i := range teams {
@@ -1330,9 +1213,9 @@ func findBestStrengthOfSchedule(teams []TeamRecord) *TeamRecord {
 	return bestTeam
 }
 
-func findBestPointDifferential(teams []TeamRecord) *TeamRecord {
+func findBestNFLPointDifferential(teams []NFLTeamRecord) *NFLTeamRecord {
 	var bestDiff int = -1 << 31
-	var bestTeam *TeamRecord
+	var bestTeam *NFLTeamRecord
 	var tie bool
 
 	for i := range teams {
@@ -1352,9 +1235,9 @@ func findBestPointDifferential(teams []TeamRecord) *TeamRecord {
 	return bestTeam
 }
 
-func findBestPointsScored(teams []TeamRecord) *TeamRecord {
+func findBestNFLPointsScored(teams []NFLTeamRecord) *NFLTeamRecord {
 	var best int = -1
-	var bestTeam *TeamRecord
+	var bestTeam *NFLTeamRecord
 	var tie bool
 
 	for i := range teams {
@@ -1373,9 +1256,9 @@ func findBestPointsScored(teams []TeamRecord) *TeamRecord {
 	return bestTeam
 }
 
-func findBestPointsAllowed(teams []TeamRecord) *TeamRecord {
+func findBestNFLPointsAllowed(teams []NFLTeamRecord) *NFLTeamRecord {
 	var best int = 1 << 31
-	var bestTeam *TeamRecord
+	var bestTeam *NFLTeamRecord
 	var tie bool
 
 	for i := range teams {
@@ -1393,8 +1276,6 @@ func findBestPointsAllowed(teams []TeamRecord) *TeamRecord {
 	}
 	return bestTeam
 }
-
-
 
 // func applyDivisionTiebreakers(teams []TeamRecord, games []GameResult) []TeamRecord {
 // 	return sortTeamsWithTiebreakers(teams, games, func(a, b TeamRecord) int {
@@ -1592,22 +1473,22 @@ func findBestPointsAllowed(teams []TeamRecord) *TeamRecord {
 // }
 
 // Helper function to sort teams with multi-team tiebreaker support
-func sortTeamsWithTiebreakers(teams []TeamRecord, games []GameResult, twoTeamCompare func(TeamRecord, TeamRecord) int) []TeamRecord {
+func sortNFLTeamsWithTiebreakers(teams []NFLTeamRecord, games []NFLGameResult, twoTeamCompare func(NFLTeamRecord, NFLTeamRecord) int) []NFLTeamRecord {
 	if len(teams) <= 1 {
 		return teams
 	}
 
 	// Group teams by win percentage
-	pctGroups := make(map[float64][]TeamRecord)
+	pctGroups := make(map[float64][]NFLTeamRecord)
 	for _, team := range teams {
 		pctGroups[team.WinPct] = append(pctGroups[team.WinPct], team)
 	}
 
-	var result []TeamRecord
+	var result []NFLTeamRecord
 
 	// Sort each group
 	for _, group := range pctGroups {
-		if len(group) == 1{
+		if len(group) == 1 {
 			result = append(result, group[0])
 		} else if len(group) == 2 {
 			// Use two-team tiebreakaer
@@ -1618,7 +1499,7 @@ func sortTeamsWithTiebreakers(teams []TeamRecord, games []GameResult, twoTeamCom
 			}
 		} else {
 			// Multi-team tiebreaker
-			sorted := resolveMultiTeamTie(group, games, twoTeamCompare)
+			sorted := resolveNFLMultiTeamTie(group, games, twoTeamCompare)
 			result = append(result, sorted...)
 		}
 	}
@@ -1631,26 +1512,26 @@ func sortTeamsWithTiebreakers(teams []TeamRecord, games []GameResult, twoTeamCom
 	return result
 }
 
-func resolveMultiTeamTie(teams []TeamRecord, games []GameResult, twoTeamCompare func(TeamRecord, TeamRecord) int) []TeamRecord {
+func resolveNFLMultiTeamTie(teams []NFLTeamRecord, games []NFLGameResult, twoTeamCompare func(NFLTeamRecord, NFLTeamRecord) int) []NFLTeamRecord {
 	// Try head-to-head sweep first
-	sweepWinner := checkHeadToHeadSweep(teams, games)
+	sweepWinner := checkNFLHeadToHeadSweep(teams, games)
 	if sweepWinner != nil {
-		remaining := []TeamRecord{}
+		remaining := []NFLTeamRecord{}
 		for _, team := range teams {
 			if team.TeamID != sweepWinner.TeamID {
 				remaining = append(remaining, team)
 			}
 		}
 
-		result := []TeamRecord{*sweepWinner}
+		result := []NFLTeamRecord{*sweepWinner}
 		if len(remaining) > 0 {
-			result = append(result, resolveMultiTeamTie(remaining, games, twoTeamCompare)...)
+			result = append(result, resolveNFLMultiTeamTie(remaining, games, twoTeamCompare)...)
 		}
 		return result
 	}
 
 	// Fall back to sorting with two-team comparisons
-	sorted := make([]TeamRecord, len(teams))
+	sorted := make([]NFLTeamRecord, len(teams))
 	copy(sorted, teams)
 
 	sort.Slice(sorted, func(i, j int) bool {
@@ -1660,7 +1541,7 @@ func resolveMultiTeamTie(teams []TeamRecord, games []GameResult, twoTeamCompare 
 	return sorted
 }
 
-func compareHeadToHead(teams []TeamRecord, games []GameResult) []TeamRecord {
+func compareNFLHeadToHead(teams []NFLTeamRecord, games []NFLGameResult) []NFLTeamRecord {
 	if len(teams) != 2 {
 		return teams
 	}
@@ -1696,15 +1577,15 @@ func compareHeadToHead(teams []TeamRecord, games []GameResult) []TeamRecord {
 
 	// Return winner or 0 if tied/no games
 	if aWins > bWins {
-		return []TeamRecord{teamA}
+		return []NFLTeamRecord{teamA}
 	} else if bWins > aWins {
-		return []TeamRecord{teamB}
+		return []NFLTeamRecord{teamB}
 	}
 
 	return teams
 }
 
-func checkHeadToHeadSweep(teams []TeamRecord, games []GameResult) *TeamRecord {
+func checkNFLHeadToHeadSweep(teams []NFLTeamRecord, games []NFLGameResult) *NFLTeamRecord {
 	for _, candidate := range teams {
 		hasDefeatedAll := true
 
@@ -1750,7 +1631,7 @@ func checkHeadToHeadSweep(teams []TeamRecord, games []GameResult) *TeamRecord {
 	return nil
 }
 
-func compareCommonGames(teams []TeamRecord, games []GameResult, minCommonGames int) []TeamRecord {
+func compareNFLCommonGames(teams []NFLTeamRecord, games []NFLGameResult, minCommonGames int) []NFLTeamRecord {
 	if len(teams) != 2 {
 		return teams
 	}
@@ -1838,20 +1719,20 @@ func compareCommonGames(teams []TeamRecord, games []GameResult, minCommonGames i
 		}
 	}
 
-	aPct := calculateWinPct(aWins, aLosses, aTies)
-	bPct := calculateWinPct(bWins, bLosses, bTies)
+	aPct := calculateNFLWinPct(aWins, aLosses, aTies)
+	bPct := calculateNFLWinPct(bWins, bLosses, bTies)
 
 	if aPct > bPct {
-		return []TeamRecord{teamA}
+		return []NFLTeamRecord{teamA}
 	} else if bPct > aPct {
-		return []TeamRecord{teamB}
+		return []NFLTeamRecord{teamB}
 	}
 
 	return teams
 }
 
-func removeTeam(teams []TeamRecord, teamID int) []TeamRecord {
-	var result []TeamRecord
+func removeNFLTeam(teams []NFLTeamRecord, teamID int) []NFLTeamRecord {
+	var result []NFLTeamRecord
 	for _, team := range teams {
 		if team.TeamID != teamID {
 			result = append(result, team)
@@ -1860,7 +1741,7 @@ func removeTeam(teams []TeamRecord, teamID int) []TeamRecord {
 	return result
 }
 
-func calculateDraftOrder(allTeams []TeamRecord, afc ConferenceStandings, nfc ConferenceStandings) []DraftPick {
+func calculateNFLDraftOrder(allTeams []NFLTeamRecord, afc NFLConferenceStandings, nfc NFLConferenceStandings) []NFLDraftPick {
 	// Get playoff teams (first 7 from each conference)
 	playoffTeamIDs := make(map[int]bool)
 	for _, seed := range afc.PlayoffSeeds {
@@ -1875,7 +1756,7 @@ func calculateDraftOrder(allTeams []TeamRecord, afc ConferenceStandings, nfc Con
 	}
 
 	// Get non-playoff teams
-	var nonPlayoffTeams []TeamRecord
+	var nonPlayoffTeams []NFLTeamRecord
 	for _, team := range allTeams {
 		if !playoffTeamIDs[team.TeamID] {
 			nonPlayoffTeams = append(nonPlayoffTeams, team)
@@ -1883,16 +1764,16 @@ func calculateDraftOrder(allTeams []TeamRecord, afc ConferenceStandings, nfc Con
 	}
 
 	// Sort non-playoff teams by record (worst to best)
-	sortedNonPlayoff := applyDraftOrderTiebreakers(nonPlayoffTeams, []GameResult{}, afc, nfc)
+	sortedNonPlayoff := applyNFLDraftOrderTiebreakers(nonPlayoffTeams, []NFLGameResult{}, afc, nfc)
 
 	// Build draft order
-	draftOrder := []DraftPick{}
+	draftOrder := []NFLDraftPick{}
 	pickNum := 1
 
 	// Picks 1-18: Non-playoff teams
 	for i := len(sortedNonPlayoff) - 1; i >= 0; i-- {
 		team := sortedNonPlayoff[i]
-		draftOrder = append(draftOrder, DraftPick{
+		draftOrder = append(draftOrder, NFLDraftPick{
 			Pick: pickNum,
 			Team: team,
 		})
@@ -1901,7 +1782,7 @@ func calculateDraftOrder(allTeams []TeamRecord, afc ConferenceStandings, nfc Con
 
 	// Picks 19-32: Playoff teams (ordered by seed, worst to best)
 	// TODO: NEEDS TO BE UPDATED AS PLAYOFFS PROGRESS
-	playoffTeams := make([]PlayoffSeed, 0)
+	playoffTeams := make([]NFLPlayoffSeed, 0)
 
 	// Combine both conferences' playoff teams and sort by seed (descending)
 	for _, seed := range afc.PlayoffSeeds {
@@ -1922,7 +1803,7 @@ func calculateDraftOrder(allTeams []TeamRecord, afc ConferenceStandings, nfc Con
 
 	// Add playoff teams to draft order
 	for _, seed := range playoffTeams {
-		draftOrder = append(draftOrder, DraftPick{
+		draftOrder = append(draftOrder, NFLDraftPick{
 			Pick: pickNum,
 			Team: seed.Team,
 		})
@@ -1932,28 +1813,28 @@ func calculateDraftOrder(allTeams []TeamRecord, afc ConferenceStandings, nfc Con
 	return draftOrder
 }
 
-func applyDraftOrderTiebreakers(teams []TeamRecord, games []GameResult, afc ConferenceStandings, nfc ConferenceStandings) []TeamRecord {
+func applyNFLDraftOrderTiebreakers(teams []NFLTeamRecord, games []NFLGameResult, afc NFLConferenceStandings, nfc NFLConferenceStandings) []NFLTeamRecord {
 	if len(teams) <= 1 {
 		return teams
 	}
 
 	// Group teams by win percentage
-	pctGroups := make(map[float64][]TeamRecord)
+	pctGroups := make(map[float64][]NFLTeamRecord)
 	for _, team := range teams {
 		pctGroups[team.WinPct] = append(pctGroups[team.WinPct], team)
 	}
 
-	var result []TeamRecord
+	var result []NFLTeamRecord
 
 	// Sort each group
 	for _, group := range pctGroups {
 		if len(group) == 1 {
 			result = append(result, group[0])
 		} else if len(group) == 2 {
-			sorted := resolveTwoTeamDraftTie(group, games, afc, nfc)
+			sorted := resolveNFLTwoTeamDraftTie(group, games, afc, nfc)
 			result = append(result, sorted...)
 		} else {
-			sorted := resolveMultiTeamDraftTie(group, games, afc, nfc)
+			sorted := resolveNFLMultiTeamDraftTie(group, games, afc, nfc)
 			result = append(result, sorted...)
 		}
 	}
@@ -1966,20 +1847,20 @@ func applyDraftOrderTiebreakers(teams []TeamRecord, games []GameResult, afc Conf
 	return result
 }
 
-func resolveTwoTeamDraftTie(teams []TeamRecord, games []GameResult, afc ConferenceStandings, nfc ConferenceStandings) []TeamRecord {
+func resolveNFLTwoTeamDraftTie(teams []NFLTeamRecord, games []NFLGameResult, afc NFLConferenceStandings, nfc NFLConferenceStandings) []NFLTeamRecord {
 	a, b := teams[0], teams[1]
 
 	// Step 1: Strength of schedule (worse gets earlier pick)
 	if a.StrengthOfSchedule != b.StrengthOfSchedule {
 		if a.StrengthOfSchedule < b.StrengthOfSchedule {
-			return []TeamRecord{a, b}
+			return []NFLTeamRecord{a, b}
 		}
-		return []TeamRecord{b, a}
+		return []NFLTeamRecord{b, a}
 	}
 
 	// If same division, use division rank (lower rank = earlier pick)
 	if a.Division == b.Division {
-		var divTeams []TeamRecord
+		var divTeams []NFLTeamRecord
 		conf := a.Conference
 		div := a.Division
 
@@ -2002,15 +1883,15 @@ func resolveTwoTeamDraftTie(teams []TeamRecord, games []GameResult, afc Conferen
 
 		if aRank != bRank && aRank != -1 && bRank != -1 {
 			if aRank > bRank { // Higher rank number = worse record = earlier pick
-				return []TeamRecord{a, b}
+				return []NFLTeamRecord{a, b}
 			}
-			return []TeamRecord{b, a}
+			return []NFLTeamRecord{b, a}
 		}
 	}
 
 	// If same conference (but different division), use conference rank
 	if a.Conference == b.Conference {
-		var confSeeds []PlayoffSeed
+		var confSeeds []NFLPlayoffSeed
 		if a.Conference == "AFC" {
 			confSeeds = afc.PlayoffSeeds
 		} else {
@@ -2029,38 +1910,38 @@ func resolveTwoTeamDraftTie(teams []TeamRecord, games []GameResult, afc Conferen
 
 		if aRank != bRank && aRank != -1 && bRank != -1 {
 			if aRank > bRank {
-				return []TeamRecord{a, b}
+				return []NFLTeamRecord{a, b}
 			}
-			return []TeamRecord{b, a}
+			return []NFLTeamRecord{b, a}
 		}
 	}
 
 	// Inter-conference tiebreakers (reversed for draft order)
 
 	// Step 1: Head-to-head (if applicable) (loser gets earlier pick)
-	h2hResult := compareHeadToHead(teams, games)
+	h2hResult := compareNFLHeadToHead(teams, games)
 	if len(h2hResult) == 1 {
 		if h2hResult[0].TeamID == a.TeamID {
-			return []TeamRecord{b, a}
+			return []NFLTeamRecord{b, a}
 		}
-		return []TeamRecord{a, b}
+		return []NFLTeamRecord{a, b}
 	}
 
 	// Step 2: Worst win percentage in common games (minimum of 4)
-	commonResults := compareCommonGames(teams, games, 4)
+	commonResults := compareNFLCommonGames(teams, games, 4)
 	if len(commonResults) == 1 {
 		if commonResults[0].TeamID == a.TeamID {
-			return []TeamRecord{b, a}
+			return []NFLTeamRecord{b, a}
 		}
-		return []TeamRecord{a, b}
+		return []NFLTeamRecord{a, b}
 	}
 
 	// Step 3: Strength of victory (lower gets earlier pick)
 	if a.StrengthOfVictory != b.StrengthOfVictory {
 		if a.StrengthOfVictory < b.StrengthOfVictory {
-			return []TeamRecord{a, b}
+			return []NFLTeamRecord{a, b}
 		}
-		return []TeamRecord{b, a}
+		return []NFLTeamRecord{b, a}
 	}
 
 	// Step 4: Worst point differential
@@ -2068,24 +1949,24 @@ func resolveTwoTeamDraftTie(teams []TeamRecord, games []GameResult, afc Conferen
 	bDiff := b.PointsFor - b.PointsAgainst
 	if aDiff != bDiff {
 		if aDiff < bDiff {
-			return []TeamRecord{a, b}
+			return []NFLTeamRecord{a, b}
 		}
-		return []TeamRecord{b, a}
+		return []NFLTeamRecord{b, a}
 	}
 
 	// Coin toss - not implemented, use TeamID for consistency
 	if a.TeamID < b.TeamID {
-		return []TeamRecord{a, b}
+		return []NFLTeamRecord{a, b}
 	}
-	return []TeamRecord{b, a}
+	return []NFLTeamRecord{b, a}
 }
 
-func resolveMultiTeamDraftTie(teams []TeamRecord, games []GameResult, afc ConferenceStandings, nfc ConferenceStandings) []TeamRecord {
+func resolveNFLMultiTeamDraftTie(teams []NFLTeamRecord, games []NFLGameResult, afc NFLConferenceStandings, nfc NFLConferenceStandings) []NFLTeamRecord {
 	if len(teams) == 1 {
 		return teams
 	}
 	if len(teams) == 2 {
-		return resolveTwoTeamDraftTie(teams, games, afc, nfc)
+		return resolveNFLTwoTeamDraftTie(teams, games, afc, nfc)
 	}
 
 	// Check if all same division
@@ -2101,7 +1982,7 @@ func resolveMultiTeamDraftTie(teams []TeamRecord, games []GameResult, afc Confer
 		conf := teams[0].Conference
 		div := teams[0].Division
 
-		var divTeams []TeamRecord
+		var divTeams []NFLTeamRecord
 		if conf == "AFC" {
 			divTeams = afc.Divisions[div]
 		} else {
@@ -2109,7 +1990,7 @@ func resolveMultiTeamDraftTie(teams []TeamRecord, games []GameResult, afc Confer
 		}
 
 		// Sort by division rank
-		var result []TeamRecord
+		var result []NFLTeamRecord
 		for _, divTeam := range divTeams {
 			for _, team := range teams {
 				if team.TeamID == divTeam.TeamID {
@@ -2120,10 +2001,10 @@ func resolveMultiTeamDraftTie(teams []TeamRecord, games []GameResult, afc Confer
 		}
 
 		// Reverse for draft order
-		for i, j := 0, len(result) - 1; i < j; i, j = i + 1, j - 1 {
+		for i, j := 0, len(result)-1; i < j; i, j = i+1, j-1 {
 			result[i], result[j] = result[j], result[i]
 		}
-		
+
 		return result
 	}
 
@@ -2139,7 +2020,7 @@ func resolveMultiTeamDraftTie(teams []TeamRecord, games []GameResult, afc Confer
 
 	// If all same conference, use conference rank
 	if allSameConference {
-		var confSeeds []PlayoffSeed
+		var confSeeds []NFLPlayoffSeed
 		if firstConference == "AFC" {
 			confSeeds = afc.PlayoffSeeds
 		} else {
@@ -2164,41 +2045,41 @@ func resolveMultiTeamDraftTie(teams []TeamRecord, games []GameResult, afc Confer
 
 	// Inter-conference
 	// Group by division
-	divisionGroups := make(map[string][]TeamRecord)
+	divisionGroups := make(map[string][]NFLTeamRecord)
 	for _, team := range teams {
 		key := team.Conference + " " + team.Division
 		divisionGroups[key] = append(divisionGroups[key], team)
 	}
 
 	// Determine lowest-ranked team in each division
-	var divRepresentatives []TeamRecord
+	var divRepresentatives []NFLTeamRecord
 	for _, divTeams := range divisionGroups {
 		if len(divTeams) == 1 {
 			divRepresentatives = append(divRepresentatives, divTeams[0])
 		} else {
-			sorted := applyDivisionTiebreakers(divTeams, games)
-			divRepresentatives = append(divRepresentatives, sorted[len(sorted) - 1])
+			sorted := applyNFLDivisionTiebreakers(divTeams, games)
+			divRepresentatives = append(divRepresentatives, sorted[len(sorted)-1])
 		}
 	}
 
 	// If only 2 teams remain, use two-team inter-conference tiebreakers
 	if len(divRepresentatives) == 2 {
-		return resolveTwoTeamDraftTie(divRepresentatives, games, afc, nfc)
+		return resolveNFLTwoTeamDraftTie(divRepresentatives, games, afc, nfc)
 	}
 
 	// Group remaining teams by conference
-	confGroups := make(map[string][]TeamRecord)
+	confGroups := make(map[string][]NFLTeamRecord)
 	for _, team := range divRepresentatives {
 		confGroups[team.Conference] = append(confGroups[team.Conference], team)
 	}
 
 	// Determine lowest-ranked team in each conference
-	var finalRepresentatives []TeamRecord
+	var finalRepresentatives []NFLTeamRecord
 	for conf, confTeams := range confGroups {
 		if len(confTeams) == 1 {
 			finalRepresentatives = append(finalRepresentatives, confTeams[0])
 		} else {
-			var confSeeds []PlayoffSeed
+			var confSeeds []NFLPlayoffSeed
 			if conf == "AFC" {
 				confSeeds = afc.PlayoffSeeds
 			} else {
@@ -2231,7 +2112,7 @@ func resolveMultiTeamDraftTie(teams []TeamRecord, games []GameResult, afc Confer
 
 	// Now should have max 2 inter-conference teams
 	if len(finalRepresentatives) <= 2 {
-		return resolveTwoTeamDraftTie(finalRepresentatives, games, afc, nfc)
+		return resolveNFLTwoTeamDraftTie(finalRepresentatives, games, afc, nfc)
 	}
 
 	// Fallback: sort by strength of schedule
@@ -2241,7 +2122,7 @@ func resolveMultiTeamDraftTie(teams []TeamRecord, games []GameResult, afc Confer
 	return teams
 }
 
-func calculateWinPct(wins, losses, ties int) float64 {
+func calculateNFLWinPct(wins, losses, ties int) float64 {
 	total := wins + losses + ties
 	if total == 0 {
 		return -1.0 // Treat 0-0 as worse than any actual record
@@ -2249,7 +2130,7 @@ func calculateWinPct(wins, losses, ties int) float64 {
 	return (float64(wins) + 0.5*float64(ties)) / float64(total)
 }
 
-func calculateGamesBack(leader TeamRecord, team TeamRecord) float64 {
+func calculateNFLGamesBack(leader NFLTeamRecord, team NFLTeamRecord) float64 {
 	if leader.TeamID == team.TeamID {
 		return 0.0
 	}

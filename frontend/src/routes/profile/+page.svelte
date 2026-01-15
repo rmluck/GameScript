@@ -357,8 +357,8 @@
                 {#each scenarios as scenario}
                     <div class="bg-primary-900/30 border border-primary-700 rounded-lg p-4 hover:border-primary-500 transition-colors">
                         <div class="flex items-start justify-between mb-1">
-                            <div class="flex-1">
-                                <h3 class="text-base sm:text-lg font-heading font-bold text-neutral mb-1">
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-base sm:text-lg font-heading font-bold text-neutral mb-1 truncate" title={scenario.name}>
                                     {scenario.name}
                                 </h3>
                                 <div class="flex items-center gap-1 text-xs sm:text-sm text-neutral/70">

@@ -27,7 +27,7 @@ func (s *Scheduler) Start() {
 	go s.startNFLScheduler()
 
 	// TODO: NBA scheduler
-	// go s.startNBAScheduler()
+	go s.startNBAScheduler()
 
 	// TODO: CFB scheduler
 	// go s.startCFBScheduler()

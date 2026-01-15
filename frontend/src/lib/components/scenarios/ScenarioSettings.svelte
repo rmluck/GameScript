@@ -28,7 +28,13 @@
                 is_public: isPublic
             });
 
-            dispatch('updated', updated);
+            // Merge updated fields with existing scenario to preserve all data
+            const mergedScenario = {
+                ...scenario,
+                ...updated
+            }
+
+            dispatch('updated', mergedScenario);
             close();
         } catch (err: any) {
             error = err.response?.data?.error || 'Failed to update scenario';

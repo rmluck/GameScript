@@ -1,13 +1,20 @@
 <script lang="ts">
     import { goto } from '$app/navigation'
     import { authStore } from '$lib/stores/auth';
-    import CreateScenarioModal from '$lib/components/scenarios/CreateScenarioModal.svelte'
+    import CreateScenarioModal from '$lib/components/scenarios/CreateScenarioModal.svelte';
+    import ComingSoonModal from '$lib/components/scenarios/ComingSoonModal.svelte';
 
     let showCreateModal = false;
+    let showComingSoonModal = false;
 
     function handleScenarioCreated(event: CustomEvent) {
         const scenario = event.detail;
         goto(`/scenarios/${scenario.id}`);
+    }
+
+    function handleCFBClick(event: Event) {
+        event.preventDefault();
+        showComingSoonModal = true;
     }
 </script>
 
@@ -19,6 +26,11 @@
 <CreateScenarioModal 
     bind:isOpen={showCreateModal} 
     on:created={handleScenarioCreated}
+/>
+
+<ComingSoonModal 
+    bind:isOpen={showComingSoonModal} 
+    feature="College Football"
 />
 
 <div class="text-center px-4 sm:px-6 md:px-8">
@@ -43,7 +55,7 @@
                 href="/scenarios"
                 class="bg-primary-900/60 hover:bg-primary-600 border-2 border-primary-900 hover:border-primary-500 rounded-lg shadow-lg transition-all hover:scale-105 px-6 py-3 font-sans font-semibold text-lg sm:text-xl text-neutral"
             >
-                VIEW MY SCENARIOS
+                VIEW SCENARIOS
             </a>
         {:else}
             <a
@@ -98,10 +110,11 @@
                 <h3 class="font-display text-2xl sm:text-4xl text-neutral  sm:mb-2">NBA</h3>
                 <p class="hidden sm:block font-sans text-neutral text-lg">National Basketball Association</p>
             </a>
-            <a href="/cfb" class="group p-4 sm:p-8 bg-primary-900/60 hover:bg-primary-600 border-2 border-primary-900 hover:border-primary-500 rounded-lg shadow-lg transition-all hover:scale-105">
+            <button on:click={handleCFBClick} class="group p-4 sm:p-8 bg-primary-900/60 hover:bg-primary-600 border-2 border-primary-900 hover:border-primary-500 rounded-lg shadow-lg transition-all hover:scale-105 relative cursor-pointer">
+                <div class="absolute top-2 right-2 bg-yellow-500/90 text-primary-900 text-xs font-sans font-bold px-2 py-1 rounded">SOON</div>
                 <h3 class="font-display text-2xl sm:text-4xl text-neutral  sm:mb-2">CFB</h3>
                 <p class="hidden sm:block font-sans text-neutral text-lg">College Football</p>
-            </a>
+            </button>
         </div>
     </div>
 

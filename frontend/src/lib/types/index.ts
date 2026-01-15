@@ -95,7 +95,7 @@ export interface Pick {
     updated_at: string;
 }
 
-export interface PlayoffSeed {
+export interface NFLPlayoffSeed {
     seed: number;
     team_id: number;
     team_name: string;
@@ -105,43 +105,95 @@ export interface PlayoffSeed {
     losses: number;
     ties: number;
     win_pct: number;
-    is_division_winner: boolean;
-    logo_url: string;
-    team_primary_color: string;
-    team_secondary_color: string;
-    conference_wins: number;
-    conference_losses: number;
-    conference_ties: number;
     division_wins: number;
     division_losses: number;
     division_ties: number;
-    conference_games_back: number;
+    conference_wins: number;
+    conference_losses: number;
+    conference_ties: number;
     division_games_back: number;
-    points_for: number;
-    points_against: number;
-    point_diff: number;
+    conference_games_back: number;
     home_wins: number;
     home_losses: number;
     home_ties: number;
     away_wins: number;
     away_losses: number;
     away_ties: number;
+    points_for: number;
+    points_against: number;
+    point_diff: number;
     strength_of_schedule: number;
     strength_of_victory: number;
+    is_division_winner: boolean;
+    logo_url: string;
+    team_primary_color: string;
+    team_secondary_color: string;
 }
 
-export interface ConferenceStandings {
-    divisions: Record<string, PlayoffSeed[]>; 
-    playoff_seeds: PlayoffSeed[];
+export interface NBAPlayoffSeed {
+    seed: number;
+    team_id: number;
+    team_name: string;
+    team_city: string;
+    team_abbr: string;
+    wins: number;
+    losses: number;
+    win_pct: number;
+    division_wins: number;
+    division_losses: number;
+    conference_wins: number;
+    conference_losses: number;
+    division_games_back: number;
+    conference_games_back: number;
+    home_wins: number;
+    home_losses: number;
+    away_wins: number;
+    away_losses: number;
+    points_for: number;
+    points_against: number;
+    games_with_scores: number;
+    strength_of_schedule: number;
+    strength_of_victory: number;
+    is_division_winner: boolean;
+    logo_url: string;
+    team_primary_color: string;
+    team_secondary_color: string;
 }
 
-export interface Standings {
-    afc: ConferenceStandings;
-    nfc: ConferenceStandings;
-    draft_order: DraftPick[];
+export interface NFLConferenceStandings {
+    divisions: Record<string, NFLPlayoffSeed[]>; 
+    playoff_seeds: NFLPlayoffSeed[];
 }
 
-export interface DraftPick {
+export interface NBAConferenceStandings {
+    divisions: Record<string, NBAPlayoffSeed[]>; 
+    playoff_seeds: NBAPlayoffSeed[];
+}
+
+export interface NFLStandings {
+    afc: NFLConferenceStandings;
+    nfc: NFLConferenceStandings;
+    draft_order: NFLDraftPick[];
+}
+
+export interface NBAStandings {
+    eastern: NBAConferenceStandings;
+    western: NBAConferenceStandings;
+    draft_order: NBADraftPick[];
+}
+
+export interface NFLDraftPick {
+    pick: number;
+    team_id: number;
+    team_name: string;
+    team_abbr: string;
+    record: string;
+    logo_url: string;
+    team_primary_color: string;
+    team_secondary_color: string;
+}
+
+export interface NBADraftPick {
     pick: number;
     team_id: number;
     team_name: string;
@@ -161,11 +213,34 @@ export interface PlayoffState {
     updated_at: string;
 }
 
-export interface PlayoffMatchup {
+export interface PlayoffSeries {
     id: number;
     playoff_state_id: number;
     round: number;
+    series_order: number;
+    conference?: string;
+    higher_seed_team_id: number;
+    lower_seed_team_id: number;
+    higher_seed: number;
+    lower_seed: number;
+    picked_team_id?: number;
+    predicted_higher_seed_wins?: number;
+    predicted_lower_seed_wins?: number;
+    best_of: number;
+    status: 'pending' | 'completed';
+    created_at: string;
+    updated_at: string;
+    higher_seed_team?: Team;
+    lower_seed_team?: Team;
+}
+
+export interface PlayoffMatchup {
+    id: number;
+    playoff_state_id: number;
+    playoff_series_id?: number;
+    round: number;
     matchup_order: number;
+    game_number?: number;
     conference?: string;
     higher_seed_team_id: number;
     lower_seed_team_id: number;
@@ -181,16 +256,34 @@ export interface PlayoffMatchup {
     lower_seed_team?: Team;
 }
 
-export const PLAYOFF_ROUNDS = {
+export const NFL_PLAYOFF_ROUNDS = {
     WILD_CARD: 1,
     DIVISIONAL: 2,
     CONFERENCE: 3,
     SUPER_BOWL: 4,
 } as const;
 
-export const PLAYOFF_ROUND_NAMES: Record<number, string> = {
+export const NBA_PLAYOFF_ROUNDS = {
+    PLAY_IN_A: 1,
+    PLAY_IN_B: 2,
+    CONFERENCE_QUARTERFINALS: 3,
+    CONFERENCE_SEMIFINALS: 4,
+    CONFERENCE_FINALS: 5,
+    NBA_FINALS: 6,
+} as const;
+
+export const NFL_PLAYOFF_ROUND_NAMES: Record<number, string> = {
     1: 'Wild Card',
     2: 'Divisional',
     3: 'Conference Championship',
     4: 'Super Bowl',
 };
+
+export const NBA_PLAYOFF_ROUND_NAMES: Record<number, string> = {
+    1: 'Play-In Tournament A',
+    2: 'Play-In Tournament B',
+    3: 'Conference Quarterfinals',
+    4: 'Conference Semifinals',
+    5: 'Conference Finals',
+    6: 'NBA Finals',
+}

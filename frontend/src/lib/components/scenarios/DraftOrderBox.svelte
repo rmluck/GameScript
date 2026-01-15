@@ -1,14 +1,10 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
-    import type { DraftPick } from '$types';
+    import type { NFLDraftPick, NBADraftPick } from '$types';
 
-    export let draftOrder: DraftPick[];
+    export let draftOrder: NFLDraftPick[] | NBADraftPick[];
 
     const dispatch = createEventDispatcher();
-
-    function formatRecord(record: string): string {
-        return record;
-    }
 
     function handleMouseEnter(e: MouseEvent, primaryColor: string) {
         const target = e.currentTarget as HTMLElement;
@@ -75,7 +71,7 @@
                     <!-- Record -->
                     <div class="text-right">
                         <span class="text-sm font-heading font-bold text-black whitespace-nowrap">
-                            {formatRecord(pick.record)}
+                            {pick.record}
                         </span>
                     </div>
                 </div>

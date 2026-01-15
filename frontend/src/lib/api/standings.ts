@@ -1,9 +1,14 @@
 import { apiClient } from './client';
-import type { Standings } from '$types';
+import type { NFLStandings, NBAStandings } from '$types';
 
 export const standingsAPI = {
-    async getByScenario(scenarioId: number): Promise<Standings> {
-        const response = await apiClient.get<Standings>(`/scenarios/${scenarioId}/standings`);
+    async getByNFLScenario(scenarioId: number): Promise<NFLStandings> {
+        const response = await apiClient.get<NFLStandings>(`/scenarios/${scenarioId}/standings`);
+        return response.data;
+    },
+
+    async getByNBAScenario(scenarioId: number): Promise<NBAStandings> {
+        const response = await apiClient.get<NBAStandings>(`/scenarios/${scenarioId}/standings`);
         return response.data;
     }
 };

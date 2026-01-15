@@ -31,9 +31,9 @@ func main() {
     // Determine filename
     var filename string
     if week > 0 {
-        filename = fmt.Sprintf("database/nfl/schedules/nfl_schedule_%d_week_%d.json", year, week)
+        filename = fmt.Sprintf("database/nba/schedules/nba_schedule_%d-%d_week_%d.json", year, year + 1, week)
     } else {
-        filename = fmt.Sprintf("database/nfl/schedules/nfl_schedule_%d_full.json", year)
+        filename = fmt.Sprintf("database/nba/schedules/nba_schedule_%d-%d_full.json", year, year + 1)
     }
 
     // Open JSON file
@@ -66,7 +66,7 @@ func main() {
     defer db.Close()
 
     // Insert games into database
-    if err := insertNFLGames(db, games); err != nil {
+    if err := insertNBAGames(db, games); err != nil {
         fmt.Printf("Error inserting games: %v", err)
         os.Exit(1)
     }
@@ -74,7 +74,7 @@ func main() {
     fmt.Printf("Successfully imported %d games from %s\n", len(games), filename)
 }
 
-func insertNFLGames(db *database.DB, games []models.Game) error {
+func insertNBAGames(db *database.DB, games []models.Game) error {
     stmt := `
         INSERT INTO games (
             season_id, espn_id, home_team_id, away_team_id, start_time, day_of_week,

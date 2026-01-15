@@ -38,6 +38,9 @@ type ESPNScheduleAPIResponse struct {
 		Competitions []struct {
 			ID string `json:"id"`
 			Date string `json:"date"`
+			Type struct {
+				ID string `json:"id"`
+			} `json:"type"`
 			Venue struct {
 				FullName string `json:"fullName"`
 				Address struct {

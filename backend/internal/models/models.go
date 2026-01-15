@@ -50,7 +50,6 @@ type Game struct {
 	HomeScore		*int      	`json:"home_score"`
 	AwayScore		*int      	`json:"away_score"`
 	Status   		*string   	`json:"status"`
-	IsPostseason	bool      	`json:"is_postseason"`
 	CreatedAt		time.Time 	`json:"created_at"`
 
 	// Temporary fields for ESPN integration (not stored in DB)
@@ -91,11 +90,32 @@ type PlayoffState struct {
 	UpdatedAt		time.Time 	`json:"updated_at"`
 }
 
-type PlayoffMatchup struct {
+type PlayoffSeries struct {
 	ID	   			int       	`json:"id"`
 	PlayoffStateID 	int       	`json:"playoff_state_id"`
 	Round			int       	`json:"round"`
+	SeriesOrder		int       	`json:"series_order"`
+	Conference		*string   	`json:"conference"`
+	HigherSeedTeamID *int     	`json:"higher_seed_team_id"`
+	LowerSeedTeamID *int      	`json:"lower_seed_team_id"`
+	HigherSeed		*int      	`json:"higher_seed"`
+	LowerSeed		*int      	`json:"lower_seed"`
+	PickedTeamID 	*int      	`json:"picked_team_id"`
+	PredictedHigherSeedWins *int     `json:"predicted_higher_seed_wins"`
+	PredictedLowerSeedWins *int      `json:"predicted_lower_seed_wins"`
+	BestOf			*int      	`json:"best_of"`
+	Status 			*string   	`json:"status"`
+	CreatedAt		time.Time 	`json:"created_at"`
+	UpdatedAt		time.Time 	`json:"updated_at"`
+}
+
+type PlayoffMatchup struct {
+	ID	   			int       	`json:"id"`
+	PlayoffStateID 	int       	`json:"playoff_state_id"`
+	PlayoffSeriesID	int       	`json:"playoff_series_id"`
+	Round			int       	`json:"round"`
 	MatchupOrder	int       	`json:"matchup_order"`
+	GameNumber		*int      	`json:"game_number"`
 	Conference		*string   	`json:"conference"`
 	HigherSeedTeamID *int     	`json:"higher_seed_team_id"`
 	LowerSeedTeamID *int      	`json:"lower_seed_team_id"`

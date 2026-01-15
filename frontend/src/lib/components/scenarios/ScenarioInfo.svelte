@@ -152,6 +152,89 @@
                             </ol>
                         </div>
                     </div>
+                {:else if sport === 'NBA'}
+                    <div class="space-y-4">
+                        <div>
+                            <h3 class="text-xl font-heading font-bold text-neutral mb-2">NBA Scenario Rules</h3>
+                            <p class="text-neutral/95">
+                                This scenario allows you to predict the outcomes of NBA games and see how they affect playoff standings.
+                            </p>
+                        </div>
+                        
+                        <div>
+                            <h4 class="text-lg font-sans font-semibold text-neutral mb-2">How to Use</h4>
+                            <ul class="list-disc list-inside space-y-1 text-neutral/95">
+                                <li>Click on team buttons to select a winner</li>
+                                <li>Enter predicted scores for tiebreaker scenarios</li>
+                                <li>Changes are saved automatically</li>
+                                <li>View updated standings in real-time</li>
+                                <li>Simulate playoff scenarios</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h4 class="text-lg font-sans font-semibold text-neutral mb-2">Playoff Seeding</h4>
+                            <ul class="list-disc list-inside space-y-1 text-neutral/95">
+                                <li>Seeds 1-10 represent postseason positions</li>
+                                <li>Seeds 1-6 get automatic playoff berths</li>
+                                <li>Seeds 7-10 participate in single-elimination Play-In Tournament</li>
+                                <li>Playoff series are best-of-7</li>
+                            </ul>
+                        </div>
+
+                        <div class="space-y-3">
+                            <h4 class="text-lg font-sans font-semibold text-neutral mb-2">Tiebreakers</h4>
+
+                            <div class="space-y-2 text-neutral ml-5">
+                                <div>
+                                    <p class="font-semibold text-neutral">Division Winners:</p>
+                                    <ul class="list-disc list-inside space-y-1 ml-4">
+                                        <li>Ties to determine division winners must be broken before any other ties</li>
+                                        <li>When a tie must be broken to determine a division winner, the results of the tie-break shall be used to determine only the division winner, and not for any other purpose</li>
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <p class="font-semibold text-neutral">Multi-Team Tie Breaking Process:</p>
+                                    <ul class="list-disc list-inside space-y-1 ml-4">
+                                        <li><span class="font-semibold">Complete Breaking:</span> If each tied team has a different win percentage or point differential under the applicable criterion, teams are ranked accordingly and no further tiebreakers are needed</li>
+                                        <li><span class="font-semibold">Partial Breaking:</span> If one or more (but not all) teams have different performance under a criterion:
+                                            <ul class="list-circle list-inside ml-6 mt-1">
+                                                <li>Better performing team(s) get higher playoff position(s)</li>
+                                                <li>Remaining tied teams restart the tiebreaker process from the beginning using two-team criteria (if two teams remain) or multi-team criteria (if three or more remain)</li>
+                                            </ul>
+                                        </li>
+                                        <li><span class="font-semibold">Random Drawing:</span> If application of all criteria does not break the tie, playoff positions are determined by random drawing</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h5 class="text-md font-sans font-semibold text-neutral mb-1">Two-Way Tiebreakers</h5>
+                                <p class="text-neutral">In the case of a tie in regular season records involving only two teams, the following criteria will be utilized in the following order:</p>
+                                <ol class="list-decimal list-inside space-y-1 text-neutral/95 ml-5">
+                                    <li>Head-to-head record</li>
+                                    <li>Division winner (this criterion is applied regardless of whether the tied teams are in the same division)</li>
+                                    <li>Division record (only if tied teams are in same division)</li>
+                                    <li>Conference record</li>
+                                    <li>Win percentage vs. teams eligible for postseason in own conference</li>
+                                    <li>Win percentage vs. teams eligible for postseason in opposing conference</li>
+                                    <li>Point differential</li>
+                                </ol>
+                            </div>
+
+                            <h5 class="text-md font-sans font-semibold text-neutral mb-1">Multi-Way Tiebreakers</h5>
+                            <p class="text-neutral">In the case of a tie in regular season records involving more than two teams, the following criteria will be utilized in the following order:</p>
+                            <ol class="list-decimal list-inside space-y-1 text-neutral/95 ml-5">
+                                <li>Division winner (this criterion is applied regardless of whether the tied teams are in the same division)</li>
+                                <li>Head-to-head record among tied teams</li>
+                                <li>Division record (only if all tied teams are in same division)</li>
+                                <li>Conference record</li>
+                                <li>Win percentage vs. teams eligible for postseason in own conference</li>
+                                <li>Point differential</li>
+                            </ol>
+                        </div>
+                    </div>
                 {:else}
                     <div class="space-y-4">
                         <p class="text-neutral/95">

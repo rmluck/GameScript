@@ -1,8 +1,8 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
     import type { PlayoffMatchup } from '$types';
-    import { PLAYOFF_ROUND_NAMES } from '$types';
-    import ConfirmationModal from './ConfirmationModal.svelte';
+    import { NFL_PLAYOFF_ROUND_NAMES } from '$types';
+    import ConfirmationModal from '../scenarios/ConfirmationModal.svelte';
 
     export let matchup: PlayoffMatchup;
     export let hasLaterRounds: boolean = false;
@@ -306,7 +306,7 @@
 {#if showConfirmation}
     <ConfirmationModal
         title="Reset Later Playoff Rounds?"
-        message={`Changing this ${PLAYOFF_ROUND_NAMES[matchup.round]} pick will reset all subsequent playoff rounds and regenerate future matchups. This action cannot be undone.`}
+        message={`Changing this ${NFL_PLAYOFF_ROUND_NAMES[matchup.round]} pick will reset all subsequent playoff rounds and regenerate future matchups. This action cannot be undone.`}
         warningType="playoff"
         confirmText="Change Pick"
         cancelText="Cancel"

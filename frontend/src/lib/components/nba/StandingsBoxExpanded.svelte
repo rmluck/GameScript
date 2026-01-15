@@ -1,29 +1,29 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
-    import type { NFLConferenceStandings, NFLPlayoffSeed } from '$types';
+    import type { NBAConferenceStandings, NBAPlayoffSeed } from '$types';
 
-    export let standings: NFLConferenceStandings;
-    export let conference: 'AFC' | 'NFC';
+    export let standings: NBAConferenceStandings;
+    export let conference: 'East' | 'West';
 
     type ViewMode = 'conference' | 'division';
     export let viewMode: ViewMode = 'conference';
 
     const dispatch = createEventDispatcher();
 
-    $: divisionWinners = standings.playoff_seeds.slice(0, 4);
-    $: wildCardTeams = standings.playoff_seeds.slice(4, 7);
-    $: nonPlayoffTeams = standings.playoff_seeds.slice(7);
+    $: playoffTeams = standings.playoff_seeds.slice(0, 6);
+    $: playInTeams = standings.playoff_seeds.slice(6, 10);
+    $: nonPlayoffTeams = standings.playoff_seeds.slice(10);
 
-    $: orderedDivisions = ['North', 'South', 'East', 'West'].filter(div => 
-        standings.divisions[`${conference} ${div}`]
-    );
+    $: orderedDivisions = conference === "East"
+        ? ['Atlantic', 'Central', 'Southeast'].filter(div => standings.divisions[`${div}`])
+        : ['Northwest', 'Pacific', 'Southwest'].filter(div => standings.divisions[`${div}`]);
 
     $: teamSeedMap = new Map(
         standings.playoff_seeds.map(seed => [seed.team_id, seed.seed])
     );
 
-    function formatRecord(wins: number, losses: number, ties: number): string {
-        return ties > 0 ? `${wins}-${losses}-${ties}` : `${wins}-${losses}`;
+    function formatRecord(wins: number, losses: number): string {
+        return `${wins}-${losses}`;
     }
 
     function formatWinPct(winPct: number): string {
@@ -36,9 +36,15 @@
         return gb.toFixed(1);
     }
 
-    function formatPointDiff(diff: number): string {
-        if (diff > 0) return `+${diff}`;
-        return diff.toString();
+    function formatPoints(points: number, games_with_scores: number): string {
+        const points_average = points / (games_with_scores);
+        return points_average.toFixed(1);
+    }
+
+    function formatPointDiff(pointsFor: number, pointsAgainst: number, gamesWithScores: number): string {
+        const diff_average = (pointsFor - pointsAgainst) / gamesWithScores;
+        if (diff_average > 0) return `+${diff_average.toFixed(1)}`;
+        return diff_average.toFixed(1);
     }
 
     function getTeamSeed(teamId: number): number | undefined {
@@ -61,11 +67,11 @@
         });
     }
 
-    function openTeamModal(team: NFLPlayoffSeed) {
+    function openTeamModal(team: NBAPlayoffSeed) {
         dispatch('openTeamModal', { team });
     }
 
-    function convertToPlayoffSeed(team: any): NFLPlayoffSeed {
+    function convertToPlayoffSeed(team: any): NBAPlayoffSeed {
         return {
             seed: team.seed,
             team_id: team.team_id,
@@ -74,31 +80,26 @@
             team_abbr: team.team_abbr,
             wins: team.wins,
             losses: team.losses,
-            ties: team.ties,
             win_pct: team.win_pct,
+            home_wins: team.home_wins,
+            home_losses: team.home_losses,
+            away_wins: team.away_wins,
+            away_losses: team.away_losses,
+            division_wins: team.division_wins,
+            division_losses: team.division_losses,
+            conference_wins: team.conference_wins,
+            conference_losses: team.conference_losses,
+            division_games_back: team.division_games_back,
+            conference_games_back: team.conference_games_back,
+            points_for: team.points_for,
+            points_against: team.points_against,
+            games_with_scores: team.games_with_scores,
+            strength_of_schedule: team.strength_of_schedule,
+            strength_of_victory: team.strength_of_victory,
             is_division_winner: team.is_division_winner,
             logo_url: team.logo_url,
             team_primary_color: team.team_primary_color,
-            team_secondary_color: team.team_secondary_color,
-            home_wins: team.home_wins,
-            home_losses: team.home_losses,
-            home_ties: team.home_ties,
-            away_wins: team.away_wins,
-            away_losses: team.away_losses,
-            away_ties: team.away_ties,
-            conference_wins: team.conference_wins,
-            conference_losses: team.conference_losses,
-            conference_ties: team.conference_ties,
-            division_wins: team.division_wins,
-            division_losses: team.division_losses,
-            division_ties: team.division_ties,
-            conference_games_back: team.conference_games_back,
-            division_games_back: team.division_games_back,
-            points_for: team.points_for,
-            points_against: team.points_against,
-            point_diff: team.point_diff,
-            strength_of_schedule: team.strength_of_schedule,
-            strength_of_victory: team.strength_of_victory
+            team_secondary_color: team.team_secondary_color
         };
     }
 </script>
@@ -107,7 +108,7 @@
     <!-- Header -->
     <div class="flex items-center justify-between pb-6 mb-4 border-b-2 border-primary-700">
         <h2 class="text-2xl font-heading font-bold uppercase tracking-wide"
-            style="color: {conference === 'AFC' ? '#C8102E' : '#013369'}">
+            style="color: {conference === 'West' ? '#C8102E' : '#013369'}">
             {conference}
         </h2>
 
@@ -136,10 +137,10 @@
     <div class="overflow-x-auto">
         {#if viewMode === 'conference'}
             <div class="space-y-4 min-w-[800px]">
-                <!-- Division Winners (Seeds 1-4) -->
+                <!-- Playoff Teams -->
                 <div>
                     <h3 class="text-lg font-sans font-bold text-primary-700 uppercase tracking-wide mb-2 px-2">
-                        Division Winners
+                        Playoff Teams
                     </h3>
                     
                     <!-- Header Row -->
@@ -154,15 +155,15 @@
                         <div class="col-span-1 text-center" title="Away Record">Away</div>
                         <div class="col-span-1 text-center" title="Games Back">GB</div>
                         <div class="col-span-1 text-center" title="Point Differential">Diff</div>
-                        <div class="col-span-1 text-center" title="Points For">PF</div>
-                        <div class="col-span-1 text-center" title="Points Against">PA</div>
+                        <div class="col-span-1 text-center" title="Points Per Game">PPG</div>
+                        <div class="col-span-1 text-center" title="Opponent Points Per Game">OPP PPG</div>
                         <div class="col-span-1 text-center" title="Strength of Schedule">SOS</div>
                         <div class="col-span-1 text-center" title="Strength of Victory">SOV</div>
                     </div>
 
                     <!-- Data Rows -->
                     <div class="space-y-1 mt-2">
-                        {#each divisionWinners as seed}
+                        {#each playoffTeams as seed}
                             <button class="w-full grid grid-cols-15 gap-1 px-2 py-2 rounded transition-colors cursor-pointer"
                                 on:mouseenter={(e) => handleMouseEnter(e, seed.team_primary_color)}
                                 on:mouseleave={handleMouseLeave}
@@ -187,7 +188,7 @@
                                 </div>
                                 <div class="col-span-1 text-center">
                                     <span class="text-sm font-heading font-bold text-black">
-                                        {formatRecord(seed.wins, seed.losses, seed.ties)}
+                                        {formatRecord(seed.wins, seed.losses)}
                                     </span>
                                 </div>
                                 <div class="col-span-1 text-center">
@@ -197,22 +198,22 @@
                                 </div>
                                 <div class="col-span-1 text-center">
                                     <span class="text-xs font-sans text-black">
-                                        {formatRecord(seed.conference_wins, seed.conference_losses, seed.conference_ties)}
+                                        {formatRecord(seed.conference_wins, seed.conference_losses)}
                                     </span>
                                 </div>
                                 <div class="col-span-1 text-center">
                                     <span class="text-xs font-sans text-black">
-                                        {formatRecord(seed.division_wins, seed.division_losses, seed.division_ties)}
+                                        {formatRecord(seed.division_wins, seed.division_losses)}
                                     </span>
                                 </div>
                                 <div class="col-span-1 text-center">
                                     <span class="text-xs font-sans text-black">
-                                        {formatRecord(seed.home_wins, seed.home_losses, seed.home_ties)}
+                                        {formatRecord(seed.home_wins, seed.home_losses)}
                                     </span>
                                 </div>
                                 <div class="col-span-1 text-center">
                                     <span class="text-xs font-sans text-black">
-                                        {formatRecord(seed.away_wins, seed.away_losses, seed.away_ties)}
+                                        {formatRecord(seed.away_wins, seed.away_losses)}
                                     </span>
                                 </div>
                                 <div class="col-span-1 text-center">
@@ -222,17 +223,17 @@
                                 </div>
                                 <div class="col-span-1 text-center">
                                     <span class="text-sm font-sans text-black">
-                                        {formatPointDiff(seed.point_diff)}
+                                        {formatPointDiff(seed.points_for, seed.points_against, seed.games_with_scores)}
                                     </span>
                                 </div>
                                 <div class="col-span-1 text-center">
                                     <span class="text-sm font-sans text-black">
-                                        {seed.points_for}
+                                        {formatPoints(seed.points_for, seed.games_with_scores)}
                                     </span>
                                 </div>
                                 <div class="col-span-1 text-center">
                                     <span class="text-sm font-sans text-black">
-                                        {seed.points_against}
+                                        {formatPoints(seed.points_against, seed.games_with_scores)}
                                     </span>
                                 </div>
                                 <div class="col-span-1 text-center">
@@ -250,11 +251,11 @@
                     </div>
                 </div>
 
-                <!-- Wild Card -->
-                {#if wildCardTeams.length > 0}
+                <!-- Play-In Teams -->
+                {#if playInTeams.length > 0}
                     <div>
                         <h3 class="text-lg font-sans font-bold text-primary-700 uppercase tracking-wide mb-2 px-2">
-                            Wild Card
+                            Play-In Teams
                         </h3>
                         
                         <!-- Header Row -->
@@ -269,14 +270,14 @@
                             <div class="col-span-1 text-center" title="Away Record">Away</div>
                             <div class="col-span-1 text-center" title="Games Back">GB</div>
                             <div class="col-span-1 text-center" title="Point Differential">Diff</div>
-                            <div class="col-span-1 text-center" title="Points For">PF</div>
-                            <div class="col-span-1 text-center" title="Points Against">PA</div>
+                            <div class="col-span-1 text-center" title="Points Per Game">PPG</div>
+                            <div class="col-span-1 text-center" title="Opponent Points Per Game">OPP PPG</div>
                             <div class="col-span-1 text-center" title="Strength of Schedule">SOS</div>
                             <div class="col-span-1 text-center" title="Strength of Victory">SOV</div>
                         </div>
 
                         <div class="space-y-1 mt-2">
-                            {#each wildCardTeams as seed}
+                            {#each playInTeams as seed}
                                 <button class="w-full grid grid-cols-15 gap-1 px-2 py-2 rounded transition-colors cursor-pointer"
                                     on:mouseenter={(e) => handleMouseEnter(e, seed.team_primary_color)}
                                     on:mouseleave={handleMouseLeave}
@@ -301,7 +302,7 @@
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-sm font-heading font-bold text-black">
-                                            {formatRecord(seed.wins, seed.losses, seed.ties)}
+                                            {formatRecord(seed.wins, seed.losses)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
@@ -311,22 +312,22 @@
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-xs font-sans text-black">
-                                            {formatRecord(seed.conference_wins, seed.conference_losses, seed.conference_ties)}
+                                            {formatRecord(seed.conference_wins, seed.conference_losses)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-xs font-sans text-black">
-                                            {formatRecord(seed.division_wins, seed.division_losses, seed.division_ties)}
+                                            {formatRecord(seed.division_wins, seed.division_losses)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-xs font-sans text-black">
-                                            {formatRecord(seed.home_wins, seed.home_losses, seed.home_ties)}
+                                            {formatRecord(seed.home_wins, seed.home_losses)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-xs font-sans text-black">
-                                            {formatRecord(seed.away_wins, seed.away_losses, seed.away_ties)}
+                                            {formatRecord(seed.away_wins, seed.away_losses)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
@@ -336,17 +337,17 @@
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-sm font-sans text-black">
-                                            {formatPointDiff(seed.point_diff)}
+                                            {formatPointDiff(seed.points_for, seed.points_against, seed.games_with_scores)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-sm font-sans text-black">
-                                            {seed.points_for}
+                                            {formatPoints(seed.points_for, seed.games_with_scores)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-sm font-sans text-black">
-                                            {seed.points_against}
+                                            {formatPoints(seed.points_against, seed.games_with_scores)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
@@ -383,8 +384,8 @@
                             <div class="col-span-1 text-center" title="Away Record">Away</div>
                             <div class="col-span-1 text-center" title="Games Back">GB</div>
                             <div class="col-span-1 text-center" title="Point Differential">Diff</div>
-                            <div class="col-span-1 text-center" title="Points For">PF</div>
-                            <div class="col-span-1 text-center" title="Points Against">PA</div>
+                            <div class="col-span-1 text-center" title="Points Per Game">PPG</div>
+                            <div class="col-span-1 text-center" title="Opponent Points Per Game">OPP PPG</div>
                             <div class="col-span-1 text-center" title="Strength of Schedule">SOS</div>
                             <div class="col-span-1 text-center" title="Strength of Victory">SOV</div>
                         </div>
@@ -415,7 +416,7 @@
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-sm font-heading font-bold text-black">
-                                            {formatRecord(seed.wins, seed.losses, seed.ties)}
+                                            {formatRecord(seed.wins, seed.losses)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
@@ -425,22 +426,22 @@
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-xs font-sans text-black">
-                                            {formatRecord(seed.conference_wins, seed.conference_losses, seed.conference_ties)}
+                                            {formatRecord(seed.conference_wins, seed.conference_losses)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-xs font-sans text-black">
-                                            {formatRecord(seed.division_wins, seed.division_losses, seed.division_ties)}
+                                            {formatRecord(seed.division_wins, seed.division_losses)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-xs font-sans text-black">
-                                            {formatRecord(seed.home_wins, seed.home_losses, seed.home_ties)}
+                                            {formatRecord(seed.home_wins, seed.home_losses)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-xs font-sans text-black">
-                                            {formatRecord(seed.away_wins, seed.away_losses, seed.away_ties)}
+                                            {formatRecord(seed.away_wins, seed.away_losses)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
@@ -450,17 +451,17 @@
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-sm font-sans text-black">
-                                            {formatPointDiff(seed.point_diff)}
+                                            {formatPointDiff(seed.points_for, seed.points_against, seed.games_with_scores)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-sm font-sans text-black">
-                                            {seed.points_for}
+                                            {formatPoints(seed.points_for, seed.games_with_scores)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-sm font-sans text-black">
-                                            {seed.points_against}
+                                            {formatPoints(seed.points_against, seed.games_with_scores)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
@@ -485,12 +486,10 @@
         {#if viewMode === 'division'}
             <div class="space-y-4 min-w-[800px]">
                 {#each orderedDivisions as divisionName}
-                    {@const fullDivisionName = `${conference} ${divisionName}`}
-                    {@const divisionTeams = standings.divisions[fullDivisionName] || []}
-                    
+                    {@const divisionTeams = standings.divisions[divisionName] || []}
                     <div>
                         <h3 class="text-lg font-sans font-bold text-primary-700 uppercase tracking-wide mb-2 px-2">
-                            {conference} {divisionName}
+                            {divisionName}
                         </h3>
 
                         <!-- Header Row -->
@@ -505,8 +504,8 @@
                             <div class="col-span-1 text-center" title="Away Record">Away</div>
                             <div class="col-span-1 text-center" title="Games Back">GB</div>
                             <div class="col-span-1 text-center" title="Point Differential">Diff</div>
-                            <div class="col-span-1 text-center" title="Points For">PF</div>
-                            <div class="col-span-1 text-center" title="Points Against">PA</div>
+                            <div class="col-span-1 text-center" title="Points Per Game">PPG</div>
+                            <div class="col-span-1 text-center" title="Opponent Points Per Game">OPP PPG</div>
                             <div class="col-span-1 text-center" title="Strength of Schedule">SOS</div>
                             <div class="col-span-1 text-center" title="Strength of Victory">SOV</div>
                         </div>
@@ -541,7 +540,7 @@
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-sm font-heading font-bold text-black">
-                                            {formatRecord(team.wins, team.losses, team.ties)}
+                                            {formatRecord(team.wins, team.losses)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
@@ -551,22 +550,22 @@
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-xs font-sans text-black">
-                                            {formatRecord(team.conference_wins, team.conference_losses, team.conference_ties)}
+                                            {formatRecord(team.conference_wins, team.conference_losses)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-xs font-sans text-black">
-                                            {formatRecord(team.division_wins, team.division_losses, team.division_ties)}
+                                            {formatRecord(team.division_wins, team.division_losses)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-xs font-sans text-black">
-                                            {formatRecord(team.home_wins, team.home_losses, team.home_ties)}
+                                            {formatRecord(team.home_wins, team.home_losses)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-xs font-sans text-black">
-                                            {formatRecord(team.away_wins, team.away_losses, team.away_ties)}
+                                            {formatRecord(team.away_wins, team.away_losses)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
@@ -576,17 +575,17 @@
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-sm font-sans text-black">
-                                            {formatPointDiff(team.point_diff)}
+                                            {formatPointDiff(team.points_for, team.points_against, team.games_with_scores)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-sm font-sans text-black">
-                                            {team.points_for}
+                                            {formatPoints(team.points_for, team.games_with_scores)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">
                                         <span class="text-sm font-sans text-black">
-                                            {team.points_against}
+                                            {formatPoints(team.points_against, team.games_with_scores)}
                                         </span>
                                     </div>
                                     <div class="col-span-1 text-center">

@@ -3,9 +3,9 @@
     import { playoffsAPI } from '$lib/api/playoffs';
     import { standingsAPI } from '$lib/api/standings';
     import { gamesAPI } from '$lib/api/games';
-    import type { PlayoffMatchup, PlayoffSeries, PlayoffState, NFLStandings, Game } from '$types';
-    import { NFL_PLAYOFF_ROUND_NAMES } from '$types';
-    
+    import type { PlayoffMatchup, PlayoffSeries, PlayoffState, NBAStandings, Game } from '$types';
+    import { NBA_PLAYOFF_ROUND_NAMES, NBA_PLAYOFF_ROUNDS } from '$types';
+
     import WeekNavigator from '../scenarios/WeekNavigator.svelte';
     import PlayoffGameCard from './PlayoffGameCard.svelte';
 
@@ -16,26 +16,23 @@
 
     const dispatch = createEventDispatcher();
 
-    let matchups: PlayoffMatchup[] = [];
-    let standings: NFLStandings | null = null;
+    let items: (PlayoffMatchup | PlayoffSeries)[] = [];
+    let standings: NBAStandings | null = null;
     let allGames: Game[] = [];
     let loading = true;
     let error = '';
 
-    // Convert round to week for WeekNavigator (Week 19 = Round 1, Week 20 = Round 2, etc.)
-    $: currentWeek = 18 + currentRound;
+    // Convert round to week for WeekNavigator
+    $: currentWeek = 25 + currentRound;
 
-    $: afcMatchups = matchups.filter(m => m.conference === 'AFC');
-    $: nfcMatchups = matchups.filter(m => m.conference === 'NFC');
-    $: superBowlMatchup = currentRound === 4 ? matchups[0] : null;
+    // Determine if current round uses series or single games
+    $: isSeries = currentRound >= NBA_PLAYOFF_ROUNDS.CONFERENCE_QUARTERFINALS;
 
-    // Get bye teams for Wild Card round
-    $: byeTeams = currentRound === 1 && standings ? [
-        standings.afc.playoff_seeds[0], // AFC #1 seed
-        standings.nfc.playoff_seeds[0]  // NFC #1 seed
-    ] : [];
+    $: isCurrentRoundComplete = items.length > 0 && items.every(m => m.picked_team_id != null);
 
-    $: isCurrentRoundComplete = matchups.length > 0 && matchups.every(m => m.picked_team_id != null);
+    $: eastItems = items.filter(m => m.conference === 'Eastern');
+    $: westItems = items.filter(m => m.conference === 'Western');
+    $: finalsItem = currentRound === NBA_PLAYOFF_ROUNDS.NBA_FINALS ? items[0] : null;
 
     onMount(async () => {
         await loadData();
@@ -53,7 +50,7 @@
 
     async function loadStandings() {
         try {
-            standings = await standingsAPI.getByNFLScenario(scenarioId);
+            standings = await standingsAPI.getByNBAScenario(scenarioId);
         } catch (err: any) {
             console.error('Failed to load standings:', err);
         }
@@ -71,8 +68,7 @@
         try {
             loading = true;
             error = '';
-            const items = await playoffsAPI.getMatchups(scenarioId, currentRound);
-            matchups = items.filter((item): item is PlayoffMatchup => !('best_of' in item));
+            items = await playoffsAPI.getMatchups(scenarioId, currentRound) as (PlayoffMatchup | PlayoffSeries)[];
         } catch (err: any) {
             error = err.response?.data?.error || 'Failed to load playoff matchups';
             console.error('Error loading matchups:', err);
@@ -93,35 +89,68 @@
     }
 
     async function handlePickChange(event: CustomEvent<{
-        matchupId: number;
+        itemId?: number;
+        matchupId?: number;
+        isSeries?: boolean;
         pickedTeamId?: number | null;
         predictedHigherScore?: number;
         predictedLowerScore?: number;
+        predictedHigherWins?: number;
+        predictedLowerWins?: number;
     }>) {
         try {
-            const { matchupId, pickedTeamId, predictedHigherScore, predictedLowerScore } = event.detail;
-            
-            // Optimistically update local state first
-            matchups = matchups.map(m => {
-                if (m.id === matchupId) {
-                    return {
-                        ...m,
-                        picked_team_id: pickedTeamId === null ? undefined : pickedTeamId,
-                        predicted_higher_seed_score: predictedHigherScore,
-                        predicted_lower_seed_score: predictedLowerScore
-                    };
+            const {
+                itemId,
+                matchupId,
+                isSeries: isSeriesPick,
+                pickedTeamId,
+                predictedHigherScore,
+                predictedLowerScore,
+                predictedHigherWins,
+                predictedLowerWins
+            } = event.detail;
+
+            const id = itemId || matchupId;
+            if (!id) return;
+
+            // Optimistically update local items
+            items = items.map(item => {
+                if (item.id === id) {
+                    if (isSeriesPick && 'best_of' in item) {
+                        return {
+                            ...item,
+                            picked_team_id: pickedTeamId === undefined ? null : pickedTeamId,
+                            predicted_higher_seed_wins: predictedHigherWins,
+                            predicted_lower_seed_wins: predictedLowerWins
+                        } as PlayoffSeries;
+                    } else {
+                        return {
+                            ...item,
+                            picked_team_id: pickedTeamId === undefined ? null : pickedTeamId,
+                            predicted_higher_seed_score: predictedHigherScore,
+                            predicted_lower_seed_score: predictedLowerScore
+                        } as PlayoffMatchup;
+                    }
                 }
-                return m;
+                return item;
             });
 
-            // Then update on server
-            await playoffsAPI.updatePick(scenarioId, matchupId, {
-                picked_team_id: pickedTeamId === undefined ? null : pickedTeamId,
-                predicted_higher_seed_score: predictedHigherScore,
-                predicted_lower_seed_score: predictedLowerScore
-            });
+            // Update on server
+            if (isSeriesPick) {
+                await playoffsAPI.updatePick(scenarioId, id, {
+                    picked_team_id: pickedTeamId === undefined ? null : pickedTeamId,
+                    predicted_higher_seed_wins: predictedHigherWins,
+                    predicted_lower_seed_wins: predictedLowerWins
+                });
+            } else {
+                await playoffsAPI.updatePick(scenarioId, id, {
+                    picked_team_id: pickedTeamId === undefined ? null : pickedTeamId,
+                    predicted_higher_seed_score: predictedHigherScore,
+                    predicted_lower_seed_score: predictedLowerScore
+                });
+            }
 
-            // Only dispatch pickUpdated (parent will handle reloading standings/playoff state)
+            // Only dispatch pickUpdated (DON'T auto-advance to next round)
             dispatch('pickUpdated');
         } catch (err: any) {
             console.error('Error saving pick:', err);
@@ -140,7 +169,7 @@
             {allGames}
             {playoffState}
             canEnablePlayoffs={false}
-            sportId={1}
+            sportId={2}
             {isCurrentRoundComplete}
             on:weekChanged={handleWeekChange}
         />
@@ -154,41 +183,41 @@
         <div class="text-center py-8">
             <p class="text-red-400 text-lg">{error}</p>
         </div>
-    {:else if matchups.length === 0}
+    {:else if items.length === 0}
         <div class="text-center py-8">
             <p class="text-neutral/70 text-lg">Complete all picks from the previous round to unlock this round.</p>
         </div>
     {:else}
         <!-- Matchups -->
         <div class="mt-4 md:mt-6 space-y-4 md:space-y-6">
-            <!-- Super Bowl (no conferences) -->
-            {#if currentRound === 4 && superBowlMatchup}
+            <!-- NBA Finals (no conferences) -->
+            {#if currentRound === NBA_PLAYOFF_ROUNDS.NBA_FINALS && finalsItem}
                 <div>
                     <h3 class="text-lg sm:text-xl font-heading font-bold text-primary-700 mb-2 md:mb-3 uppercase tracking-wide text-center">
-                        Championship
+                        NBA Finals
                     </h3>
                     
                     <div class="max-w-md mx-auto">
                         <PlayoffGameCard 
-                            matchup={superBowlMatchup}
+                            item={finalsItem}
                             hasLaterRounds={false}
                             on:pickChanged={handlePickChange}
                         />
                     </div>
                 </div>
             {:else}
-                <!-- AFC Conference -->
-                {#if afcMatchups.length > 0}
+                <!-- Eastern Conference -->
+                {#if eastItems.length > 0}
                     <div>
                         <h3 class="text-lg sm:text-xl font-heading font-bold mb-2 md:mb-3 uppercase tracking-wide"
                             style="color: #C8102E">
-                            AFC {NFL_PLAYOFF_ROUND_NAMES[currentRound]}
+                            East {NBA_PLAYOFF_ROUND_NAMES[currentRound]}
                         </h3>
                         
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
-                            {#each afcMatchups as matchup (matchup.id)}
+                            {#each eastItems as item (item.id)}
                                 <PlayoffGameCard 
-                                    {matchup}
+                                    {item}
                                     hasLaterRounds={playoffState.current_round > currentRound}
                                     on:pickChanged={handlePickChange}
                                 />
@@ -197,18 +226,18 @@
                     </div>
                 {/if}
 
-                <!-- NFC Conference -->
-                {#if nfcMatchups.length > 0}
+                <!-- Western Conference -->
+                {#if westItems.length > 0}
                     <div>
                         <h3 class="text-lg sm:text-xl font-heading font-bold mb-2 md:mb-3 uppercase tracking-wide"
                             style="color: #013369">
-                            NFC {NFL_PLAYOFF_ROUND_NAMES[currentRound]}
+                            West {NBA_PLAYOFF_ROUND_NAMES[currentRound]}
                         </h3>
                         
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
-                            {#each nfcMatchups as matchup (matchup.id)}
+                            {#each westItems as item (item.id)}
                                 <PlayoffGameCard 
-                                    {matchup}
+                                    {item}
                                     hasLaterRounds={playoffState.current_round > currentRound}
                                     on:pickChanged={handlePickChange}
                                 />
@@ -216,46 +245,6 @@
                         </div>
                     </div>
                 {/if}
-            {/if}
-
-            <!-- Bye Teams (Wild Card Round Only) -->
-            {#if currentRound === 1 && byeTeams.length > 0}
-                <div class="mt-6 pt-6 border-t-2 border-primary-700">
-                    <h3 class="text-xl font-heading font-bold text-primary-700 mb-3 uppercase tracking-wide">
-                        First Round Bye
-                    </h3>
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        {#each byeTeams as team}
-                            <div class="border-2 rounded-lg p-4"
-                                style="background-color: #{team.team_primary_color}90; border-color: #{team.team_primary_color};">
-                                <div class="flex items-center gap-3">
-                                    {#if team.logo_url}
-                                        <img 
-                                            src={team.logo_url} 
-                                            alt={team.team_abbr}
-                                            class="w-12 h-12 object-contain"
-                                        />
-                                    {/if}
-                                    <div class="flex-1">
-                                        <div
-                                            class="text-sm font-sans font-semibold"
-                                            style="color: #{team.team_primary_color}"
-                                        >
-                                            {team.team_city}
-                                        </div>
-                                        <div
-                                            class="text-lg font-heading font-bold"
-                                            style="color: #{team.team_primary_color}"
-                                        >
-                                            {team.team_name}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {/each}
-                    </div>
-                </div>
             {/if}
         </div>
     {/if}

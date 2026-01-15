@@ -5,9 +5,9 @@
     import { standingsAPI } from '$lib/api/standings';
     import { playoffsAPI } from '$lib/api/playoffs';
     import GamePickerRow from '../scenarios/GamePickerRow.svelte';
-    import type { NFLPlayoffSeed, Game, Pick, PlayoffState } from '$types';
+    import type { NBAPlayoffSeed, Game, Pick, PlayoffState } from '$types';
 
-    export let team: NFLPlayoffSeed;
+    export let team: NBAPlayoffSeed;
     export let scenarioId: number;
     export let seasonId: number;
 
@@ -18,10 +18,7 @@
     let loading = true;
     let error = '';
 
-    let byeWeek: number | null = null;
-    let gamesWithBye: Array<Game | { isByeWeek: true; week: number }> = [];
-
-    let currentTeam: NFLPlayoffSeed = team;
+    let currentTeam: NBAPlayoffSeed = team;
     let teamDivision: string = '';
 
     let playoffState: PlayoffState | null = null;
@@ -41,26 +38,6 @@
             );
 
             await loadTeamDivision();
-
-            // Find bye week
-            const playedWeeks = new Set(teamGames.map(game => game.week));
-            for (let week = 1; week <= 18; week++) {
-                if (!playedWeeks.has(week)) {
-                    byeWeek = week;
-                    break;
-                }
-            }
-
-            // Insert bye week into the schedule
-            if (byeWeek !== null) {
-                gamesWithBye = [
-                    ...teamGames.filter(game => game.week < byeWeek!),
-                    { isByeWeek: true, week: byeWeek },
-                    ...teamGames.filter(game => game.week > byeWeek!)
-                ];
-            } else {
-                gamesWithBye = teamGames;
-            }
         } catch (err: any) {
             error = 'Failed to load team games';
             console.error(err);
@@ -105,12 +82,12 @@
     // Add function to reload team data
     async function reloadTeamData() {
         try {
-            const standings = await standingsAPI.getByNFLScenario(scenarioId);
+            const standings = await standingsAPI.getByNBAScenario(scenarioId);
             
             // Find updated team data in standings
             const allSeeds = [
-                ...standings.afc.playoff_seeds,
-                ...standings.nfc.playoff_seeds
+                ...standings.eastern.playoff_seeds,
+                ...standings.western.playoff_seeds
             ];
             
             const updatedTeam = allSeeds.find(seed => seed.team_id === team.team_id);
@@ -169,8 +146,8 @@
         }
     }
 
-    function formatRecord(wins: number, losses: number, ties: number): string {
-        return ties > 0 ? `${wins}-${losses}-${ties}` : `${wins}-${losses}`;
+    function formatRecord(wins: number, losses: number): string {
+        return `${wins}-${losses}`;
     }
 
     function formatWinPct(winPct: number): string {
@@ -183,9 +160,15 @@
         return gb.toFixed(1);
     }
 
-    function formatPointDiff(diff: number): string {
-        if (diff > 0) return `+${diff}`;
-        return diff.toString();
+    function formatPoints(points: number, games_with_scores: number): string {
+        const points_average = points / (games_with_scores);
+        return points_average.toFixed(1);
+    }
+
+    function formatPointDiff(pointsFor: number, pointsAgainst: number, gamesWithScores: number): string {
+        const diff_average = (pointsFor - pointsAgainst) / gamesWithScores;
+        if (diff_average > 0) return `+${diff_average.toFixed(1)}`;
+        return diff_average.toFixed(1);
     }
 
     function formatDate(dateString: string): string {
@@ -213,16 +196,14 @@
         return isHomeGame(game) ? game.away_team : game.home_team;
     }
 
-    function getGameResult(game: Game): 'win' | 'loss' | 'tie' | 'upcoming' {
+    function getGameResult(game: Game): 'win' | 'loss' | 'upcoming' {
         const pick = picks.get(game.id);
         
         if (pick?.picked_team_id !== undefined && pick.picked_team_id !== null) {
-            if (pick.picked_team_id === 0) return 'tie';
             return pick.picked_team_id === team.team_id ? 'win' : 'loss';
         }
         
         if (game.status === 'final' && game.home_score !== null && game.away_score !== null) {
-            if (game.home_score === game.away_score) return 'tie';
             const teamScore = isHomeGame(game) ? game.home_score : game.away_score;
             const oppScore = isHomeGame(game) ? game.away_score : game.home_score;
             return (teamScore ?? 0) > (oppScore ?? 0) ? 'win' : 'loss';
@@ -296,7 +277,7 @@
                 <div class="rounded-lg p-2 sm:p-3 bg-white/50">
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase">Record</div>
                     <div class="text-sm sm:text-xl font-heading font-bold text-black">
-                        {formatRecord(currentTeam.wins, currentTeam.losses, currentTeam.ties)}
+                        {formatRecord(currentTeam.wins, currentTeam.losses)}
                     </div>
                 </div>
                 <div class="bg-white/50 rounded-lg p-2 sm:p-3">
@@ -307,7 +288,7 @@
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase">Conf Record</div>
                     <div class="flex flex-row items-baseline gap-0.5 sm:gap-1">
                         <div class="text-sm sm:text-xl font-heading font-bold text-black">
-                            {formatRecord(currentTeam.conference_wins, currentTeam.conference_losses, currentTeam.conference_ties)}
+                            {formatRecord(currentTeam.conference_wins, currentTeam.conference_losses)}
                         </div>
                         <div class="text-[10px] sm:text-xs font-sans text-black/60">
                             ({formatGamesBack(currentTeam.conference_games_back)} GB)
@@ -318,7 +299,7 @@
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase">Div Record</div>
                     <div class="flex flex-row items-baseline gap-0.5 sm:gap-1">
                         <div class="text-sm sm:text-xl font-heading font-bold text-black">
-                            {formatRecord(currentTeam.division_wins, currentTeam.division_losses, currentTeam.division_ties)}
+                            {formatRecord(currentTeam.division_wins, currentTeam.division_losses)}
                         </div>
                         <div class="text-[10px] sm:text-xs font-sans text-black/60">
                             ({formatGamesBack(currentTeam.division_games_back)} GB)
@@ -328,13 +309,13 @@
                 <div class="bg-white/50 rounded-lg p-2 sm:p-3">
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase">Home Record</div>
                     <div class="text-sm sm:text-xl font-heading font-bold text-black">
-                        {formatRecord(currentTeam.home_wins, currentTeam.home_losses, currentTeam.home_ties)}
+                        {formatRecord(currentTeam.home_wins, currentTeam.home_losses)}
                     </div>
                 </div>
                 <div class="bg-white/50 rounded-lg p-2 sm:p-3">
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase">Away Record</div>
                     <div class="text-sm sm:text-xl font-heading font-bold text-black">
-                        {formatRecord(currentTeam.away_wins, currentTeam.away_losses, currentTeam.away_ties)}
+                        {formatRecord(currentTeam.away_wins, currentTeam.away_losses)}
                     </div>
                 </div>
                 <div class="bg-white/50 rounded-lg p-2 sm:p-3">
@@ -346,19 +327,19 @@
                 <div class="bg-white/50 rounded-lg p-2 sm:p-3">
                     <div class="text-xs font-sans font-semibold text-black/60 uppercase">Point Diff</div>
                     <div class="text-sm sm:text-xl font-heading font-bold text-black">
-                        {formatPointDiff(currentTeam.point_diff)}
+                        {formatPointDiff(currentTeam.points_for, currentTeam.points_against, currentTeam.games_with_scores)}
                     </div>
                 </div>
                 <div class="bg-white/50 rounded-lg p-2 sm:p-3">
-                    <div class="text-xs font-sans font-semibold text-black/60 uppercase">Points For</div>
+                    <div class="text-xs font-sans font-semibold text-black/60 uppercase">PPG</div>
                     <div class="text-sm sm:text-xl font-heading font-bold text-black">
-                        {currentTeam.points_for}
+                        {formatPoints(currentTeam.points_for, currentTeam.games_with_scores)}
                     </div>
                 </div>
                 <div class="bg-white/50 rounded-lg p-2 sm:p-3">
-                    <div class="text-xs font-sans font-semibold text-black/60 uppercase">Points Against</div>
+                    <div class="text-xs font-sans font-semibold text-black/60 uppercase">Opp PPG</div>
                     <div class="text-sm sm:text-xl font-heading font-bold text-black">
-                        {currentTeam.points_against}
+                        {formatPoints(currentTeam.points_against, currentTeam.games_with_scores)}
                     </div>
                 </div>
                 <div class="bg-white/50 rounded-lg p-2 sm:p-3">
@@ -399,87 +380,50 @@
                 </div>
             {:else}
                 <div class="space-y-2">
-                    {#each gamesWithBye as item ('isByeWeek' in item ? `bye-${item.week}` : item.id)}
-                        {#if 'isByeWeek' in item}
-                            <!-- Bye Week Row -->
-                            <div
-                                class="border-2 rounded-lg transition-colors"
-                                style={`border-color: #${currentTeam.team_primary_color}40; background-color: #${currentTeam.team_primary_color}10;`}
-                                role="region"
-                                on:mouseenter={(e) => e.currentTarget.style.borderColor = `#${currentTeam.team_primary_color}90`}
-                                on:mouseleave={(e) => e.currentTarget.style.borderColor = `#${currentTeam.team_primary_color}40`}
-                            >
-                                <div class="grid grid-cols-3 grid-rows-3">
-                                    <div class="flex items-center justify-left pl-4 pt-4">
-                                        <span class="text-sm font-sans font-semibold text-black">
-                                            Week {item.week}
-                                        </span>
-                                    </div>
-                                    <div></div>
-                                    <div></div>
-                                    
-                                    <div></div>
-                                    <div class="flex items-center justify-center">
-                                        <span class="text-lg font-heading font-bold uppercase tracking-wide"
-                                            style={`color: #${currentTeam.team_primary_color};`}>
-                                            BYE WEEK
-                                        </span>
-                                    </div>
-                                    <div></div>
-                                    
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
+                    {#each teamGames as game (game.id)}
+                        {@const result = getGameResult(game)}
+                        {@const pick = picks.get(game.id)}
+                        {@const isHome = isHomeGame(game)}
+                        
+                        <div
+                            class="border-2 rounded-lg p-4 transition-colors"
+                            style={`border-color: #${currentTeam.team_primary_color}60;`}
+                            on:mouseenter={(e) => e.currentTarget.style.borderColor = `#${currentTeam.team_primary_color}90`}
+                            on:mouseleave={(e) => e.currentTarget.style.borderColor = `#${currentTeam.team_primary_color}60`}
+                            role="region"
+                        >
+                            <!-- Game Header -->
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-sans font-semibold text-black">
+                                        Week {game.week}
+                                    </span>
+                                    <span class="text-xs font-sans text-black/60">
+                                        {formatDate(game.start_time)} • {formatTime(game.start_time)}
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    {#if result === 'win'}
+                                        <span class="px-2 py-1 bg-green-500/20 text-green-700 text-xs font-sans font-bold rounded">W</span>
+                                    {:else if result === 'loss'}
+                                        <span class="px-2 py-1 bg-red-500/20 text-red-700 text-xs font-sans font-bold rounded">L</span>
+                                    {/if}
+                                    <span class="text-xs font-sans text-black/60">
+                                        {isHome ? 'vs' : '@'}
+                                    </span>
                                 </div>
                             </div>
-                        {:else}
-                            {@const game = item}
-                            {@const result = getGameResult(game)}
-                            {@const pick = picks.get(game.id)}
-                            {@const isHome = isHomeGame(game)}
-                            
-                            <div
-                                class="border-2 rounded-lg p-4 transition-colors"
-                                style={`border-color: #${currentTeam.team_primary_color}60;`}
-                                on:mouseenter={(e) => e.currentTarget.style.borderColor = `#${currentTeam.team_primary_color}90`}
-                                on:mouseleave={(e) => e.currentTarget.style.borderColor = `#${currentTeam.team_primary_color}60`}
-                                role="region"
-                            >
-                                <!-- Game Header -->
-                                <div class="flex items-center justify-between mb-3">
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-sm font-sans font-semibold text-black">
-                                            Week {game.week}
-                                        </span>
-                                        <span class="text-xs font-sans text-black/60">
-                                            {formatDate(game.start_time)} • {formatTime(game.start_time)}
-                                        </span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        {#if result === 'win'}
-                                            <span class="px-2 py-1 bg-green-500/20 text-green-700 text-xs font-sans font-bold rounded">W</span>
-                                        {:else if result === 'loss'}
-                                            <span class="px-2 py-1 bg-red-500/20 text-red-700 text-xs font-sans font-bold rounded">L</span>
-                                        {:else if result === 'tie'}
-                                            <span class="px-2 py-1 bg-gray-500/20 text-gray-700 text-xs font-sans font-bold rounded">T</span>
-                                        {/if}
-                                        <span class="text-xs font-sans text-black/60">
-                                            {isHome ? 'vs' : '@'}
-                                        </span>
-                                    </div>
-                                </div>
 
-                                <!-- Game Picker Row (Reusable Component) -->
-                                <GamePickerRow
-                                    {game}
-                                    {pick}
-                                    compact={true}
-                                    sportId={1}
-                                    hasPlayoffs={playoffState?.is_enabled || false}
-                                    on:pickChanged={handlePickChange}
-                                />
-                            </div>
-                        {/if}
+                            <!-- Game Picker Row (Reusable Component) -->
+                            <GamePickerRow
+                                {game}
+                                {pick}
+                                compact={true}
+                                sportId={2}
+                                hasPlayoffs={playoffState?.is_enabled || false}
+                                on:pickChanged={handlePickChange}
+                            />
+                        </div>
                     {/each}
                 </div>
             {/if}

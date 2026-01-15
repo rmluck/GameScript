@@ -16,7 +16,7 @@ func getGamesBySeason(db *database.DB) fiber.Handler {
                 game.home_team_id, game.away_team_id,
                 game.start_time, game.day_of_week, game.week,
                 game.location, game.primetime, game.network,
-                game.home_score, game.away_score, game.status, game.is_postseason,
+                game.home_score, game.away_score, game.status, 
                 ht.id as home_id, ht.abbreviation as home_abbr, ht.city as home_city, ht.name as home_name, ht.conference as home_conference, ht.division as home_division, ht.primary_color as home_primary_color, ht.secondary_color as home_secondary_color, ht.logo_url as home_logo_url, ht.alternate_logo_url as home_alternate_logo_url,
                 at.id as away_id, at.abbreviation as away_abbr, at.city as away_city, at.name as away_name, at.conference as away_conference, at.division as away_division, at.primary_color as away_primary_color, at.secondary_color as away_secondary_color, at.logo_url as away_logo_url, at.alternate_logo_url as away_alternate_logo_url
             FROM games game
@@ -38,14 +38,13 @@ func getGamesBySeason(db *database.DB) fiber.Handler {
             var week, homeScore, awayScore *int
             var espnID, startTime, homeAbbr, homeCity, homeName, homePrimaryColor, homeSecondaryColor, awayAbbr, awayCity, awayName, awayPrimaryColor, awaySecondaryColor string
             var dayOfWeek, location, primetime, network, status, homeConference, homeDivision, homeLogoURL, homeAlternateLogoURL, awayConference, awayDivision, awayLogoURL, awayAlternateLogoURL *string
-            var isPostseason bool
 
             err := rows.Scan(
                 &id, &seasonID, &espnID,
                 &homeTeamID, &awayTeamID,  // ← ADD THESE to Scan
                 &startTime, &dayOfWeek, &week,
                 &location, &primetime, &network,
-                &homeScore, &awayScore, &status, &isPostseason,
+                &homeScore, &awayScore, &status, 
                 &homeTeamID, &homeAbbr, &homeCity, &homeName, &homeConference, &homeDivision, &homePrimaryColor, &homeSecondaryColor, &homeLogoURL, &homeAlternateLogoURL,
                 &awayTeamID, &awayAbbr, &awayCity, &awayName, &awayConference, &awayDivision, &awayPrimaryColor, &awaySecondaryColor, &awayLogoURL, &awayAlternateLogoURL,
             )
@@ -57,8 +56,8 @@ func getGamesBySeason(db *database.DB) fiber.Handler {
                 "id": id,
                 "season_id": seasonID,
                 "espn_id": espnID,
-                "home_team_id": homeTeamID,  // ← ADD THIS
-                "away_team_id": awayTeamID,  // ← ADD THIS
+                "home_team_id": homeTeamID,
+                "away_team_id": awayTeamID,
                 "start_time": startTime,
                 "day_of_week": dayOfWeek,
                 "week": week,
@@ -68,7 +67,6 @@ func getGamesBySeason(db *database.DB) fiber.Handler {
                 "home_score": homeScore,
                 "away_score": awayScore,
                 "status": status,
-                "is_postseason": isPostseason,
                 "home_team": map[string]interface{}{
                     "id": homeTeamID,
                     "abbreviation": homeAbbr,
@@ -111,7 +109,7 @@ func getGamesByWeek(db *database.DB) fiber.Handler {
                 game.home_team_id, game.away_team_id,
                 game.start_time, game.day_of_week, game.week,
                 game.location, game.primetime, game.network,
-                game.home_score, game.away_score, game.status, game.is_postseason,
+                game.home_score, game.away_score, game.status, 
                 ht.id as home_id, ht.abbreviation as home_abbr, ht.city as home_city, ht.name as home_name, ht.conference as home_conference, ht.division as home_division, ht.primary_color as home_primary_color, ht.secondary_color as home_secondary_color, ht.logo_url as home_logo_url, ht.alternate_logo_url as home_alternate_logo_url,
                 at.id as away_id, at.abbreviation as away_abbr, at.city as away_city, at.name as away_name, at.conference as away_conference, at.division as away_division, at.primary_color as away_primary_color, at.secondary_color as away_secondary_color, at.logo_url as away_logo_url, at.alternate_logo_url as away_alternate_logo_url
             FROM games game
@@ -133,14 +131,13 @@ func getGamesByWeek(db *database.DB) fiber.Handler {
             var week, homeScore, awayScore *int
             var espnID, startTime, homeAbbr, homeCity, homeName, homePrimaryColor, homeSecondaryColor, awayAbbr, awayCity, awayName, awayPrimaryColor, awaySecondaryColor string
             var dayOfWeek, location, primetime, network, status, homeConference, homeDivision, homeLogoURL, homeAlternateLogoURL, awayConference, awayDivision, awayLogoURL, awayAlternateLogoURL *string
-            var isPostseason bool
 
             err := rows.Scan(
                 &id, &seasonID, &espnID,
                 &homeTeamID, &awayTeamID,  // ← ADD THESE
                 &startTime, &dayOfWeek, &week,
                 &location, &primetime, &network,
-                &homeScore, &awayScore, &status, &isPostseason,
+                &homeScore, &awayScore, &status, 
                 &homeTeamID, &homeAbbr, &homeCity, &homeName, &homeConference, &homeDivision, &homePrimaryColor, &homeSecondaryColor, &homeLogoURL, &homeAlternateLogoURL,
                 &awayTeamID, &awayAbbr, &awayCity, &awayName, &awayConference, &awayDivision, &awayPrimaryColor, &awaySecondaryColor, &awayLogoURL, &awayAlternateLogoURL,
             )
@@ -163,7 +160,6 @@ func getGamesByWeek(db *database.DB) fiber.Handler {
                 "home_score": homeScore,
                 "away_score": awayScore,
                 "status": status,
-                "is_postseason": isPostseason,
                 "home_team": map[string]interface{}{
                     "id": homeTeamID,
                     "abbreviation": homeAbbr,
@@ -205,7 +201,7 @@ func getGamesByTeam(db *database.DB) fiber.Handler {
                 game.home_team_id, game.away_team_id,
                 game.start_time, game.day_of_week, game.week,
                 game.location, game.primetime, game.network,
-                game.home_score, game.away_score, game.status, game.is_postseason,
+                game.home_score, game.away_score, game.status, 
                 ht.id as home_id, ht.abbreviation as home_abbr, ht.city as home_city, ht.name as home_name, ht.conference as home_conference, ht.division as home_division, ht.primary_color as home_primary_color, ht.secondary_color as home_secondary_color, ht.logo_url as home_logo_url, ht.alternate_logo_url as home_alternate_logo_url,
                 at.id as away_id, at.abbreviation as away_abbr, at.city as away_city, at.name as away_name, at.conference as away_conference, at.division as away_division, at.primary_color as away_primary_color, at.secondary_color as away_secondary_color, at.logo_url as away_logo_url, at.alternate_logo_url as away_alternate_logo_url
             FROM games game
@@ -227,14 +223,13 @@ func getGamesByTeam(db *database.DB) fiber.Handler {
             var week, homeScore, awayScore *int
             var espnID, startTime, homeAbbr, homeCity, homeName, homePrimaryColor, homeSecondaryColor, awayAbbr, awayCity, awayName, awayPrimaryColor, awaySecondaryColor string
             var dayOfWeek, location, primetime, network, status, homeConference, homeDivision, homeLogoURL, homeAlternateLogoURL, awayConference, awayDivision, awayLogoURL, awayAlternateLogoURL *string
-            var isPostseason bool
 
             err := rows.Scan(
                 &id, &seasonID, &espnID,
                 &homeTeamID, &awayTeamID,  // ← ADD THESE
                 &startTime, &dayOfWeek, &week,
                 &location, &primetime, &network,
-                &homeScore, &awayScore, &status, &isPostseason,
+                &homeScore, &awayScore, &status, 
                 &homeTeamID, &homeAbbr, &homeCity, &homeName, &homeConference, &homeDivision, &homePrimaryColor, &homeSecondaryColor, &homeLogoURL, &homeAlternateLogoURL,
                 &awayTeamID, &awayAbbr, &awayCity, &awayName, &awayConference, &awayDivision, &awayPrimaryColor, &awaySecondaryColor, &awayLogoURL, &awayAlternateLogoURL,
             )
@@ -257,7 +252,6 @@ func getGamesByTeam(db *database.DB) fiber.Handler {
                 "home_score": homeScore,
                 "away_score": awayScore,
                 "status": status,
-                "is_postseason": isPostseason,
                 "home_team": map[string]interface{}{
                     "id": homeTeamID,
                     "abbreviation": homeAbbr,
@@ -299,7 +293,7 @@ func getGame(db *database.DB) fiber.Handler {
                 game.home_team_id, game.away_team_id,
                 game.start_time, game.day_of_week, game.week,
                 game.location, game.primetime, game.network,
-                game.home_score, game.away_score, game.status, game.is_postseason,
+                game.home_score, game.away_score, game.status, 
                 ht.id as home_id, ht.abbreviation as home_abbr, ht.city as home_city, ht.name as home_name, ht.conference as home_conference, ht.division as home_division, ht.primary_color as home_primary_color, ht.secondary_color as home_secondary_color, ht.logo_url as home_logo_url, ht.alternate_logo_url as home_alternate_logo_url,
                 at.id as away_id, at.abbreviation as away_abbr, at.city as away_city, at.name as away_name, at.conference as away_conference, at.division as away_division, at.primary_color as away_primary_color, at.secondary_color as away_secondary_color, at.logo_url as away_logo_url, at.alternate_logo_url as away_alternate_logo_url
             FROM games game
@@ -312,14 +306,13 @@ func getGame(db *database.DB) fiber.Handler {
         var week, homeScore, awayScore *int
         var espnID, startTime, homeAbbr, homeCity, homeName, homePrimaryColor, homeSecondaryColor, awayAbbr, awayCity, awayName, awayPrimaryColor, awaySecondaryColor string
         var dayOfWeek, location, primetime, network, status, homeConference, homeDivision, homeLogoURL, homeAlternateLogoURL, awayConference, awayDivision, awayLogoURL, awayAlternateLogoURL *string
-        var isPostseason bool
 
         err := db.Conn.QueryRow(query, gameID).Scan(
             &id, &seasonID, &espnID,
             &homeTeamID, &awayTeamID,  // ← ADD THESE
             &startTime, &dayOfWeek, &week,
             &location, &primetime, &network,
-            &homeScore, &awayScore, &status, &isPostseason,
+            &homeScore, &awayScore, &status, 
             &homeTeamID, &homeAbbr, &homeCity, &homeName, &homeConference, &homeDivision, &homePrimaryColor, &homeSecondaryColor, &homeLogoURL, &homeAlternateLogoURL,
             &awayTeamID, &awayAbbr, &awayCity, &awayName, &awayConference, &awayDivision, &awayPrimaryColor, &awaySecondaryColor, &awayLogoURL, &awayAlternateLogoURL,
         )
@@ -342,7 +335,6 @@ func getGame(db *database.DB) fiber.Handler {
             "home_score": homeScore,
             "away_score": awayScore,
             "status": status,
-            "is_postseason": isPostseason,
             "home_team": map[string]interface{}{
                 "id": homeTeamID,
                 "abbreviation": homeAbbr,

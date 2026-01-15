@@ -1,13 +1,13 @@
 import type { Game } from '$types';
 
-export interface NFLWeekDateRange {
+export interface NBAWeekDateRange {
     week: number;
     startDate: Date;
     endDate: Date;
 }
 
-export function getNFLWeekDateRangesFromGames(allGames: Game[]): Map<number, NFLWeekDateRange> {
-    const weekRanges = new Map<number, NFLWeekDateRange>();
+export function getNBAWeekDateRangesFromGames(allGames: Game[]): Map<number, NBAWeekDateRange> {
+    const weekRanges = new Map<number, NBAWeekDateRange>();
     
     // Group games by week
     const gamesByWeek = new Map<number, Date[]>();
@@ -27,16 +27,16 @@ export function getNFLWeekDateRangesFromGames(allGames: Game[]): Map<number, NFL
         // Find the earliest game date for this week
         const earliestGame = new Date(Math.min(...dates.map(d => d.getTime())));
         
-        // Find the Tuesday before (or on) the earliest game
+        // Find the Monday before (or on) the earliest game
         const startDate = new Date(earliestGame);
         const dayOfWeek = startDate.getDay();
-        const daysToSubtract = (dayOfWeek + 5) % 7; // Days back to Tuesday
+        const daysToSubtract = (dayOfWeek + 6) % 7; // Days back to Monday
         startDate.setDate(startDate.getDate() - daysToSubtract);
         startDate.setHours(0, 0, 0, 0);
         
-        // End date is the following Monday
+        // End date is the following Sunday
         const endDate = new Date(startDate);
-        endDate.setDate(endDate.getDate() + 6); // Tuesday + 6 days = Monday
+        endDate.setDate(endDate.getDate() + 6); // Monday + 6 days = Sunday
         endDate.setHours(23, 59, 59, 999);
         
         weekRanges.set(week, {
@@ -49,26 +49,26 @@ export function getNFLWeekDateRangesFromGames(allGames: Game[]): Map<number, NFL
     return weekRanges;
 }
 
-export function formatNFLDateRange(startDate: Date, endDate: Date): string {
+export function formatNBADateRange(startDate: Date, endDate: Date): string {
     const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
     const start = startDate.toLocaleDateString('en-US', options);
     const end = endDate.toLocaleDateString('en-US', options);
     return `${start} - ${end}`;
 }
 
-export function getCurrentNFLWeekFromGames(allGames: Game[]): number {
+export function getCurrentNBAWeekFromGames(allGames: Game[]): number {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     
-    const weekRanges = getNFLWeekDateRangesFromGames(allGames);
+    const weekRanges = getNBAWeekDateRangesFromGames(allGames);
     
     // Check each week to find where current date falls
-    for (let week = 1; week <= 18; week++) {
+    for (let week = 1; week <= 25; week++) {
         const range = weekRanges.get(week);
         if (!range) continue;
         
         // Check if we're currently in this week's range
-        // Week starts on Tuesday and ends on Monday night
+        // Week starts on Monday and ends on Sunday night
         if (now >= range.startDate && now <= range.endDate) {
             return week;
         }
@@ -76,7 +76,7 @@ export function getCurrentNFLWeekFromGames(allGames: Game[]): number {
     
     // If we're past all weeks, check if we're between weeks
     // Return the next upcoming week that hasn't started yet
-    for (let week = 1; week <= 18; week++) {
+    for (let week = 1; week <= 25; week++) {
         const range = weekRanges.get(week);
         if (!range) continue;
         

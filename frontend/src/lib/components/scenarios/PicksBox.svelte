@@ -23,6 +23,7 @@
     let allTeams: Team[] = [];
     let byeTeams: Team[] = [];
     let seasonId: number | null = null;
+    let sportId: number | null = null;
     let loading = true;
     let error = '';
 
@@ -36,7 +37,9 @@
     // Filter games when week changes
     $: if (currentWeek && allGames.length > 0) {
         games = allGames.filter(game => game.week === currentWeek);
-        calculateByeTeams();
+        if (sportId === 1) {
+            calculateByeTeams();
+        }
     }
 
     async function loadData() {
@@ -46,6 +49,7 @@
             
             const scenario = await scenariosAPI.getById(scenarioId);
             seasonId = scenario.season_id;
+            sportId = scenario.sport_id;
 
             // Load all teams
             allTeams = await teamsAPI.getBySeason(seasonId);
@@ -57,7 +61,9 @@
             games = allGames.filter(game => game.week === currentWeek);
             
             await loadPicks();
-            calculateByeTeams();
+            if (sportId === 1) {
+                calculateByeTeams();
+            }
         } catch (err: any) {
             error = err.response?.data?.error || 'Failed to load games';
             console.error('Error loading data:', err);
@@ -101,10 +107,15 @@
             grouped.get(day)!.push(game);
         });
 
-        const dayOrder = ['Thursday', 'Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday'];
+        let dayOrder: string[] = [];
+        if (sportId === 1) {
+            dayOrder = ['Thursday', 'Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday'];
+        } else if (sportId === 2) {
+            dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        }
         const sortedMap = new Map<string, Game[]>();
         
-        dayOrder.forEach(day => {
+        dayOrder.forEach((day: string) => {
             if (grouped.has(day)) {
                 sortedMap.set(day, grouped.get(day)!);
             }
@@ -163,15 +174,15 @@
 
 <div class="bg-neutral border-2 border-primary-700 rounded-lg p-3 sm:p-4 md:p-6 w-full max-w-full">
     <!-- Week Navigator -->
-    {#if allGames.length > 0}
-        <WeekNavigator 
-            {currentWeek}
-            {allGames}
-            {playoffState}
-            {canEnablePlayoffs}
-            on:weekChanged={handleWeekChange}
-        />
-    {/if}
+    <WeekNavigator 
+        {currentWeek}
+        {allGames}
+        {playoffState}
+        {canEnablePlayoffs}
+        sportId={sportId}
+        isCurrentRoundComplete={false}
+        on:weekChanged={handleWeekChange}
+    />
 
     {#if loading}
         <div class="flex items-center justify-center py-12">
@@ -198,6 +209,7 @@
                         {#each dayGames as game (game.id)}
                             <GameCard 
                                 {game}
+                                sportId={sportId}
                                 pick={picks.get(game.id)}
                                 hasPlayoffs={playoffState?.is_enabled || false}
                                 on:pickChanged={handlePickChange}

@@ -10,6 +10,8 @@ import (
     "github.com/golang-jwt/jwt/v5"
 )
 
+// NEED TO FIX: Update to claim started scenario from non-user when logging in/signing up
+
 type Claims struct {
     UserID   int    `json:"user_id"`
     Email    string `json:"email"`

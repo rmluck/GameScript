@@ -3,8 +3,10 @@
     import { authStore } from '$stores/auth';
     import { onMount } from 'svelte';
     import { authAPI } from '$lib/api/auth';
+    import ComingSoonModal from "$lib/components/scenarios/ComingSoonModal.svelte";
 
     let mobileMenuOpen = false;
+    let showComingSoonModal=false;
 
     onMount(async () => {
         // Validate token on mount
@@ -26,7 +28,18 @@
     function closeMobileMenu() {
         mobileMenuOpen = false;
     }
+
+    function handleCFBClick(event: Event) {
+        event.preventDefault();
+        showComingSoonModal = true;
+        closeMobileMenu();
+    }
 </script>
+
+<ComingSoonModal 
+    bind:isOpen={showComingSoonModal} 
+    feature="College Football"
+/>
 
 <div class="min-h-screen bg-linear-to-br from-primary-975 to-primary-950 flex flex-col">
     <nav class="bg-primary-900/30 shadow-md">
@@ -49,12 +62,12 @@
                         >
                             NBA
                         </a>
-                        <a
-                            href="/cfb"
-                            class="inline-flex items-center px-1 pt-1 font-sans font-semibold text-lg text-neutral hover:text-primary-400 transition-colors duration-200"
+                        <button
+                            on:click={handleCFBClick}
+                            class="inline-flex items-center px-1 pt-1 font-sans font-semibold text-lg text-neutral hover:text-primary-400 transition-colors duration-200 cursor-pointer relative"
                         >
                             CFB
-                        </a>
+                        </button>
                     </div>
                 </div>
                 <div class="flex items-center">
@@ -149,13 +162,12 @@
                     >
                         NBA
                     </a>
-                    <a
-                        href="/cfb"
-                        on:click={closeMobileMenu}
-                        class="block px-3 py-2 rounded-md font-sans font-semibold text-base text-neutral hover:text-primary-400 hover:bg-primary-800/30 transition-colors duration-200"
+                    <button
+                        on:click={handleCFBClick}
+                        class="w-full text-left px-3 py-2 rounded-md font-sans font-semibold text-base text-neutral hover:text-primary-400 hover:bg-primary-800/30 transition-colors duration-200 cursor-pointer"
                     >
                         CFB
-                    </a>
+                    </button>
                 </div>
 
                 <!-- Divider -->

@@ -6,6 +6,7 @@
     export let game: Game;
     export let pick: Pick | undefined = undefined;
     export let hasPlayoffs: boolean = false;
+    export let sportId: number | null = null;
 
     const dispatch = createEventDispatcher();
 
@@ -16,7 +17,7 @@
     let showHomeTeamName = false;
     let showConfirmation = false;
     let pendingAction: (() => void) | null = null;
-    
+
     // References for positioning fixed tooltips
     let infoButton: HTMLButtonElement;
     let awayButton: HTMLButtonElement;
@@ -396,18 +397,20 @@
             </button>
 
             <!-- Tie Button -->
-            <button
-                on:click={selectTie}
-                class="px-1.5 py-0.5 rounded border text-xs font-sans font-semibold transition-all cursor-pointer"
-                class:bg-primary-600={highlightTieButton}
-                class:border-primary-500={highlightTieButton}
-                class:text-neutral={highlightTieButton}
-                class:bg-transparent={!highlightTieButton}
-                class:border-primary-600={!highlightTieButton}
-                class:hover:border-primary-400={!highlightTieButton}
-            >
-                TIE
-            </button>
+             {#if sportId === 1}
+                <button
+                    on:click={selectTie}
+                    class="px-1.5 py-0.5 rounded border text-xs font-sans font-semibold transition-all cursor-pointer"
+                    class:bg-primary-600={highlightTieButton}
+                    class:border-primary-500={highlightTieButton}
+                    class:text-neutral={highlightTieButton}
+                    class:bg-transparent={!highlightTieButton}
+                    class:border-primary-600={!highlightTieButton}
+                    class:hover:border-primary-400={!highlightTieButton}
+                >
+                    TIE
+                </button>
+            {/if}
         </div>
 
         <!-- Home Team Section (Team Button + Score) -->

@@ -85,12 +85,12 @@ func (c *Client) FetchNFLSchedule(year int, week int) ([]models.Game, error) {
 		}
 
 		// Parse primetime info
-		primetime := determinePrimetime(gameTimePST, location)
+		primetime := determineNFLPrimetime(gameTimePST, location)
 
 		// Parse broadcasts
 		var network string
 		if len(competition.Broadcasts) > 0 {
-			network = parseBroadcast(competition.Broadcasts[0].Names)
+			network = parseNFLBroadcast(competition.Broadcasts[0].Names)
 		}
 
 		// Determine game status
@@ -111,7 +111,6 @@ func (c *Client) FetchNFLSchedule(year int, week int) ([]models.Game, error) {
 			Primetime: 			&primetime,
 			Status:    			&status,
 			Network: 			&network,
-			IsPostseason: 		week > 18,
 			HomeTeamESPNID: 	&homeTeamID,
 			AwayTeamESPNID: 	&awayTeamID,
 		}
@@ -133,18 +132,17 @@ func (c *Client) FetchEntireNFLSeason(year int) ([]models.Game, error) {
 			fmt.Printf("Error fetching week %d: %v\n", week, err)
 			continue
 		}
+
 		allGames = append(allGames, weekGames...)
 
 		// Be polite to the API
 		time.Sleep(500 * time.Millisecond)
 	}
 
-	// TODO: Add postseason weeks if needed
-
 	return allGames, nil
 }
 
-func determinePrimetime(gameTime time.Time, location string) string {
+func determineNFLPrimetime(gameTime time.Time, location string) string {
 	var labels []string
 
 	// Get Pacific time components
@@ -219,7 +217,7 @@ func determinePrimetime(gameTime time.Time, location string) string {
 	return result
 }
 
-func parseBroadcast(broadcast []string) string {
+func parseNFLBroadcast(broadcast []string) string {
     // Define the contains logic as a closure
     contains := func(slice []string, item string) bool {
         for _, s := range slice {

@@ -72,11 +72,12 @@ func SetupRoutes(app *fiber.App, db *database.DB, scheduler *scheduler.Scheduler
 	playoffs.Get("/scenarios/:scenario_id/rounds/:round", getPlayoffMatchups(db))
 	playoffs.Put("/scenarios/:scenario_id/matchups/:matchup_id", updatePlayoffPick(db))
 	playoffs.Delete("/scenarios/:scenario_id/matchups/:matchup_id", deletePlayoffPick(db))
+	playoffs.Post("/scenarios/:scenario_id/generate", generateNextPlayoffRound(db))
 
 	// Admin routes
 	admin := api.Group("/admin")
 	admin.Post("/update-schedule/nfl", triggerNFLUpdate(scheduler))
-	// admin.Post("/update-schedule/nba", triggerNBAUpdate(scheduler))
+	admin.Post("/update-schedule/nba", triggerNBAUpdate(scheduler))
 	// admin.Post("/update-schedule/cfb", triggerCFBUpdate(scheduler))
 }
 
@@ -193,15 +194,15 @@ func triggerNFLUpdate(scheduler *scheduler.Scheduler) fiber.Handler {
 	}
 }
 
-// func triggerNBAUpdate(scheduler *scheduler.Scheduler) fiber.Handler {
-// 	return func(c *fiber.Ctx) error {
-// 		scheduler.UpdateNBASchedule()
-// 		return c.JSON(fiber.Map{
-// 			"status": "ok",
-// 			"message": "NBA schedule update trigerred"
-// 		})
-// 	}
-// }
+func triggerNBAUpdate(scheduler *scheduler.Scheduler) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		scheduler.UpdateNBASchedule()
+		return c.JSON(fiber.Map{
+			"status": "ok",
+			"message": "NBA schedule update triggered",
+		})
+	}
+}
 
 // func triggerCFBUpdate(scheduler *scheduler.Scheduler) fiber.Handler {
 // 	return func(c *fiber.Ctx) error {

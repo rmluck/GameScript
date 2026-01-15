@@ -5,23 +5,23 @@
     import { standingsAPI } from '$lib/api/standings';
     import { gamesAPI } from '$lib/api/games';
     import { playoffsAPI } from '$lib/api/playoffs';
-    import type { Scenario, NFLStandings, PlayoffState, Game } from '$types';
+    import type { Scenario, NBAStandings, PlayoffState, Game } from '$types';
 
     import ScenarioHeader from '$lib/components/scenarios/ScenarioHeader.svelte';
     import ScenarioSettings from '$lib/components/scenarios/ScenarioSettings.svelte';
     import ScenarioInfo from '$lib/components/scenarios/ScenarioInfo.svelte';
     import PicksBox from '$lib/components/scenarios/PicksBox.svelte';
-    import StandingsBox from '$lib/components/nfl/StandingsBox.svelte';
-    import StandingsBoxExpanded from '$lib/components/nfl/StandingsBoxExpanded.svelte';
+    import StandingsBox from '$lib/components/nba/StandingsBox.svelte';
+    import StandingsBoxExpanded from '$lib/components/nba/StandingsBoxExpanded.svelte';
     import DraftOrderBox from '$lib/components/scenarios/DraftOrderBox.svelte';
-    import PlayoffPicksBox from '$lib/components/nfl/PlayoffPicksBox.svelte';
-    import TeamModal from '$lib/components/nfl/TeamModal.svelte';
-    import { getCurrentNFLWeekFromGames } from '$lib/utils/nfl/dates';
-    import type { NFLPlayoffSeed } from '$types';
+    import PlayoffPicksBox from '$lib/components/nba/PlayoffPicksBox.svelte';
+    import TeamModal from '$lib/components/nba/TeamModal.svelte';
+    import { getCurrentNBAWeekFromGames } from '$lib/utils/nba/dates';
+    import type { NBAPlayoffSeed } from '$types';
 
     let scenarioId: number;
     let scenario: Scenario | null = null;
-    let standings: NFLStandings | null = null;
+    let standings: NBAStandings | null = null;
     let playoffState: PlayoffState | null = null;
     let canEnablePlayoffs: boolean = false;
     let loading = true;
@@ -40,7 +40,7 @@
     type ViewMode = 'conference' | 'division';
     let standingsViewMode: ViewMode = 'conference';
 
-    let selectedTeam: NFLPlayoffSeed | null = null;
+    let selectedTeam: NBAPlayoffSeed | null = null;
 
     let saveStatus: 'idle' | 'saving' | 'saved' | 'error' = 'idle';
 
@@ -63,7 +63,7 @@
 
             if (scenario.season_id) {
                 allGames = await gamesAPI.getBySeason(scenario.season_id);
-                currentWeek = getCurrentNFLWeekFromGames(allGames);
+                currentWeek = getCurrentNBAWeekFromGames(allGames);
                 viewKey = `regular-${currentWeek}`;
             }
         } catch (err: any) {
@@ -75,7 +75,7 @@
 
     async function loadStandings() {
         try {
-            standings = await standingsAPI.getByNFLScenario(scenarioId);
+            standings = await standingsAPI.getByNBAScenario(scenarioId);
         } catch (err: any) {
             console.error('Failed to load standings:', err);
         }
@@ -118,13 +118,13 @@
         setTimeout(() => saveStatus = 'idle', 2000);
     }
 
-    async function handleWeekChange(event: CustomEvent) {
+    async function handleWeekChange(event: CustomEvent<{ week: number }>) {
         const newWeek = event.detail.week;
         
-        // Week 19+ are playoff rounds
-        if (newWeek > 18) {
-            const newRound = newWeek - 18;
-
+        // Week 26+ are playoff rounds
+        if (newWeek > 25) {
+            const newRound = newWeek - 25;
+            
             // If trying to advance to a round that doesn't exist yet, generate it
             if (playoffState && newRound > playoffState.current_round) {
                 try {
@@ -135,7 +135,7 @@
                     return;
                 }
             }
-
+            
             currentPlayoffRound = newRound;
             viewKey = `playoff-${currentPlayoffRound}`;
         } else {
@@ -147,8 +147,8 @@
     async function handlePickUpdated() {
         saveStatus = 'saved';
         setTimeout(() => saveStatus = 'idle', 2000);
-        await loadStandings();
         await loadPlayoffState();
+        await loadStandings();
 
         // Reload picks in both PicksBox instances
         if (desktopPicksBox && 'reloadPicks' in desktopPicksBox) {
@@ -159,7 +159,7 @@
         }
     }
 
-    function handleOpenTeamModal(event: CustomEvent<{ team: NFLPlayoffSeed }>) {
+    function handleOpenTeamModal(event: CustomEvent<{ team: NBAPlayoffSeed }>) {
         selectedTeam = event.detail.team;
     }
 
@@ -226,12 +226,12 @@
     <div class="mt-6 space-y-6 lg:space-y-0">
         <!-- Desktop: 3-column layout with fixed-width standings -->
         <div class="hidden lg:grid lg:grid-cols-[200px_1fr_200px] lg:gap-6">
-            <!-- Left: AFC Standings (Fixed width) -->
+            <!-- Left: East Standings (Fixed width) -->
             <div class="w-[200px]">
                 {#if standings && scenario.season_id}
                     <StandingsBox 
-                        standings={standings.afc} 
-                        conference="AFC"
+                        standings={standings.eastern} 
+                        conference="East"
                         bind:viewMode={standingsViewMode}
                         on:openTeamModal={handleOpenTeamModal}
                     />
@@ -265,12 +265,12 @@
                 {/key}
             </div>
 
-            <!-- Right: NFC Standings (Fixed width) -->
+            <!-- Right: West Standings (Fixed width) -->
             <div class="w-[200px]">
                 {#if standings && scenario.season_id}
                     <StandingsBox 
-                        standings={standings.nfc} 
-                        conference="NFC"
+                        standings={standings.western} 
+                        conference="West"
                         bind:viewMode={standingsViewMode}
                         on:openTeamModal={handleOpenTeamModal}
                     />
@@ -309,14 +309,14 @@
             {#if standings && scenario.season_id}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <StandingsBoxExpanded 
-                        standings={standings.afc} 
-                        conference="AFC"
+                        standings={standings.eastern} 
+                        conference="East"
                         bind:viewMode={standingsViewMode}
                         on:openTeamModal={handleOpenTeamModal}
                     />
                     <StandingsBoxExpanded 
-                        standings={standings.nfc} 
-                        conference="NFC"
+                        standings={standings.western} 
+                        conference="West"
                         bind:viewMode={standingsViewMode}
                         on:openTeamModal={handleOpenTeamModal}
                     />

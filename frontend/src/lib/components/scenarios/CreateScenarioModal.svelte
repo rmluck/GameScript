@@ -21,9 +21,10 @@
     let seasonDropdownOpen = false;
 
     onMount(async () => {
-        // Load sports
+        // Load sports (filter out CFB for now)
         const response = await fetch('/api/sports');
-        sports = await response.json();
+        const allSports = await response.json();
+        sports = allSports.filter((sport: Sport) => sport.short_name !== 'CFB');
         console.log('Loaded sports:', sports);
     });
 

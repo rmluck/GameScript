@@ -63,7 +63,6 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     is_admin BOOLEAN DEFAULT FALSE,
     avatar_url VARCHAR(255),
-    -- Need to update database to add these fields
     failed_login_attempts INTEGER DEFAULT 0,
     locked_until TIMESTAMPTZ,
     last_login TIMESTAMPTZ,
@@ -110,12 +109,35 @@ CREATE TABLE playoff_states (
     UNIQUE(scenario_id)
 );
 
+-- PLAYOFF SERIES
+CREATE TABLE playoff_series (
+    id SERIAL PRIMARY KEY,
+    playoff_state_id INTEGER NOT NULL REFERENCES playoff_states(id) ON DELETE CASCADE,
+    round INTEGER NOT NULL,
+    series_order INTEGER NOT NULL,
+    conference VARCHAR(100),
+    higher_seed_team_id INTEGER NOT NULL REFERENCES teams(id),
+    lower_seed_team_id INTEGER NOT NULL REFERENCES teams(id),
+    higher_seed INTEGER NOT NULL,
+    lower_seed INTEGER NOT NULL,
+    picked_team_id INTEGER REFERENCES teams(id),
+    predicted_higher_seed_wins INTEGER DEFAULT 0,
+    predicted_lower_seed_wins INTEGER DEFAULT 0,
+    best_of INTEGER DEFAULT 7,
+    status VARCHAR(50) DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(playoff_state_id, round, series_order, conference)
+);
+
 -- PLAYOFF MATCHUPS
 CREATE TABLE playoff_matchups (
     id SERIAL PRIMARY KEY,
     playoff_state_id INTEGER NOT NULL REFERENCES playoff_states(id) ON DELETE CASCADE,
+    playoff_series_id INTEGER REFERENCES playoff_series(id) ON DELETE CASCADE,
     round INTEGER NOT NULL,
     matchup_order INTEGER NOT NULL,
+    game_number INTEGER,
     conference VARCHAR(100),
     higher_seed_team_id INTEGER NOT NULL REFERENCES teams(id),
     lower_seed_team_id INTEGER NOT NULL REFERENCES teams(id),
@@ -127,7 +149,7 @@ CREATE TABLE playoff_matchups (
     status VARCHAR(50) DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(playoff_state_id, round, matchup_order, conference)
+    UNIQUE(playoff_state_id, round, matchup_order, conference, game_number)
 );
 
 -- Indexes for performance optimization
@@ -138,5 +160,8 @@ CREATE INDEX idx_picks_scenario ON picks(scenario_id);
 CREATE INDEX idx_picks_game ON picks(game_id);
 CREATE INDEX idx_scenarios_session_token ON scenarios(session_token);
 CREATE INDEX idx_playoff_states_scenario ON playoff_states(scenario_id);
+CREATE INDEX idx_playoff_series_state ON playoff_series(playoff_state_id);
+CREATE INDEX idx_playoff_series_round ON playoff_series(playoff_state_id, round);
 CREATE INDEX idx_playoff_matchups_state ON playoff_matchups(playoff_state_id);
 CREATE INDEX idx_playoff_matchups_round ON playoff_matchups(playoff_state_id, round);
+CREATE INDEX idx_playoff_matchups_series ON playoff_matchups(playoff_series_id);

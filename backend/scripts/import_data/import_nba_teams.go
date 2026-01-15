@@ -14,7 +14,7 @@ import (
 
 func main() {
 	// Open JSON file
-	file, err := os.Open("database/nfl/teams/nfl_teams_2025.json")
+	file, err := os.Open("database/nba/teams/nba_teams_2025.json")
 	if err != nil {
 		fmt.Printf("Error opening file: %v\n", err)
 		os.Exit(1)
@@ -43,15 +43,15 @@ func main() {
 	defer db.Close()
 
 	// Insert teams into database
-	if err := insertNFLTeams(db, teams); err != nil {
+	if err := insertNBATeams(db, teams); err != nil {
 		fmt.Printf("Error inserting teams: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("Successfully imported %d teams from %s.\n", len(teams), "database/nfl/teams/nfl_teams_2025.json")
+	fmt.Printf("Successfully imported %d teams from %s.\n", len(teams), "database/nba/teams/nba_teams_2025.json")
 }
 
-func insertNFLTeams(db *database.DB, teams []models.Team) error {
+func insertNBATeams(db *database.DB, teams []models.Team) error {
 	// Prepare insert statement
 	stmt := `
 		INSERT INTO teams (
