@@ -52,10 +52,10 @@
                 CREATE SCENARIO
             </button>
             <a
-                href="/scenarios"
+                href="/profile"
                 class="bg-primary-900/60 hover:bg-primary-600 border-2 border-primary-900 hover:border-primary-500 rounded-lg shadow-lg transition-all hover:scale-105 px-6 py-3 font-sans font-semibold text-lg sm:text-xl text-neutral"
             >
-                VIEW SCENARIOS
+                VIEW PROFILE
             </a>
         {:else}
             <a
@@ -64,12 +64,12 @@
             >
                 GET STARTED
             </a>
-            <a
+            <!-- <a
                 href="/scenarios"
                 class="bg-primary-900/60 hover:bg-primary-600 border-2 border-primary-900 hover:border-primary-500 rounded-lg shadow-lg transition-all hover:scale-105 px-6 py-3 font-sans font-semibold text-lg sm:text-xl text-neutral"
             >
                 BROWSE AS GUEST
-            </a>
+            </a> -->
         {/if}
     </div>
 
@@ -85,12 +85,12 @@
             <div class="p-6 sm:p-8 bg-neutral rounded-lg shadow">
                 <div class="text-4xl sm:text-5xl font-bold text-primary-400 mb-4">2</div>
                 <h3 class="text-lg sm:text-xl font-heading font-semibold text-primary-600 mb-2">Make Your Picks</h3>
-                <p class="font-sans text-base sm:text-lg text-gray-600">Pick winners and predict scores for upcoming games.</p>
+                <p class="font-sans text-base sm:text-lg text-gray-600">Pick winners and predict scores for upcoming games. View live updated standings and playoff seeding based on your picks.</p>
             </div>
             <div class="p-6 sm:p-8 bg-neutral rounded-lg shadow">
                 <div class="text-4xl sm:text-5xl font-bold text-primary-400 mb-4">3</div>
-                <h3 class="text-lg sm:text-xl font-heading font-semibold text-primary-600 mb-2">See the Results</h3>
-                <p class="font-sans text-base sm:text-lg text-gray-600">View updated standings, playoff seeding, and draft order based on your picks.</p>
+                <h3 class="text-lg sm:text-xl font-heading font-semibold text-primary-600 mb-2">Simulate the Playoffs</h3>
+                <p class="font-sans text-base sm:text-lg text-gray-600">Finish the simulation by completing a playoff bracket designed based on your picks.</p>
             </div>
         </div>
     </div>
@@ -127,16 +127,16 @@
                 <p class="font-sans text-neutral text-sm">Create and name your own season scenarios with personalized settings.</p>
             </div>
             <div class="p-4 sm:p-6 bg-primary-900/60 border-l-4 border-primary-500 rounded-r-lg">
+                <h3 class="font-heading text-base sm:text-lg font-semibold text-neutral mb-2">✅ Pick Games</h3>
+                <p class="font-sans text-neutral text-sm">Pick winners for each game in the season, and optionally include scores.</p>
+            </div>
+            <div class="p-4 sm:p-6 bg-primary-900/60 border-l-4 border-primary-500 rounded-r-lg">
                 <h3 class="font-heading text-base sm:text-lg font-semibold text-neutral mb-2">📊 Live Standings</h3>
-                <p class="font-sans text-neutral text-sm">See real-time updates to division standings as you make picks.</p>
+                <p class="font-sans text-neutral text-sm">See real-time updates to division and conference standings as you make picks.</p>
             </div>
             <div class="p-4 sm:p-6 bg-primary-900/60 border-l-4 border-primary-500 rounded-r-lg">
-                <h3 class="font-heading text-base sm:text-lg font-semibold text-neutral mb-2">🏆 Playoff Seeding</h3>
-                <p class="font-sans text-neutral text-sm">Watch playoff brackets update automatically using official tiebreaker rules.</p>
-            </div>
-            <div class="p-4 sm:p-6 bg-primary-900/60 border-l-4 border-primary-500 rounded-r-lg">
-                <h3 class="font-heading text-base sm:text-lg font-semibold text-neutral mb-2">📋 Draft Order</h3>
-                <p class="font-sans text-neutral text-sm">Track how teams move in the draft order based on records.</p>
+                <h3 class="font-heading text-base sm:text-lg font-semibold text-neutral mb-2">🏆 Playoff Simulation</h3>
+                <p class="font-sans text-neutral text-sm">Simulate entire playoff brackets seeded based on regular season records.</p>
             </div>
             <div class="p-4 sm:p-6 bg-primary-900/60 border-l-4 border-primary-500 rounded-r-lg">
                 <h3 class="font-heading text-base sm:text-lg font-semibold text-neutral mb-2">⚙️ User-Friendly Interface</h3>
@@ -144,7 +144,7 @@
             </div>
             <div class="p-4 sm:p-6 bg-primary-900/60 border-l-4 border-primary-500 rounded-r-lg">
                 <h3 class="font-heading text-base sm:text-lg font-semibold text-neutral mb-2">💾 Save & Share</h3>
-                <p class="font-sans text-neutral text-sm">Save multiple scenarios and share them with friends.</p>
+                <p class="font-sans text-neutral text-sm">Save multiple scenarios and view them from your profile dashboard.</p>
             </div>
         </div>
     </div>

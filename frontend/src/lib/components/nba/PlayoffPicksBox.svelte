@@ -161,7 +161,7 @@
     }
 </script>
 
-<div class="bg-neutral border-2 border-primary-700 rounded-lg p-3 sm:p-4 md:p-6 w-full max-w-full">
+<div class="bg-neutral border-2 border-primary-700 rounded-lg p-3 sm:p-4 md:p-6 w-full max-w-full flex flex-col overflow-hidden h-[114vh]">
     <!-- Week Navigator -->
     {#if allGames.length > 0}
         <WeekNavigator 

@@ -179,8 +179,8 @@
 {:else if error}
     <div class="text-center">
         <p class="text-red-400 text-xl mb-4">{error}</p>
-        <a href="/scenarios" class="text-primary-400 hover:text-primary-300">
-            ← Back to Scenarios
+        <a href="/" class="text-primary-400 hover:text-primary-300">
+            ← Back to Home
         </a>
     </div>
 {:else if scenario}

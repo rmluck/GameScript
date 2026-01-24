@@ -27,6 +27,10 @@
     let deletingScenarioId: number | null = null;
     let showCreateModal = false;
 
+    // Share functionality
+    let copiedScenarioId: number | null = null;
+    let copiedTimeout: ReturnType<typeof setTimeout>;
+
     onMount(async () => {
         // Check if user is authenticated
         if (!$authStore.isAuthenticated) {
@@ -120,6 +124,69 @@
             console.error(err);
         } finally {
             deletingScenarioId = null;
+        }
+    }
+
+    async function handleShareScenario(scenario: Scenario) {
+        const url = `${window.location.origin}/scenarios/${scenario.sport_short_name?.toLowerCase()}/${scenario.id}`;
+
+        // Try native share API first (mobile devices)
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `GameScript - ${scenario.name}`,
+                    text: `Check out my scenario ${scenario.name} on GameScript!`,
+                    url: url
+                });
+                return;
+            } catch (err) {
+                // User cancelled or share failed, fall back to clipboard
+                if ((err as Error).name !== 'AbortError') {
+                    console.error('Native share failed:', err);
+                }
+            }
+        }
+
+        // Fallback to clipboard
+        try {
+            await navigator.clipboard.writeText(url);
+            copiedScenarioId = scenario.id;
+
+            // Clear any existing timeout
+            if (copiedTimeout) clearTimeout(copiedTimeout);
+
+            // Hide message after 2 seconds
+            copiedTimeout = setTimeout(() => {
+                copiedScenarioId = null;
+            }, 2000);
+        } catch (err) {
+            console.error('Failed to copy to clipboard:', err);
+            // Fallback for older browsers
+            fallbackCopyToClipboard(url, scenario.id);
+        }
+    }
+
+    function fallbackCopyToClipboard(text: string, scenarioId: number) {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+
+        try {
+            document.execCommand('copy');
+            copiedScenarioId = scenarioId;
+
+            if (copiedTimeout) clearTimeout(copiedTimeout);
+
+            copiedTimeout = setTimeout(() => {
+                copiedScenarioId = null;
+            }, 2000);
+        } catch (err) {
+            console.error('Fallback copy failed:', err);
+        } finally {
+            document.body.removeChild(textArea);
         }
     }
 
@@ -399,6 +466,25 @@
                             >
                                 Open
                             </a>
+                            <div class="relative">
+                                <button
+                                    on:click={() => handleShareScenario(scenario)}
+                                    class="px-3 py-3 bg-primary-800/60 hover:bg-primary-700 border border-primary-600 text-neutral text-sm sm:text-base font-sans font-semibold rounded transition-colors cursor-pointer"
+                                    title="Share Scenario"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                    </svg>
+                                </button>
+
+                                <!-- Copied Message Tooltip -->
+                                {#if copiedScenarioId === scenario.id}
+                                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-green-500 text-white text-xs font-sans font-semibold rounded-md shadow-lg whitespace-nowrap z-50 animate-fade-in">
+                                        Link copied!
+                                        <div class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-green-500 transform rotate-45"></div>
+                                    </div>
+                                {/if}
+                            </div>
                             <button
                                 on:click={() => handleDeleteScenario(scenario.id)}
                                 disabled={deletingScenarioId === scenario.id}
@@ -413,3 +499,20 @@
         {/if}
     </div>
 </div>
+
+<style>
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+            transform: translateY(4px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-fade-in {
+        animation: fade-in 0.2s ease-out;
+    }
+</style>

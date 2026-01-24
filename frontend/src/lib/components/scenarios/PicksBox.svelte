@@ -124,6 +124,8 @@
         return sortedMap;
     }
 
+    $: boxHeight = sportId === 1 ? '119.5vh' : sportId === 2 ? '114vh' : '100vh';
+
     function handleWeekChange(event: CustomEvent<{ week: number }>) {
         currentWeek = event.detail.week;
         dispatch('weekChanged', { week: currentWeek });
@@ -172,7 +174,7 @@
     }
 </script>
 
-<div class="bg-neutral border-2 border-primary-700 rounded-lg p-3 sm:p-4 md:p-6 w-full max-w-full">
+<div class="bg-neutral border-2 border-primary-700 rounded-lg p-3 sm:p-4 md:p-6 w-full max-w-full flex flex-col overflow-hidden" style="height: {boxHeight};">
     <!-- Week Navigator -->
     <WeekNavigator 
         {currentWeek}
@@ -198,7 +200,7 @@
         </div>
     {:else}
         <!-- Games List -->
-        <div class="mt-4 md:mt-6 space-y-4">
+        <div class="mt-4 md:mt-6 space-y-4 overflow-y-auto flex-1 pr-2">
             {#each [...gamesByDay.entries()] as [day, dayGames]}
                 <div>
                     <h3 class="text-lg sm:text-xl font-heading font-bold text-primary-700 mb-2 md:mb-3 uppercase tracking-wide">

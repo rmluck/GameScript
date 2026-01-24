@@ -4,6 +4,7 @@
     import { onMount } from 'svelte';
     import { authAPI } from '$lib/api/auth';
     import ComingSoonModal from "$lib/components/scenarios/ComingSoonModal.svelte";
+	import { goto } from '$app/navigation';
 
     let mobileMenuOpen = false;
     let showComingSoonModal=false;
@@ -33,6 +34,11 @@
         event.preventDefault();
         showComingSoonModal = true;
         closeMobileMenu();
+    }
+
+    function handleLogout() {
+        authStore.logout();
+        goto('/');
     }
 </script>
 
@@ -82,7 +88,7 @@
                             PROFILE
                         </a>
                         <button
-                            on:click={() => authStore.logout()}
+                            on:click={handleLogout}
                             class="hidden md:block font-sans font-semibold text-sm lg:text-base bg-primary-800/60 hover:bg-primary-600 text-neutral transition-colors duration-200 px-3 py-2 rounded-md"
                         >
                             LOGOUT

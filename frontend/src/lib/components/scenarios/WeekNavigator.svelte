@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte';
+    import { createEventDispatcher, onMount, onDestroy } from 'svelte';
     import { getNFLWeekDateRangesFromGames, formatNFLDateRange, type NFLWeekDateRange } from '$lib/utils/nfl/dates';
     import { getNBAWeekDateRangesFromGames, formatNBADateRange, type NBAWeekDateRange } from '$lib/utils/nba/dates';
     import { NFL_PLAYOFF_ROUND_NAMES, NBA_PLAYOFF_ROUND_NAMES } from '$types';
@@ -27,7 +27,6 @@
     $: FINAL_PLAYOFF_ROUND = sportId === 1 ? 4 : sportId === 2 ? 6 : 0;
 
     $: maxAvailableWeek = getMaxAvailableWeek(sportId, playoffState, isCurrentRoundComplete, currentWeek);
-    $: console.log(maxAvailableWeek);
 
     $: playoffRound = currentWeek > NUM_WEEKS ? currentWeek - NUM_WEEKS : 0;
 
@@ -87,6 +86,37 @@
         if (!dateRange) return `WEEK ${week}`;
         return `WEEK ${week} (${sportId === 1 ? formatNFLDateRange(dateRange.startDate, dateRange.endDate) : formatNBADateRange(dateRange.startDate, dateRange.endDate)})`;
     }
+
+    function handleKeydown(event: KeyboardEvent) {
+        // Don't interfere if user is typing in an input or textarea
+        if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+            return;
+        }
+
+        // Close dropdown with Escape
+        if (event.key === 'Escape' && weekDropdownOpen) {
+            weekDropdownOpen = false;
+            event.preventDefault();
+            return;
+        }
+
+        // Navigate weeks with Arrow keys
+        if (event.key === 'ArrowLeft') {
+            previousWeek();
+            event.preventDefault();
+        } else if (event.key === 'ArrowRight') {
+            nextWeek();
+            event.preventDefault();
+        }
+    }
+
+    onMount(() => {
+        window.addEventListener('keydown', handleKeydown);
+    });
+
+    onDestroy(() => {
+        window.removeEventListener('keydown', handleKeydown);
+    });
 </script>
 
 <!-- Rest of template stays the same -->
