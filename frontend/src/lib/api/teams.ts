@@ -1,3 +1,5 @@
+// API functions related to teams
+
 import { apiClient } from './client';
 import type { Team } from '$types';
 

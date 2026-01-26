@@ -2,14 +2,16 @@
     import { createEventDispatcher } from 'svelte';
     import type { NFLConferenceStandings, NFLPlayoffSeed } from '$types';
 
+    // Props
     export let standings: NFLConferenceStandings;
     export let conference: 'AFC' | 'NFC';
-
     type ViewMode = 'conference' | 'division';
     export let viewMode: ViewMode = 'conference';
 
+    // Event dispatcher
     const dispatch = createEventDispatcher();
 
+    // Sort teams into groups
     $: divisionWinners = standings.playoff_seeds.slice(0, 4);
     $: wildCardTeams = standings.playoff_seeds.slice(4, 7);
     $: nonPlayoffTeams = standings.playoff_seeds.slice(7);
@@ -18,6 +20,7 @@
         standings.divisions[`${conference} ${div}`]
     );
 
+    // Map for quick seed lookup
     $: teamSeedMap = new Map(
         standings.playoff_seeds.map(seed => [seed.team_id, seed.seed])
     );
@@ -46,6 +49,7 @@
     }
 
     function handleMouseEnter(e: MouseEvent, primaryColor: string) {
+        // Set background and text colors on hover
         const target = e.currentTarget as HTMLElement;
         target.style.backgroundColor = `#${primaryColor}90`;
         target.querySelectorAll('span, div').forEach(el => {
@@ -54,6 +58,7 @@
     }
 
     function handleMouseLeave(e: MouseEvent) {
+        // Reset background and text colors on hover leave
         const target = e.currentTarget as HTMLElement;
         target.style.backgroundColor = 'transparent';
         target.querySelectorAll('span, div').forEach(el => {
@@ -142,7 +147,6 @@
                         Division Winners
                     </h3>
                     
-                    <!-- Header Row -->
                     <div class="grid grid-cols-15 gap-1 px-2 border-b border-primary-700/30 text-xs font-sans font-bold text-black uppercase">
                         <div class="col-span-1" title="Playoff Seed">Seed</div>
                         <div class="col-span-2" title="Team">Team</div>
@@ -160,7 +164,6 @@
                         <div class="col-span-1 text-center" title="Strength of Victory">SOV</div>
                     </div>
 
-                    <!-- Data Rows -->
                     <div class="space-y-1 mt-2">
                         {#each divisionWinners as seed}
                             <button class="w-full grid grid-cols-15 gap-1 px-2 py-2 rounded transition-colors cursor-pointer"
@@ -250,7 +253,7 @@
                     </div>
                 </div>
 
-                <!-- Wild Card -->
+                <!-- Wild Card (Seeds 5-7) -->
                 {#if wildCardTeams.length > 0}
                     <div>
                         <h3 class="text-lg font-sans font-bold text-primary-700 uppercase tracking-wide mb-2 px-2">
@@ -365,7 +368,7 @@
                     </div>
                 {/if}
 
-                <!-- Non-Playoff Teams -->
+                <!-- Non-Playoff Teams (Seeds 8-16) -->
                 {#if nonPlayoffTeams.length > 0}
                     <div class="opacity-60">
                         <h3 class="text-lg font-sans font-bold text-primary-700 uppercase tracking-wide mb-2 px-2">
@@ -493,7 +496,6 @@
                             {conference} {divisionName}
                         </h3>
 
-                        <!-- Header Row -->
                         <div class="grid grid-cols-15 gap-1 px-2 border-b border-primary-700/30 text-xs font-sans font-bold text-black uppercase">
                             <div class="col-span-1" title="Playoff Seed">Seed</div>
                             <div class="col-span-2" title="Team">Team</div>
@@ -511,7 +513,6 @@
                             <div class="col-span-1 text-center" title="Strength of Victory">SOV</div>
                         </div>
 
-                        <!-- Data Rows -->
                         <div class="space-y-1 mt-2">
                             {#each divisionTeams as team}
                                 {@const teamSeed = getTeamSeed(team.team_id)}

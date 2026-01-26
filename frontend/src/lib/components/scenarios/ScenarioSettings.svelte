@@ -3,21 +3,28 @@
     import { scenariosAPI } from '$lib/api/scenarios';
     import type { Scenario } from '$types';
 
+    // Props
     export let isOpen = false;
     export let scenario: Scenario;
 
+    // Event dispatcher
     const dispatch = createEventDispatcher();
 
+    // State variables for form fields
     let scenarioName = scenario.name;
     let isPublic = scenario.is_public;
+
+    // Loading and error states
     let loading = false;
     let error = '';
 
+    // Update form fields when scenario or isOpen changes
     $: if (isOpen) {
         scenarioName = scenario.name;
         isPublic = scenario.is_public;
     }
 
+    // Handle form submission
     async function handleSave() {
         error = '';
         loading = true;
@@ -43,14 +50,16 @@
         }
     }
 
+    // Handle scenario deletion
     async function handleDelete() {
         if (!confirm('Are you sure you want to delete this scenario? This action cannot be undone.')) {
             return;
         }
 
         try {
+            // Delete scenario and redirect to home page
             await scenariosAPI.delete(scenario.id);
-            window.location.href = '/scenarios';
+            window.location.href = '/';
         } catch (err: any) {
             error = err.response?.data?.error || 'Failed to delete scenario';
         }
@@ -61,6 +70,7 @@
         error = '';
     }
 
+    // Handle backdrop click to close modal
     function handleBackdropClick(event: MouseEvent) {
         if (event.target === event.currentTarget) {
             close();
@@ -76,6 +86,7 @@
         on:keydown={(e) => e.key === 'Escape' && close()}
     >
         <section class="bg-linear-to-br from-primary-975  to-primary-950 border-4 border-primary-900 rounded-lg max-w-xl w-full overflow-hidden flex flex-col">
+            <!-- Header -->
             <div class="bg-primary-900/30 shadow-md p-6 flex justify-between items-center">
                 <h2 class="text-2xl font-heading font-bold text-neutral">SCENARIO SETTINGS</h2>
                 <button
@@ -95,6 +106,7 @@
                 </div>
             {/if}
 
+            <!-- Form Content -->
             <div class="bg-linear-to-br from-primary-975  to-primary-950 flex-1 overflow-y-auto p-6">
                 <form on:submit|preventDefault={handleSave} class="space-y-4">
                     <!-- Scenario Name -->
@@ -150,6 +162,7 @@
                         >
                             CANCEL
                         </button>
+
                         <button
                             type="submit"
                             disabled={loading}
@@ -159,7 +172,7 @@
                         </button>
                     </div>
 
-                    <!-- Danger Zone -->
+                    <!-- Delete Button -->
                     <div class="pt-6 border-t border-primary-600/30">
                         <button
                             type="button"

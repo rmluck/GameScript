@@ -4,26 +4,37 @@
     import { NBA_PLAYOFF_ROUND_NAMES } from '$types';
     import ConfirmationModal from '../scenarios/ConfirmationModal.svelte';
 
+    // Props
     export let item: PlayoffMatchup | PlayoffSeries;
     export let hasLaterRounds: boolean = false;
 
+    // Event dispatcher
     const dispatch = createEventDispatcher();
 
-    // Determine if this is a series or single game
-    $: isSeries = 'best_of' in item;
-
-    // For single games (play-in)
+    // State variables for single game matchups
     let predictedHigherScore = '';
     let predictedLowerScore = '';
 
-    // For series
+    // State variables for series matchups
     let predictedHigherWins = '';
     let predictedLowerWins = '';
 
-    let showConfirmation = false;
+    // State variable for pending team selection
     let pendingTeamId: number | null = null;
 
-    // Update values when item changes
+    // State variable for confirmation modal
+    let showConfirmation = false;
+
+    // State variables for team tooltips
+    let showLowerSeedName = false;
+    let showHigherSeedName = false;
+    let lowerSeedButton: HTMLButtonElement;
+    let higherSeedButton: HTMLButtonElement;
+    
+    // Determine if this is a series or single game
+    $: isSeries = 'best_of' in item;
+
+    // Initialize predicted scores/wins based on item type
     $: {
         if (isSeries) {
             const series = item as PlayoffSeries;
@@ -36,24 +47,24 @@
         }
     }
 
+    // Determine if higher or lower seed is picked
     $: isHigherSeedPicked = item.picked_team_id === item.higher_seed_team_id;
     $: isLowerSeedPicked = item.picked_team_id === item.lower_seed_team_id;
 
+    // Determine team logo URLs, using alternate if picked
     $: higherTeamLogoURL = (isHigherSeedPicked && item.higher_seed_team?.alternate_logo_url)
         ? item.higher_seed_team.alternate_logo_url
         : (item.higher_seed_team?.logo_url || '');
-
     $: lowerTeamLogoURL = (isLowerSeedPicked && item.lower_seed_team?.alternate_logo_url)
         ? item.lower_seed_team.alternate_logo_url
         : (item.lower_seed_team?.logo_url || '');
 
-    let showLowerSeedName = false;
-    let showHigherSeedName = false;
-    let lowerSeedButton: HTMLButtonElement;
-    let higherSeedButton: HTMLButtonElement;
+    // Calculate tooltip positions
+    $: lowerSeedPosition = showLowerSeedName && lowerSeedButton ? getTeamTooltipPosition(lowerSeedButton) : { top: 0, left: 0 };
+    $: higherSeedPosition = showHigherSeedName && higherSeedButton ? getTeamTooltipPosition(higherSeedButton) : { top: 0, left: 0 };
 
+    // Show confirmation modal if later rounds exist
     function selectTeam(teamId: number) {
-        // Show warning if later rounds exist
         if (hasLaterRounds && item.round < 6) {
             pendingTeamId = teamId;
             showConfirmation = true;
@@ -63,9 +74,10 @@
         executeTeamSelection(teamId);
     }
 
+    // Handle team selection logic
     function executeTeamSelection(teamId: number) {
         if (item.picked_team_id === teamId) {
-            // DELETE the pick
+            // Deselect picked team
             if (isSeries) {
                 predictedHigherWins = '';
                 predictedLowerWins = '';
@@ -88,7 +100,7 @@
                 });
             }
         } else {
-            // SWITCHING teams - clear predictions
+            // Select new team
             const wasPickMade = item.picked_team_id !== undefined && item.picked_team_id !== null;
             if (wasPickMade) {
                 if (isSeries) {
@@ -120,6 +132,7 @@
         }
     }
 
+    // Handle confirmation modal actions
     function handleConfirm() {
         showConfirmation = false;
         if (pendingTeamId !== null) {
@@ -128,19 +141,21 @@
         }
     }
 
+    // Cancel team selection change
     function handleCancel() {
         showConfirmation = false;
         pendingTeamId = null;
     }
 
+    // Handle score input changes for single game matchups
     function handleScoreChange() {
         if (!isSeries && item.picked_team_id) {
             const higherScore = parseInput(predictedHigherScore);
             const lowerScore = parseInput(predictedLowerScore);
 
             // Determine winner based on scores
+            // If scores are invalid or tied, do not change pick
             let newPickedTeamId = item.picked_team_id;
-
             if (higherScore !== undefined && lowerScore !== undefined) {
                 if (higherScore > lowerScore) {
                     newPickedTeamId = item.higher_seed_team_id;
@@ -148,7 +163,7 @@
                     newPickedTeamId = item.lower_seed_team_id;
                 }
             }
-            // If scores are incomplete, keep current pick
+
             dispatch('pickChanged', {
                 matchupId: item.id,
                 isSeries: false,
@@ -159,11 +174,13 @@
         }
     }
 
+    // Handle wins input changes for series matchups
     function handleWinsChange() {
         if (isSeries && item.picked_team_id) {
             const higherWins = parseInput(predictedHigherWins);
             const lowerWins = parseInput(predictedLowerWins);
 
+            // Validate wins input
             if (higherWins !== undefined && lowerWins !== undefined) {
                 if (higherWins < 0 || lowerWins < 0 || higherWins > 4 || lowerWins > 4) {
                     return;
@@ -176,8 +193,8 @@
                 }
             }
 
+            // Determine winner based on wins
             let newPickedTeamId = item.picked_team_id;
-
             if (higherWins !== undefined && lowerWins !== undefined) {
                 if (higherWins === 4) {
                     newPickedTeamId = item.higher_seed_team_id;
@@ -196,12 +213,14 @@
         }
     }
 
+    // Parse score or wins input string to number or undefined
     function parseInput(value: string): number | undefined {
         if (value === '') return undefined;
         const parsed = parseInt(value);
         return isNaN(parsed) ? undefined : parsed;
     }
 
+    // Calculate tooltip position for a team button
     function getTeamTooltipPosition(element: HTMLElement) {
         if (!element) return { top: 0, left: 0 };
         const rect = element.getBoundingClientRect();
@@ -210,12 +229,10 @@
             left: rect.left + rect.width / 2
         };
     }
-
-    $: lowerSeedPosition = showLowerSeedName && lowerSeedButton ? getTeamTooltipPosition(lowerSeedButton) : { top: 0, left: 0 };
-    $: higherSeedPosition = showHigherSeedName && higherSeedButton ? getTeamTooltipPosition(higherSeedButton) : { top: 0, left: 0 };
 </script>
 
 <style>
+    /* Hide spin buttons for number inputs */
     input[type='number']::-webkit-inner-spin-button,
     input[type='number']::-webkit-outer-spin-button {
         -webkit-appearance: none;
@@ -232,7 +249,7 @@
     class:z-50={showLowerSeedName || showHigherSeedName}
 >
     <div class="flex items-center gap-2">
-        <!-- Lower Seed Section (Score on LEFT, Button on RIGHT like away team) -->
+        <!-- Lower Seed Section -->
         <div class="flex-1 flex items-stretch">
             <!-- Lower Seed Score -->
             <div class="w-10 shrink-0">
@@ -311,7 +328,7 @@
         <!-- VS Divider -->
         <div class="text-xs font-sans font-bold text-black/50 shrink-0">VS</div>
 
-        <!-- Higher Seed Section (Button on LEFT, Score on RIGHT like home team) -->
+        <!-- Higher Seed Section -->
         <div class="flex-1 flex items-stretch">
             <!-- Higher Seed Button -->
             <button
@@ -389,7 +406,7 @@
     </div>
 </div>
 
-<!-- Tooltips rendered outside parent -->
+<!-- Lower Seed Tooltip -->
 {#if showLowerSeedName && item.lower_seed_team}
     <div
         class="fixed z-50 px-3 py-1.5 bg-primary-950 border border-primary-600 rounded-lg shadow-xl whitespace-nowrap pointer-events-none"
@@ -401,6 +418,7 @@
     </div>
 {/if}
 
+<!-- Higher Seed Tooltip -->
 {#if showHigherSeedName && item.higher_seed_team}
     <div
         class="fixed z-50 px-3 py-1.5 bg-primary-950 border border-primary-600 rounded-lg shadow-xl whitespace-nowrap pointer-events-none"
@@ -412,6 +430,7 @@
     </div>
 {/if}
 
+<!-- Confirmation Modal -->
 {#if showConfirmation}
     <ConfirmationModal
         title="Reset Later Playoff Rounds?"

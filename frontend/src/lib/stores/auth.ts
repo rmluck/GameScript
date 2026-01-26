@@ -9,6 +9,7 @@ interface AuthState {
 }
 
 function createAuthStore() {
+    // Initial state
     const { subscribe, set, update } = writable<AuthState>({
         user: null,
         token: null,
@@ -22,6 +23,7 @@ function createAuthStore() {
         const storedUser = localStorage.getItem('user');
 
         if (storedToken && tokenExpiry && storedUser) {
+            // If token is not expired, set the state
             const expiry = new Date(tokenExpiry);
             if (expiry > new Date()) {
                 set({
@@ -39,7 +41,9 @@ function createAuthStore() {
     }
 
     return {
+        // Expose the subscribe method for the store
         subscribe,
+        // Methods to update the store
         login: (user: User, token: string) => {
             if (browser) {
                 localStorage.setItem('token', token);

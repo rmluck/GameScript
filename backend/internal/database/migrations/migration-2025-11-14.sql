@@ -1,3 +1,5 @@
+-- Migration: Add ESPN IDs to games and teams
+
 ALTER TABLE games ADD COLUMN espn_id VARCHAR(32);
 CREATE UNIQUE INDEX IF NOT EXISTS games_season_espn_id_idx ON games (season_id, espn_id);
 

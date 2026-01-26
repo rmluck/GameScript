@@ -1,3 +1,5 @@
+// Fetches NBA schedule data from ESPN API and processes it into internal game models
+
 package espn
 
 import (
@@ -5,18 +7,17 @@ import (
 	"fmt"
 	"strconv"
 	"time"
-
 	// "os"
 
 	"gamescript/internal/models"
 )
+
 
 const nbaScheduleURL = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
 
 func (c *Client) FetchNBASchedule(startDate string, endDate string) ([]models.Game, error) {
 	// Format: YYYYMMDD-YYYYMMDD
 	url := fmt.Sprintf("%s?dates=%s-%s", nbaScheduleURL, startDate, endDate)
-
 	body, err := c.Get(url)
 	if err != nil {
 		return nil, err
@@ -27,7 +28,7 @@ func (c *Client) FetchNBASchedule(startDate string, endDate string) ([]models.Ga
 		return nil, fmt.Errorf("failed to unmarshal: %w", err)
 	}
 
-	// Throw raw response into file for further inspection if January 2 2026 is within date range
+	// // Throw raw response into file for further inspection
 	// err = os.WriteFile("nba_full_schedule_response.json", body, 0644)
 	// if err != nil {
 	// 	return nil, fmt.Errorf("failed to write response to file: %w", err)
@@ -41,10 +42,10 @@ func (c *Client) FetchNBASchedule(startDate string, endDate string) ([]models.Ga
 
 	var games []models.Game
 	for _, event := range scheduleResp.Events {
+		// Ensure competition exists and has two competitors
 		if len(event.Competitions) == 0 {
 			continue
 		}
-
 		competition := event.Competitions[0]
 		if len(competition.Competitors) < 2 {
 			continue
@@ -60,7 +61,7 @@ func (c *Client) FetchNBASchedule(startDate string, endDate string) ([]models.Ga
 			continue
 		}
 
-		// Parse the game time
+		// Parse gametime
 		gameTimeUTC, err := time.Parse("2006-01-02T15:04Z", competition.Date)
 		if err != nil {
 			continue
@@ -68,7 +69,7 @@ func (c *Client) FetchNBASchedule(startDate string, endDate string) ([]models.Ga
 		gameTimePST := gameTimeUTC.In(pst)
 		dayOfWeek := gameTimePST.Weekday().String()
 
-		// Parse the location
+		// Parse location
 		location := competition.Venue.FullName
 		if competition.Venue.Address.State == "" {
 			location += ", " + competition.Venue.Address.City + ", USA"
@@ -79,7 +80,6 @@ func (c *Client) FetchNBASchedule(startDate string, endDate string) ([]models.Ga
 		// Find home and away teams
 		var homeTeamID, awayTeamID string
 		var homeScore, awayScore *int
-
 		for _, competitor := range competition.Competitors {
 			if competitor.HomeAway == "home" {
 				homeTeamID = competitor.Team.ID
@@ -95,7 +95,7 @@ func (c *Client) FetchNBASchedule(startDate string, endDate string) ([]models.Ga
 		}
 
 		// Parse primetime info
-		primetime := determineNBAPrimetime(gameTimePST, location)
+		primetime := determineNBAPrimetime(gameTimePST)
 
 		// Parse broadcasts
 		var network string
@@ -136,16 +136,15 @@ func (c *Client) FetchEntireNBASeason(startYear int) ([]models.Game, error) {
 	// Update for current NBA season dates
 	seasonStart := time.Date(startYear, time.October, 21, 0, 0, 0, 0, time.UTC)
 	seasonEnd := time.Date(startYear + 1, time.April, 13, 0, 0, 0, 0, time.UTC)
-
 	fmt.Printf("Fetching NBA season from %s to %s...\n", seasonStart.Format("2006-01-02"), seasonEnd.Format("2006-01-02"))
 
 	var allGames []models.Game
 
-	// Fetch in weekly chunks
+	// Fetch in weekly increments
 	currentDate := seasonStart
 	weekNum := 1
-
 	for currentDate.Before(seasonEnd) {
+		// Calculate week end date
 		weekEnd := currentDate.AddDate(0, 0, 7)
 		if weekEnd.After(seasonEnd) {
 			weekEnd = seasonEnd
@@ -156,6 +155,7 @@ func (c *Client) FetchEntireNBASeason(startYear int) ([]models.Game, error) {
 
 		fmt.Printf("Fetching week %d: %s to %s...\n", weekNum, startDateStr, endDateStr)
 
+		// Fetch schedule for the week
 		games, err := c.FetchNBASchedule(startDateStr, endDateStr)
 		if err != nil {
 			fmt.Printf("Error fetching games for week %d: %v\n", weekNum, err)
@@ -164,6 +164,7 @@ func (c *Client) FetchEntireNBASeason(startYear int) ([]models.Game, error) {
 			allGames = append(allGames, games...)
 		}
 
+		// Move to next week
 		currentDate = weekEnd.AddDate(0, 0, 1)
 		weekNum++
 
@@ -193,6 +194,7 @@ func assignNBAWeeks(games []models.Game) []models.Game {
 		return games
 	}
 
+	// Load Pacific timezone
 	pst, _ := time.LoadLocation("America/Los_Angeles")
 
 	// Find the first Monday of the season
@@ -206,6 +208,7 @@ func assignNBAWeeks(games []models.Game) []models.Game {
 	seasonStartMonday := firstGameTime.AddDate(0, 0, daysUntilMonday)
 	seasonStartMonday = time.Date(seasonStartMonday.Year(), seasonStartMonday.Month(), seasonStartMonday.Day(), 0, 0, 0, 0, pst)
 
+	// Assign games to weeks
 	for i := range games {
 		gameTime := games[i].StartTime.In(pst)
 
@@ -223,7 +226,7 @@ func assignNBAWeeks(games []models.Game) []models.Game {
 	return games
 }
 
-func determineNBAPrimetime(gameTime time.Time, location string) string {
+func determineNBAPrimetime(gameTime time.Time) string {
 	var labels []string
 
 	// Get Pacific time components
@@ -252,7 +255,6 @@ func determineNBAPrimetime(gameTime time.Time, location string) string {
 }
 
 func parseNBABroadcast(broadcast []string) string {
-	// Define the contains logic as a closure
 	contains := func(slice []string, item string) bool {
 		for _, s := range slice {
 			if s == item {

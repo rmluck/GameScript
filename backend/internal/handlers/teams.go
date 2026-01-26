@@ -1,3 +1,5 @@
+// Teams handlers
+
 package handlers
 
 import (
@@ -5,6 +7,7 @@ import (
 
 	"gamescript/internal/database"
 )
+
 
 func getTeamsBySeason(db *database.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {

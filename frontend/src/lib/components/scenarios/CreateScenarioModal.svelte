@@ -3,30 +3,48 @@
     import { scenariosAPI } from '$lib/api/scenarios';
     import type { Sport, Season } from '$types';
 
+    // Props
     export let isOpen = false;
 
+    // Event dispatcher
     const dispatch = createEventDispatcher();
 
+    // State variables for dropdown menus
     let sports: Sport[] = [];
     let seasons: Season[] = [];
+    let sportDropdownOpen = false;
+    let seasonDropdownOpen = false;
+
+    // State variables for form inputs
     let selectedSportId: number | null = null;
     let selectedSeasonId: number | null = null;
     let scenarioName = '';
     let isPublic = false;
+
+    // Loading and error state
     let loading = false;
     let error = '';
-    
-    // Custom dropdown state
-    let sportDropdownOpen = false;
-    let seasonDropdownOpen = false;
 
+    // Get selected sport and season names
+    $: selectedSportName = selectedSportId 
+        ? sports.find(s => s.id === selectedSportId)?.name 
+        : null;
+    $: selectedSeasonName = selectedSeasonId
+        ? seasons.find(s => s.id === selectedSeasonId)
+        : null;
+
+    // Load data on mount
     onMount(async () => {
-        // Load sports (filter out CFB for now)
         const response = await fetch('/api/sports');
         const allSports = await response.json();
-        sports = allSports.filter((sport: Sport) => sport.short_name !== 'CFB');
+        sports = allSports.filter((sport: Sport) => sport.short_name !== 'CFB'); // Filter out 'CFB' sport for now
         console.log('Loaded sports:', sports);
     });
+
+    // Load seasons when a sport is selected
+    $: if (selectedSportId) {
+        loadSeasons();
+    }
 
     function formatDate() {
         const today = new Date();
@@ -47,7 +65,7 @@
         if (activeSeason) {
             selectedSeasonId = activeSeason.id;
             
-            // Auto-generate name if empty
+            // Auto-generate scenario name if empty
             if (!scenarioName) {
                 const sport = sports.find(s => s.id === selectedSportId);
                 const todayDate = formatDate();
@@ -61,10 +79,6 @@
         }
     }
 
-    $: if (selectedSportId) {
-        loadSeasons();
-    }
-    
     function selectSport(sportId: number) {
         selectedSportId = sportId;
         sportDropdownOpen = false;
@@ -75,17 +89,11 @@
         seasonDropdownOpen = false;
     }
     
-    $: selectedSportName = selectedSportId 
-        ? sports.find(s => s.id === selectedSportId)?.name 
-        : null;
-    
-    $: selectedSeasonName = selectedSeasonId
-        ? seasons.find(s => s.id === selectedSeasonId)
-        : null;
-
+    // Handle form submission
     async function handleSubmit() {
         error = '';
         
+        // Validate inputs
         if (!scenarioName || !selectedSportId || !selectedSeasonId) {
             error = 'Please fill in all fields';
             return;
@@ -93,6 +101,7 @@
 
         loading = true;
 
+        // Create scenario
         try {
             const scenario = await scenariosAPI.create({
                 name: scenarioName,
@@ -124,12 +133,14 @@
         seasonDropdownOpen = false;
     }
 
+    // Handle backdrop click to close modal
     function handleBackdropClick(event: MouseEvent) {
         if (event.target === event.currentTarget) {
             close();
         }
     }
 
+    // Handle Escape key to close modal
     function handleKeydown(event: KeyboardEvent) {
         if (event.key === 'Escape' && isOpen) {
             close();
@@ -138,9 +149,9 @@
 </script>
 
 {#if isOpen}
-    <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
     <div class="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-50" on:click={handleBackdropClick} on:keydown={handleKeydown} role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1">
         <div class="bg-primary-900 border-2 border-primary-700 rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <!-- Modal Header -->
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-heading font-bold text-neutral">CREATE SCENARIO</h2>
                 <button on:click={close} class="text-neutral hover:text-primary-400 transition-colors cursor-pointer" aria-label="Close modal">
@@ -156,8 +167,8 @@
                 </div>
             {/if}
 
+            <!-- Sport Dropdown -->
             <form on:submit|preventDefault={handleSubmit} class="space-y-4">
-                <!-- Custom Sport Dropdown -->
                 <div class="relative">
                     <label for="sport" class="block text-lg font-semibold font-sans text-neutral mb-2">
                         Sport
@@ -196,8 +207,8 @@
                     {/if}
                 </div>
 
+                <!-- Season Dropdown -->
                 {#if seasons.length > 0}
-                    <!-- Custom Season Dropdown -->
                     <div class="relative">
                         <label for="season" class="block text-lg font-semibold font-sans text-neutral mb-2">
                             Season
@@ -239,6 +250,7 @@
                     </div>
                 {/if}
 
+                <!-- Scenario Name Input -->
                 <div>
                     <label for="name" class="block text-lg font-semibold font-sans text-neutral mb-2">
                         Scenario Name
@@ -254,7 +266,7 @@
                     />
                 </div>
 
-                <!-- Custom Checkbox -->
+                <!-- Public Checkbox -->
                 <div class="relative">
                     <label class="flex items-center gap-3 w-full rounded-md bg-primary-800/60 border-2 border-primary-600 px-4 py-3 transition-colors hover:bg-primary-800 cursor-pointer" class:border-primary-400={isPublic}>
                         <div class="relative flex items-center justify-center">
@@ -278,6 +290,7 @@
                     </label>
                 </div>
 
+                <!-- Cancel Button -->
                 <div class="flex gap-3 mt-6">
                     <button
                         type="button"

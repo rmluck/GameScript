@@ -7,22 +7,29 @@
     import GamePickerRow from '../scenarios/GamePickerRow.svelte';
     import type { NBAPlayoffSeed, Game, Pick, PlayoffState } from '$types';
 
+    // Props
     export let team: NBAPlayoffSeed;
     export let scenarioId: number;
     export let seasonId: number;
 
+    // Event dispatcher
     const dispatch = createEventDispatcher();
 
+    // State variables for games and picks
     let teamGames: Game[] = [];
     let picks: Map<number, Pick> = new Map();
-    let loading = true;
-    let error = '';
 
+    // State variables for team info
     let currentTeam: NBAPlayoffSeed = team;
     let teamDivision: string = '';
 
     let playoffState: PlayoffState | null = null;
 
+    // Loading and error states
+    let loading = true;
+    let error = '';
+
+    // Load data on mount
     onMount(async () => {
         await loadTeamGames();
         await loadPicks();
@@ -79,7 +86,7 @@
         }
     }
 
-    // Add function to reload team data
+    // Reload team data to get updated stats after pick changes
     async function reloadTeamData() {
         try {
             const standings = await standingsAPI.getByNBAScenario(scenarioId);
@@ -91,7 +98,6 @@
             ];
             
             const updatedTeam = allSeeds.find(seed => seed.team_id === team.team_id);
-            
             if (updatedTeam) {
                 currentTeam = updatedTeam;
             }
@@ -104,6 +110,7 @@
         dispatch('close');
     }
 
+    // Close modal when clicking outside content
     function handleClickOutside(event: MouseEvent) {
         if (event.target === event.currentTarget) {
             closeModal();
@@ -116,9 +123,11 @@
             const existingPick = picks.get(gameId);
 
             if (deletePick && existingPick) {
+                // Delete the pick
                 await picksAPI.delete(scenarioId, gameId);
                 picks.delete(gameId);
             } else if (existingPick) {
+                // Update existing pick
                 const updated = await picksAPI.update(scenarioId, gameId, {
                     picked_team_id: pickedTeamId === undefined ? null : pickedTeamId,
                     predicted_home_score: predictedHomeScore,
@@ -126,6 +135,7 @@
                 });
                 picks.set(gameId, updated);
             } else {
+                // Create new pick
                 const updated = await picksAPI.create(scenarioId, gameId, {
                     picked_team_id: pickedTeamId === undefined ? null : pickedTeamId,
                     predicted_home_score: predictedHomeScore,
@@ -192,17 +202,15 @@
         return game.home_team_id === team.team_id;
     }
 
-    function getOpponent(game: Game) {
-        return isHomeGame(game) ? game.away_team : game.home_team;
-    }
-
     function getGameResult(game: Game): 'win' | 'loss' | 'upcoming' {
         const pick = picks.get(game.id);
         
+        // Check if there's a pick for this game
         if (pick?.picked_team_id !== undefined && pick.picked_team_id !== null) {
             return pick.picked_team_id === team.team_id ? 'win' : 'loss';
         }
         
+        // If no pick, check actual game result if final
         if (game.status === 'final' && game.home_score !== null && game.away_score !== null) {
             const teamScore = isHomeGame(game) ? game.home_score : game.away_score;
             const oppScore = isHomeGame(game) ? game.away_score : game.home_score;
@@ -229,7 +237,7 @@
         tabindex="-1"
         aria-label="Team details modal"
     >
-        <!-- Header -->
+        <!-- Team Info -->
         <div
             class="border-b-4 p-4 sm:p-6"
             style={`background-color: #${currentTeam.team_primary_color}70; border-color: #${currentTeam.team_primary_color};`}
@@ -243,6 +251,7 @@
                             class="w-12 sm:w-16 h-12 sm:h-16 object-contain"
                         />
                     {/if}
+
                     <div>
                         <p class="text-md sm:text-lg font-sans text-black/70 -mb-1">
                             {currentTeam.team_city}
@@ -357,7 +366,7 @@
             </div>
         </div>
 
-        <!-- Schedule Content -->
+        <!-- Team Schedule -->
         <div class="flex-1 overflow-y-auto p-6">
             <h3
                 class="text-xl font-heading font-bold mb-4 uppercase tracking-wide"
@@ -402,6 +411,7 @@
                                         {formatDate(game.start_time)} • {formatTime(game.start_time)}
                                     </span>
                                 </div>
+                                
                                 <div class="flex items-center gap-2">
                                     {#if result === 'win'}
                                         <span class="px-2 py-1 bg-green-500/20 text-green-700 text-xs font-sans font-bold rounded">W</span>

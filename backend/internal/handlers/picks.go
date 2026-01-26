@@ -1,3 +1,5 @@
+// Picks handlers
+
 package handlers
 
 import (
@@ -8,6 +10,7 @@ import (
 
 	"gamescript/internal/database"
 )
+
 
 func getPicksByScenario(db *database.DB) fiber.Handler {
     return func(c *fiber.Ctx) error {
@@ -195,7 +198,6 @@ func createPick(db *database.DB) fiber.Handler {
 
 		// If both scores are provided, validate that picked team id matches winning team
 		if req.PredictedHomeScore != nil && req.PredictedAwayScore != nil && req.PickedTeamID != nil {
-			// Get game details to determine home and away team IDs
 			var homeTeamID, awayTeamID int
 			err := db.Conn.QueryRow(`
 				SELECT home_team_id, away_team_id
@@ -250,7 +252,6 @@ func createPick(db *database.DB) fiber.Handler {
                 WHERE id = $1
             `, scenarioIDInt)
             if updateErr != nil {
-                // Log error but don't fail the request
                 c.Locals("scenario_update_error", updateErr.Error())
             }
         }
@@ -292,7 +293,6 @@ func updatePick(db *database.DB) fiber.Handler {
 
 		// If both scores are provided, validate that picked team id matches winning team
 		if req.PredictedHomeScore != nil && req.PredictedAwayScore != nil && req.PickedTeamID != nil {
-			// Get game details to determine home and away team IDs
 			var homeTeamID, awayTeamID int
 			err := db.Conn.QueryRow(`
 				SELECT home_team_id, away_team_id
@@ -330,7 +330,6 @@ func updatePick(db *database.DB) fiber.Handler {
 				DELETE FROM playoff_matchups WHERE playoff_state_id = $1
 			`, playoffStateID)
 			if err != nil {
-				// Log error but don't fail the request
 				c.Locals("playoff_matchup_delete_error", err.Error())
 			}
 
@@ -338,7 +337,6 @@ func updatePick(db *database.DB) fiber.Handler {
 				DELETE FROM playoff_states WHERE id = $1
 			`, playoffStateID)
 			if err != nil {
-				// Log error but don't fail the request
 				c.Locals("playoff_state_delete_error", err.Error())
 			}
 		}
@@ -372,7 +370,6 @@ func updatePick(db *database.DB) fiber.Handler {
                 WHERE id = $1
             `, scenarioIDInt)
             if updateErr != nil {
-                // Log error but don't fail the request
                 c.Locals("scenario_update_error", updateErr.Error())
             }
         }
@@ -418,7 +415,6 @@ func deletePick(db *database.DB) fiber.Handler {
                 WHERE id = $1
             `, scenarioIDInt)
             if updateErr != nil {
-                // Log error but don't fail the request
                 c.Locals("scenario_update_error", updateErr.Error())
             }
         }

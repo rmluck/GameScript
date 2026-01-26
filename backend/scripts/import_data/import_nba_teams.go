@@ -1,3 +1,5 @@
+// Imports NBA teams data from JSON file into the database
+
 package main
 
 import (
@@ -52,7 +54,6 @@ func main() {
 }
 
 func insertNBATeams(db *database.DB, teams []models.Team) error {
-	// Prepare insert statement
 	stmt := `
 		INSERT INTO teams (
 			sport_id, season_id, espn_id, abbreviation, city, name,
@@ -68,7 +69,6 @@ func insertNBATeams(db *database.DB, teams []models.Team) error {
 			logo_url = EXCLUDED.logo_url
 	`
 
-	// Insert each team
 	for _, team := range teams {
 		_, err := db.Conn.Exec(
 			stmt,

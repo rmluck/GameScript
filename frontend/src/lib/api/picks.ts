@@ -1,3 +1,5 @@
+// API functions related to picks
+
 import { apiClient } from './client';
 import type { Pick } from '$types';
 

@@ -1,12 +1,14 @@
+// HTTP client for ESPN API interactions
+
 package espn
 
 import (
-	// "encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"time"
 )
+
 
 type Client struct {
 	httpClient *http.Client

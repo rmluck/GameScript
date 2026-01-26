@@ -1,3 +1,6 @@
+// Middleware for JWT authentication in a Fiber web application
+// TODO: Update to claim started scenario from non-user when logging in/signing up
+
 package middleware
 
 import (
@@ -9,8 +12,6 @@ import (
     "github.com/gofiber/fiber/v2"
     "github.com/golang-jwt/jwt/v5"
 )
-
-// NEED TO FIX: Update to claim started scenario from non-user when logging in/signing up
 
 type Claims struct {
     UserID   int    `json:"user_id"`
@@ -46,7 +47,6 @@ func AuthMiddleware(c *fiber.Ctx) error {
         }
         return []byte(jwtSecret), nil
     })
-
     if err != nil {
         log.Printf("Token parsing error: %v", err)
         return c.Status(401).JSON(fiber.Map{"error": "Invalid or expired token"})
@@ -73,7 +73,7 @@ func AuthMiddleware(c *fiber.Ctx) error {
     return c.Next()
 }
 
-// OptionalAuth allows requests with or without authentication
+// Allows requests with or without authentication
 func OptionalAuth(c *fiber.Ctx) error {
     authHeader := c.Get("Authorization")
     
@@ -100,6 +100,7 @@ func OptionalAuth(c *fiber.Ctx) error {
         jwtSecret = "jwt_dev_secret_key"
     }
 
+    // Parse and validate token
     token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
         if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
             return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -107,6 +108,7 @@ func OptionalAuth(c *fiber.Ctx) error {
         return []byte(jwtSecret), nil
     })
 
+    // If token is valid, extract claims
     if err == nil && token.Valid {
         claims, ok := token.Claims.(*Claims)
         if ok {

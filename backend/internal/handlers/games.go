@@ -1,10 +1,13 @@
+// Games handlers
+
 package handlers
 
 import (
-    "gamescript/internal/database"
-
     "github.com/gofiber/fiber/v2"
+
+    "gamescript/internal/database"
 )
+
 
 func getGamesBySeason(db *database.DB) fiber.Handler {
     return func(c *fiber.Ctx) error {
@@ -41,7 +44,7 @@ func getGamesBySeason(db *database.DB) fiber.Handler {
 
             err := rows.Scan(
                 &id, &seasonID, &espnID,
-                &homeTeamID, &awayTeamID,  // ← ADD THESE to Scan
+                &homeTeamID, &awayTeamID,
                 &startTime, &dayOfWeek, &week,
                 &location, &primetime, &network,
                 &homeScore, &awayScore, &status, 
@@ -134,7 +137,7 @@ func getGamesByWeek(db *database.DB) fiber.Handler {
 
             err := rows.Scan(
                 &id, &seasonID, &espnID,
-                &homeTeamID, &awayTeamID,  // ← ADD THESE
+                &homeTeamID, &awayTeamID,
                 &startTime, &dayOfWeek, &week,
                 &location, &primetime, &network,
                 &homeScore, &awayScore, &status, 
@@ -149,8 +152,8 @@ func getGamesByWeek(db *database.DB) fiber.Handler {
                 "id": id,
                 "season_id": seasonID,
                 "espn_id": espnID,
-                "home_team_id": homeTeamID,  // ← ADD THIS
-                "away_team_id": awayTeamID,  // ← ADD THIS
+                "home_team_id": homeTeamID,
+                "away_team_id": awayTeamID,
                 "start_time": startTime,
                 "day_of_week": dayOfWeek,
                 "week": week,
@@ -226,7 +229,7 @@ func getGamesByTeam(db *database.DB) fiber.Handler {
 
             err := rows.Scan(
                 &id, &seasonID, &espnID,
-                &homeTeamID, &awayTeamID,  // ← ADD THESE
+                &homeTeamID, &awayTeamID,
                 &startTime, &dayOfWeek, &week,
                 &location, &primetime, &network,
                 &homeScore, &awayScore, &status, 
@@ -241,8 +244,8 @@ func getGamesByTeam(db *database.DB) fiber.Handler {
                 "id": id,
                 "season_id": seasonID,
                 "espn_id": espnID,
-                "home_team_id": homeTeamID,  // ← ADD THIS
-                "away_team_id": awayTeamID,  // ← ADD THIS
+                "home_team_id": homeTeamID,
+                "away_team_id": awayTeamID,
                 "start_time": startTime,
                 "day_of_week": dayOfWeek,
                 "week": week,
@@ -309,7 +312,7 @@ func getGame(db *database.DB) fiber.Handler {
 
         err := db.Conn.QueryRow(query, gameID).Scan(
             &id, &seasonID, &espnID,
-            &homeTeamID, &awayTeamID,  // ← ADD THESE
+            &homeTeamID, &awayTeamID,
             &startTime, &dayOfWeek, &week,
             &location, &primetime, &network,
             &homeScore, &awayScore, &status, 
@@ -324,8 +327,8 @@ func getGame(db *database.DB) fiber.Handler {
             "id": id,
             "season_id": seasonID,
             "espn_id": espnID,
-            "home_team_id": homeTeamID,  // ← ADD THIS
-            "away_team_id": awayTeamID,  // ← ADD THIS
+            "home_team_id": homeTeamID,
+            "away_team_id": awayTeamID,
             "start_time": startTime,
             "day_of_week": dayOfWeek,
             "week": week,

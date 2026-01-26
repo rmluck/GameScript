@@ -1,3 +1,5 @@
+// API functions related to user authentication
+
 import { apiClient } from './client';
 import type { User, AuthResponse } from '$types';
 

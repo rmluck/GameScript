@@ -1,12 +1,14 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
 
+    // Props
     export let title: string;
     export let message: string;
     export let confirmText: string = 'Continue';
     export let cancelText: string = 'Cancel';
     export let warningType: 'regular' | 'playoff' = 'regular';
 
+    // Event dispatcher
     const dispatch = createEventDispatcher();
 
     function confirm() {
@@ -17,6 +19,7 @@
         dispatch('cancel');
     }
 
+    // Handle click outside the modal to cancel
     function handleClickOutside(event: MouseEvent) {
         if (event.target === event.currentTarget) {
             cancel();
@@ -39,7 +42,7 @@
         role="document"
         tabindex="-1"
     >
-        <!-- Header -->
+        <!-- Modal Header -->
         <div
             class="border-b-4 p-6"
             class:bg-red-600={warningType === 'playoff'}

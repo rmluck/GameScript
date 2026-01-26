@@ -1,3 +1,5 @@
+// Fetches NFL teams from ESPN API and maps them to internal team models
+
 package espn
 
 import (
@@ -10,6 +12,7 @@ import (
 const nflTeamsURL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams"
 
 func (c *Client) FetchNFLTeams() ([]models.Team, error) {
+	// Fetch NFL teams from ESPN API
 	body, err := c.Get(nflTeamsURL)
 	if err != nil {
 		return nil, err
@@ -20,6 +23,7 @@ func (c *Client) FetchNFLTeams() ([]models.Team, error) {
 		return nil, fmt.Errorf("failed to unmarshal: %w", err)
 	}
 
+	// Map ESPN API response to internal team models
 	var teams []models.Team
 	for _, league := range apiResp.Sports[0].Leagues {
 		for _, t := range league.Teams {

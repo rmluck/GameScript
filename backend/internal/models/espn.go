@@ -1,6 +1,7 @@
+// Models for ESPN API responses
+
 package models
 
-// Teams API Response
 type ESPNTeamAPIResponse struct {
 	Sports []struct {
 		Leagues []struct {
@@ -29,7 +30,6 @@ type ESPNTeamAPIResponse struct {
 	} `json:"sports"`
 }
 
-// Schedule API Response
 type ESPNScheduleAPIResponse struct {
 	Week struct {
 		Number int `json:"number"`
@@ -68,53 +68,3 @@ type ESPNScheduleAPIResponse struct {
 		} `json:"competitions"`
 	} `json:"events"`
 }
-
-// type ESPNScheduleAPIResponse struct {
-// 	Events []ESPNEvent `json:"events"`
-// }
-
-// type ESPNEvent struct {
-// 	ID       		string `json:"id"`
-// 	Date     		string `json:"date"`
-// 	Name	 		string `json:"name"`
-// 	Competitions []ESPNCompetition `json:"competitions"`
-// 	Status 		ESPNEventStatus `json:"status"`
-// }
-
-// type ESPNCompetition struct {
-// 	ID	   		string `json:"id"`
-// 	Date   		string `json:"date"`
-// 	Venue  		ESPNVenue `json:"venue"`
-// 	Competitors []ESPNCompetitor `json:"competitors"`
-// 	Status ESPNCompetitionStatus `json:"status"`
-// }
-
-// type ESPNVenue struct {
-// 	FullName 	string `json:"fullName"`
-// }
-
-// type ESPNCompetitor struct {
-// 	HomeAway	string `json:"homeAway"`
-// 	Team ESPNTeam `json:"team"`
-// 	Score 	string `json:"score"`
-// }
-
-// type ESPNTeam struct {
-// 	ID          string `json:"id"`
-// 	Abbreviation string `json:"abbreviation"`
-// 	DisplayName string `json:"displayName"`
-// }
-
-// type ESPNCompetitionStatus struct {
-// 	Type ESPNStatusType `json:"type"`
-// }
-
-// type ESPNEventStatus struct {
-// 	Type ESPNStatusType `json:"type"`
-// }
-
-// type ESPNStatusType struct {
-// 	Name 		string `json:"name"`
-// 	State 		string `json:"state"`
-// 	Completed 	bool   `json:"completed"`
-// }

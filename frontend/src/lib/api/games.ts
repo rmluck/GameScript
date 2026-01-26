@@ -1,3 +1,5 @@
+// API functions related to games
+
 import { apiClient } from './client';
 import type { Game } from '$types';
 

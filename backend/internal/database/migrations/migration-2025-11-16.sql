@@ -1,3 +1,5 @@
+-- Migration: Modify teams unique constraint and add session token to scenarios
+
 ALTER TABLE teams DROP CONSTRAINT IF EXISTS teams_sport_id_espn_id_key;
 ALTER TABLE teams ADD CONSTRAINT teams_season_espn_id_unique UNIQUE (season_id, espn_id);
 

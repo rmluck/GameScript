@@ -1,12 +1,16 @@
+// Playoffs handlers
+
 package handlers
 
 import (
-	"gamescript/internal/database"
-	"gamescript/internal/playoffs"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+
+	"gamescript/internal/database"
+	"gamescript/internal/playoffs"
 )
+
 
 func getPlayoffState(db *database.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
@@ -17,10 +21,7 @@ func getPlayoffState(db *database.DB) fiber.Handler {
 			return c.Status(403).JSON(fiber.Map{"error": "Unauthorized"})
 		}
 
-		// Check if playoffs should be enabled
 		sID, _ := strconv.Atoi(scenarioID)
-
-		// Get scenario to find season and sport
 		var seasonID, sportID int
 		err := db.Conn.QueryRow("SELECT season_id, sport_id FROM scenarios WHERE id = $1", sID).Scan(&seasonID, &sportID)
 		if err != nil {
@@ -125,8 +126,6 @@ func enablePlayoffs(db *database.DB) fiber.Handler {
 		}
 
 		sID, _ := strconv.Atoi(scenarioID)
-
-		// Get scenario details (only need seasonID for generating matchups)
 		var seasonID, sportID int
 		err := db.Conn.QueryRow("SELECT season_id, sport_id FROM scenarios WHERE id = $1", sID).Scan(&seasonID, &sportID)
 		if err != nil {
@@ -141,12 +140,11 @@ func enablePlayoffs(db *database.DB) fiber.Handler {
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 			}
-
 			if !allComplete {
 				return c.Status(400).JSON(fiber.Map{"error": "Not all regular season games are complete"})
 			}
 
-			// Generate wild card round (no need to pass seasonID/sportID to playoff state creation)
+			// Generate wild card round
 			err = generator.GenerateNFLWildCardRound(sID, seasonID, sportID)
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{"error": err.Error()})
@@ -161,7 +159,6 @@ func enablePlayoffs(db *database.DB) fiber.Handler {
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 			}
-
 			if !allComplete {
 				return c.Status(400).JSON(fiber.Map{"error": "Not all regular season games are complete"})
 			}
@@ -189,14 +186,13 @@ func getPlayoffMatchups(db *database.DB) fiber.Handler {
 			return c.Status(403).JSON(fiber.Map{"error": "Unauthorized"})
 		}
 
+		// Get playoff round
 		round, err := strconv.Atoi(roundStr)
 		if err != nil {
 			return c.Status(400).JSON(fiber.Map{"error": "Invalid round"})
 		}
 
 		sID, _ := strconv.Atoi(scenarioID)
-
-		// Get playoff state ID and sport ID
 		var playoffStateID, sportID int
 		err = db.Conn.QueryRow(`
 			SELECT ps.id, s.sport_id
@@ -419,8 +415,6 @@ func updatePlayoffPick(db *database.DB) fiber.Handler {
 
 		mID, _ := strconv.Atoi(itemID)
 		sID, _ := strconv.Atoi(scenarioID)
-
-		// Get sport ID and current round
 		var sportID, currentRound int
 		err := db.Conn.QueryRow(`
 			SELECT s.sport_id, ps.round
@@ -449,7 +443,6 @@ func updatePlayoffPick(db *database.DB) fiber.Handler {
 		// Single elimination game logic
 		// If both scores are provided, validate that picked team id matches the winning team
 		if req.PredictedHigherSeedScore != nil && req.PredictedLowerSeedScore != nil && req.PickedTeamID != nil {
-			// Get matchup details to determine higher and lower seed team IDs
 			var higherSeedTeamID, lowerSeedTeamID int
 			err := db.Conn.QueryRow(`
 				SELECT higher_seed_team_id, lower_seed_team_id
@@ -488,7 +481,7 @@ func updatePlayoffPick(db *database.DB) fiber.Handler {
 			}
 		}
 
-		// Update the pick
+		// Update the matchup pick
 		query := `
             UPDATE playoff_matchups
             SET picked_team_id = $1, 
@@ -509,29 +502,6 @@ func updatePlayoffPick(db *database.DB) fiber.Handler {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 		}
-
-		// Check if current round is complete and generate next round
-		// if sportID == 1 {
-		// 	generator := playoffs.NewNFLPlayoffGenerator(db)
-		// 	isComplete, err := generator.CheckNFLRoundComplete(sID, currentRound)
-		// 	if err == nil && isComplete && currentRound < playoffs.RoundSuperBowl {
-		// 		var seasonID int
-		// 		db.Conn.QueryRow("SELECT season_id FROM scenarios WHERE id = $1", sID).Scan(&seasonID)
-		// 		generator.GenerateNFLNextRound(sID, seasonID, currentRound)
-		// 	}
-		// } else if sportID == 2 {
-		// 	generator := playoffs.NewNBAPlayoffGenerator(db)
-		// 	isComplete, err := generator.CheckNBARoundComplete(sID, currentRound)
-		// 	if err == nil && isComplete {
-		// 		if currentRound == playoffs.RoundPlayInA {
-		// 			generator.GenerateNBAPlayInRoundB(sID)
-		// 		} else if currentRound == playoffs.RoundPlayInB {
-		// 			var seasonID int
-		// 			db.Conn.QueryRow("SELECT season_id FROM scenarios WHERE id = $1", sID).Scan(&seasonID)
-		// 			generator.GenerateNBAConferenceQuarterfinals(sID, seasonID)
-		// 		}
-		// 	}
-		// }
 
 		// Update scenario's updated_at timestamp
 		_, updateErr := db.Conn.Exec(`
@@ -579,6 +549,7 @@ func updatePlayoffSeriesPick(db *database.DB, c *fiber.Ctx, scenarioID int, seri
 			return c.Status(404).JSON(fiber.Map{"error": "Series not found"})
 		}
 
+		// Override the picked team ID with calculated winner
 		if *req.PredictedHigherSeedWins == 4 {
 			req.PickedTeamID = &higherSeedTeamID
 		} else {
@@ -613,12 +584,6 @@ func updatePlayoffSeriesPick(db *database.DB, c *fiber.Ctx, scenarioID int, seri
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	// Check if current round is complete and generate next round
-	// isComplete, err := generator.CheckNBASeriesComplete(scenarioID, currentRound)
-	// if err == nil && isComplete && currentRound < playoffs.RoundNBAFinals {
-	// 	generator.GenerateNBANextRound(scenarioID, currentRound)
-	// }
-
 	// Update scenario's updated_at timestamp
 	db.Conn.Exec(`UPDATE scenarios SET updated_at = NOW() WHERE id = $1`, scenarioID)
 
@@ -640,8 +605,6 @@ func generateNextPlayoffRound(db *database.DB) fiber.Handler {
         }
 
         sID, _ := strconv.Atoi(scenarioID)
-
-        // Get current playoff state and sport
         var currentRound, sportID, seasonID int
         err := db.Conn.QueryRow(`
             SELECT ps.current_round, s.sport_id, s.season_id
@@ -653,7 +616,6 @@ func generateNextPlayoffRound(db *database.DB) fiber.Handler {
             return c.Status(404).JSON(fiber.Map{"error": "Playoff state not found"})
         }
 
-        // Generate based on sport and current round
 		if sportID == 1 {
 			generator := playoffs.NewNFLPlayoffGenerator(db)
 

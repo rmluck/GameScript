@@ -3,28 +3,37 @@
     import { playoffsAPI } from '$lib/api/playoffs';
     import { standingsAPI } from '$lib/api/standings';
     import { gamesAPI } from '$lib/api/games';
-    import type { PlayoffMatchup, PlayoffSeries, PlayoffState, NFLStandings, Game } from '$types';
+    import type { PlayoffMatchup, PlayoffState, NFLStandings, Game } from '$types';
     import { NFL_PLAYOFF_ROUND_NAMES } from '$types';
-    
     import WeekNavigator from '../scenarios/WeekNavigator.svelte';
     import PlayoffGameCard from './PlayoffGameCard.svelte';
 
+    // Props
     export let scenarioId: number;
     export let playoffState: PlayoffState;
     export let currentRound: number;
     export let seasonId: number;
 
+    // Event dispatcher
     const dispatch = createEventDispatcher();
 
+    // State variable for playoff matchups/series
     let matchups: PlayoffMatchup[] = [];
+
+    // State variables for standings
     let standings: NFLStandings | null = null;
+
+    // State variable for all games
     let allGames: Game[] = [];
+
+    // Loading and error states
     let loading = true;
     let error = '';
 
-    // Convert round to week for WeekNavigator (Week 19 = Round 1, Week 20 = Round 2, etc.)
+    // Convert round to week for week navigator
     $: currentWeek = 18 + currentRound;
 
+    // Filter matchups by conference
     $: afcMatchups = matchups.filter(m => m.conference === 'AFC');
     $: nfcMatchups = matchups.filter(m => m.conference === 'NFC');
     $: superBowlMatchup = currentRound === 4 ? matchups[0] : null;
@@ -35,16 +44,20 @@
         standings.nfc.playoff_seeds[0]  // NFC #1 seed
     ] : [];
 
+    // Determine if all picks for current round are complete
     $: isCurrentRoundComplete = matchups.length > 0 && matchups.every(m => m.picked_team_id != null);
 
+    // Load data on mount
     onMount(async () => {
         await loadData();
     });
 
+    // Reload matchups when current round changes
     $: if (currentRound) {
         loadMatchups();
     }
 
+    // Load all necessary data
     async function loadData() {
         await loadStandings();
         await loadGames();
@@ -86,12 +99,7 @@
         await loadMatchups();
     }
 
-    function handleWeekChange(event: CustomEvent<{ week: number }>) {
-        const newWeek = event.detail.week;
-        // Dispatch up to parent which will handle switching between regular season and playoffs
-        dispatch('weekChanged', { week: newWeek });
-    }
-
+    // Handle pick changes from child components
     async function handlePickChange(event: CustomEvent<{
         matchupId: number;
         pickedTeamId?: number | null;
@@ -114,21 +122,27 @@
                 return m;
             });
 
-            // Then update on server
+            // Update on server
             await playoffsAPI.updatePick(scenarioId, matchupId, {
                 picked_team_id: pickedTeamId === undefined ? null : pickedTeamId,
                 predicted_higher_seed_score: predictedHigherScore,
                 predicted_lower_seed_score: predictedLowerScore
             });
 
-            // Only dispatch pickUpdated (parent will handle reloading standings/playoff state)
+            // Only dispatch pickUpdated (do not reload matchups here)
             dispatch('pickUpdated');
         } catch (err: any) {
-            console.error('Error saving pick:', err);
             // Revert optimistic update on error
+            console.error('Error saving pick:', err);
             await loadMatchups();
             alert('Failed to save pick. Please try again.');
         }
+    }
+
+    function handleWeekChange(event: CustomEvent<{ week: number }>) {
+        const newWeek = event.detail.week;
+        // Dispatch up to parent which will handle switching between regular season and playoffs
+        dispatch('weekChanged', { week: newWeek });
     }
 </script>
 

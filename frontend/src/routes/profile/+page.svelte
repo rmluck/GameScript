@@ -7,12 +7,11 @@
     import CreateScenarioModal from '$lib/components/scenarios/CreateScenarioModal.svelte';
     import type { User, Scenario } from '$types';
 
+    // State variables for user and scenarios
     let user: User | null = null;
     let scenarios: Scenario[] = [];
-    let loading = true;
-    let error = '';
 
-    // Settings state
+    // State variables for profile settings
     let showSettings = false;
     let username = '';
     let email = '';
@@ -23,13 +22,17 @@
     let settingsError = '';
     let settingsSuccess = '';
 
-    // Scenario management
+    // State variables for scenario management
     let deletingScenarioId: number | null = null;
     let showCreateModal = false;
 
-    // Share functionality
+    // State variables for sharing scenarios
     let copiedScenarioId: number | null = null;
     let copiedTimeout: ReturnType<typeof setTimeout>;
+
+    // Loading and error states
+    let loading = true;
+    let error = '';
 
     onMount(async () => {
         // Check if user is authenticated
@@ -77,7 +80,6 @@
                 settingsSaving = false;
                 return;
             }
-
             if (newPassword && newPassword !== confirmPassword) {
                 settingsError = 'New passwords do not match';
                 settingsSaving = false;
@@ -86,6 +88,7 @@
 
             const updateData: any = { username, email };
             
+            // Include password fields only if changing password
             if (newPassword) {
                 updateData.current_password = currentPassword;
                 updateData.new_password = newPassword;
@@ -140,7 +143,7 @@
                 });
                 return;
             } catch (err) {
-                // User cancelled or share failed, fall back to clipboard
+                // User cancelled or share failed
                 if ((err as Error).name !== 'AbortError') {
                     console.error('Native share failed:', err);
                 }
@@ -167,6 +170,7 @@
     }
 
     function fallbackCopyToClipboard(text: string, scenarioId: number) {
+        // Create a temporary textarea to copy the text
         const textArea = document.createElement('textarea');
         textArea.value = text;
         textArea.style.position = 'fixed';
@@ -178,8 +182,10 @@
             document.execCommand('copy');
             copiedScenarioId = scenarioId;
 
+            // Clear any existing timeout
             if (copiedTimeout) clearTimeout(copiedTimeout);
 
+            // Hide message after 2 seconds
             copiedTimeout = setTimeout(() => {
                 copiedScenarioId = null;
             }, 2000);
@@ -242,6 +248,7 @@
     <div class="rounded-lg p-4 sm:p-6 mb-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div class="flex items-center gap-3 sm:gap-4">
+                <!-- User Avatar -->
                 {#if user?.avatar_url}
                     <img 
                         src={user.avatar_url} 
@@ -255,6 +262,8 @@
                         </span>
                     </div>
                 {/if}
+
+                <!-- User Information -->
                 <div>
                     <h1 class="text-2xl sm:text-3xl font-heading font-bold text-neutral">
                         {user?.username}
@@ -267,6 +276,8 @@
                     {/if}
                 </div>
             </div>
+
+            <!-- Edit Profile Button -->
             <button
                 on:click={() => showSettings = !showSettings}
                 class="w-full sm:w-auto px-4 py-2 bg-primary-700 hover:bg-primary-600 text-neutral font-sans font-semibold rounded-lg transition-colors cursor-pointer"
@@ -293,8 +304,9 @@
                 </div>
             {/if}
 
+            <!-- Profile Update Form -->
             <form on:submit|preventDefault={handleUpdateProfile} class="space-y-4">
-                <!-- Username -->
+                <!-- Username Input -->
                 <div>
                     <label for="username" class="block text-sm font-sans font-semibold text-neutral mb-2">
                         Username
@@ -308,7 +320,7 @@
                     />
                 </div>
 
-                <!-- Email -->
+                <!-- Email Input -->
                 <div class="pb-2">
                     <label for="email" class="block text-sm font-sans font-semibold text-neutral mb-2">
                         Email
@@ -421,8 +433,10 @@
             </div>
         {:else}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Scenario Cards -->
                 {#each scenarios as scenario}
                     <div class="bg-primary-900/30 border border-primary-700 rounded-lg p-4 hover:border-primary-500 transition-colors">
+                        <!-- Scenario Info -->
                         <div class="flex items-start justify-between mb-1">
                             <div class="flex-1 min-w-0">
                                 <h3 class="text-base sm:text-lg font-heading font-bold text-neutral mb-1 truncate" title={scenario.name}>
@@ -445,7 +459,7 @@
                             {/if}
                         </div>
 
-                        <!-- Timestamps on one line with bullet separator -->
+                        <!-- Timestamps -->
                         <div class="flex items-center gap-2 text-xs text-neutral/50 mb-4">
                             <span title={`Created ${formatDate(scenario.created_at)}`}>
                                 Created {formatDate(scenario.created_at)}
@@ -459,13 +473,17 @@
                             </span>
                         </div>
 
+                        <!-- Scenario Actions -->
                         <div class="flex gap-2">
+                            <!-- Open Scenario Link -->
                             <a
                                 href="/scenarios/{scenario.sport_short_name?.toLowerCase()}/{scenario.id}"
                                 class="flex-1 px-3 py-2 bg-primary-700 hover:bg-primary-600 text-neutral text-center text-sm sm:text-base font-sans font-semibold rounded transition-colors"
                             >
                                 Open
                             </a>
+
+                            <!-- Share Scenario Button -->
                             <div class="relative">
                                 <button
                                     on:click={() => handleShareScenario(scenario)}
@@ -485,6 +503,8 @@
                                     </div>
                                 {/if}
                             </div>
+
+                            <!-- Delete Scenario Button -->
                             <button
                                 on:click={() => handleDeleteScenario(scenario.id)}
                                 disabled={deletingScenarioId === scenario.id}

@@ -3,58 +3,71 @@
     import type { Game, Pick } from '$types';
     import ConfirmationModal from './ConfirmationModal.svelte';
 
+    // Props
     export let game: Game;
     export let pick: Pick | undefined = undefined;
     export let hasPlayoffs: boolean = false;
     export let sportId: number | null = null;
 
+    // Event dispatcher
     const dispatch = createEventDispatcher();
 
+    // Map primetime values to badge images
+    const primetimeBadgeMap: { [key: string]: string } = {
+        'Christmas': '/images/christmas.png',
+        'Thanksgiving': '/images/thanksgiving.png',
+        'International': '/images/international.png',
+    };
+
+    // State variables for score inputs
     let predictedHomeScore = pick?.predicted_home_score?.toString() || '';
     let predictedAwayScore = pick?.predicted_away_score?.toString() || '';
+
+    // State variable for confirmation modal
+    let showConfirmation = false;
+
+    // State variables for game info tooltip
     let showInfo = false;
+    let infoButton: HTMLButtonElement;
+
+    // State variables for team tooltips
     let showAwayTeamName = false;
     let showHomeTeamName = false;
-    let showConfirmation = false;
-    let pendingAction: (() => void) | null = null;
-
-    // References for positioning fixed tooltips
-    let infoButton: HTMLButtonElement;
     let awayButton: HTMLButtonElement;
     let homeButton: HTMLButtonElement;
 
+    // State variable for pending action
+    let pendingAction: (() => void) | null = null;
+    
     // Check if game is completed
     $: isGameCompleted = game.status === 'final';
     
+    // Determine pick status
+    $: userMadePick = pick !== undefined;
     $: isHomeTeamPicked = pick?.picked_team_id === game.home_team_id;
     $: isAwayTeamPicked = pick?.picked_team_id === game.away_team_id;
     $: isTiePicked = pick !== undefined && pick.picked_team_id === 0;
-
-    // Check if user made any pick
-    $: userMadePick = pick !== undefined;
 
     // Determine actual winner for completed games
     $: homeTeamWon = isGameCompleted && 
         game.home_score && game.home_score !== null && 
         game.away_score && game.away_score !== null && 
         game.home_score > game.away_score;
-    
     $: awayTeamWon = isGameCompleted && 
         game.home_score && game.home_score !== null && 
         game.away_score && game.away_score !== null && 
         game.away_score > game.home_score;
-    
     $: isActualTie = isGameCompleted && 
         game.home_score && game.home_score !== null && 
         game.away_score && game.away_score !== null && 
         game.home_score === game.away_score;
 
-    // Determine if button should be highlighted
-    // Priority goes to user pick (if exists) over actual result (if exists)
+    // Determine button that should be highlighted
     $: highlightHomeButton = userMadePick ? isHomeTeamPicked : (isGameCompleted ? homeTeamWon : false);
     $: highlightAwayButton = userMadePick ? isAwayTeamPicked : (isGameCompleted ? awayTeamWon : false);
     $: highlightTieButton = userMadePick ? isTiePicked : (isGameCompleted ? isActualTie : false);
 
+    // Determine what to show in score inputs
     $: {
         predictedHomeScore = pick?.predicted_home_score !== null && pick?.predicted_home_score !== undefined 
             ? pick.predicted_home_score.toString() 
@@ -64,21 +77,13 @@
             : '';
     }
 
-    // Determine which logo to use
+    // Determine team logo URLs, using alternate if picked
     $: homeTeamLogoURL = highlightHomeButton && game.home_team.alternate_logo_url 
         ? game.home_team.alternate_logo_url 
         : game.home_team.logo_url;
-    
     $: awayTeamLogoURL = highlightAwayButton && game.away_team.alternate_logo_url 
         ? game.away_team.alternate_logo_url 
         : game.away_team.logo_url;
-
-    // Map primetime values to badge images
-    const primetimeBadgeMap: { [key: string]: string } = {
-        'Christmas': '/images/christmas.png',
-        'Thanksgiving': '/images/thanksgiving.png',
-        'International': '/images/international.png',
-    };
 
     // Parse primetime badges from comma-separated string
     $: primetimeBadges = game.primetime 
@@ -88,12 +93,17 @@
             .filter(badge => badge !== undefined)
         : [];
 
+    // Calculate tooltip positions
+    $: infoPosition = showInfo && infoButton ? getTooltipPosition(infoButton) : { top: 0, left: 0 };
+    $: awayPosition = showAwayTeamName && awayButton ? getTeamTooltipPosition(awayButton) : { top: 0, left: 0 };
+    $: homePosition = showHomeTeamName && homeButton ? getTeamTooltipPosition(homeButton) : { top: 0, left: 0 };
+
     function selectTeam(teamId: number) {
         // Show warning if playoffs exist and user is trying to change a regular season pick
         if (hasPlayoffs) {
             pendingAction = () => {
                 if (pick?.picked_team_id === teamId) {
-                    // DELETE the pick
+                    // Delete the pick
                     predictedHomeScore = '';
                     predictedAwayScore = '';
                     dispatch('pickChanged', {
@@ -101,7 +111,7 @@
                         deletePick: true
                     });
                 } else {
-                    // SWITCHING teams - clear scores since they're likely for the old pick
+                    // Switch pick and clear scores
                     const wasPickMade = pick !== undefined && pick.picked_team_id !== null;
                     if (wasPickMade) {
                         predictedHomeScore = '';
@@ -119,8 +129,9 @@
             return;
         }
 
+        // No playoffs - proceed directly
         if (pick?.picked_team_id === teamId) {
-            // Instead of setting to undefined, DELETE the pick
+            // Delete the pick
             predictedHomeScore = '';
             predictedAwayScore = '';
             dispatch('pickChanged', {
@@ -128,7 +139,7 @@
                 deletePick: true
             });
         } else {
-            // SWITCHING teams - clear scores since they're likely for the old pick
+            // Switch pick and clear scores
             const wasPickMade = pick !== undefined && pick.picked_team_id !== null;
             if (wasPickMade) {
                 predictedHomeScore = '';
@@ -144,10 +155,11 @@
     }
 
     function selectTie() {
+        // Show warning if playoffs exist and user is trying to change a regular season pick
         if (hasPlayoffs) {
             pendingAction = () => {
                 if (isTiePicked) {
-                    // DELETE the pick
+                    // Delete the pick
                     predictedHomeScore = '';
                     predictedAwayScore = '';
                     dispatch('pickChanged', {
@@ -155,7 +167,7 @@
                         deletePick: true
                     });
                 } else {
-                    // SWITCHING to tie - clear scores
+                    // Switch to tie and clear scores
                     const wasPickMade = pick !== undefined && pick.picked_team_id !== null;
                     if (wasPickMade) {
                         predictedHomeScore = '';
@@ -173,8 +185,9 @@
             return;
         }
 
+        // No playoffs - proceed directly
         if (isTiePicked) {
-            // DELETE the pick
+            // Delete the pick
             predictedHomeScore = '';
             predictedAwayScore = '';
             dispatch('pickChanged', {
@@ -182,7 +195,7 @@
                 deletePick: true
             });
         } else {
-            // SWITCHING to tie - clear scores
+            // Switch to tie and clear scores
             const wasPickMade = pick !== undefined && pick.picked_team_id !== null;
             if (wasPickMade) {
                 predictedHomeScore = '';
@@ -197,6 +210,7 @@
         }
     }
 
+    // Handle confirmation modal actions
     function handleConfirm() {
         showConfirmation = false;
         if (pendingAction) {
@@ -205,19 +219,21 @@
         }
     }
 
+    // Cancel team selection change
     function handleCancel() {
         showConfirmation = false;
         pendingAction = null;
     }
 
+    // Handle score input changes
     function handleScoreChange() {
         if (pick) {
             const homeScore = parseScoreInput(predictedHomeScore);
             const awayScore = parseScoreInput(predictedAwayScore);
 
+            // Determine winner based on scores
+            // If scores are invalid, keep existing pick
             let newPickedTeamId = pick.picked_team_id;
-
-            // Determine winner based on scores if both are defined
             if (homeScore !== undefined && awayScore !== undefined) {
                 if (homeScore > awayScore) {
                     newPickedTeamId = game.home_team_id;
@@ -227,7 +243,6 @@
                     newPickedTeamId = 0; // Tie
                 }
             }
-            // If scores are not both defined, keep existing pick
 
             dispatch('pickChanged', {
                 gameId: game.id,
@@ -238,6 +253,7 @@
         }
     }
 
+    // Parse score input string to number or undefined
     function parseScoreInput(value: string): number | undefined {
         if (value === '') return undefined;
         const parsed = parseInt(value);
@@ -267,6 +283,7 @@
         });
     }
 
+    // Calculate tooltip position below the element
     function getTooltipPosition(element: HTMLElement) {
         if (!element) return { top: 0, left: 0 };
         const rect = element.getBoundingClientRect();
@@ -276,6 +293,7 @@
         };
     }
 
+    // Calculate tooltip position for a team button
     function getTeamTooltipPosition(element: HTMLElement) {
         if (!element) return { top: 0, left: 0 };
         const rect = element.getBoundingClientRect();
@@ -284,14 +302,10 @@
             left: rect.left + rect.width / 2
         };
     }
-
-    $: infoPosition = showInfo && infoButton ? getTooltipPosition(infoButton) : { top: 0, left: 0 };
-    $: awayPosition = showAwayTeamName && awayButton ? getTeamTooltipPosition(awayButton) : { top: 0, left: 0 };
-    $: homePosition = showHomeTeamName && homeButton ? getTeamTooltipPosition(homeButton) : { top: 0, left: 0 };
 </script>
 
 <style>
-    /* Remove number input spinners/arrows */
+    /* Hide spin buttons for number inputs */
     input[type='number']::-webkit-inner-spin-button,
     input[type='number']::-webkit-outer-spin-button {
         -webkit-appearance: none;
@@ -321,9 +335,9 @@
     {/if}
 
     <div class="flex items-center gap-2">
-        <!-- Away Team Section (Score + Team Button) -->
+        <!-- Away Team Section -->
         <div class="flex-1 flex items-stretch">
-            <!-- Away Score (Left) -->
+            <!-- Away Score -->
             <div class="w-10 shrink-0">
                 {#if isGameCompleted && (game.away_score !== null && game.away_score !== undefined) && !userMadePick}
                     <div class="h-full flex items-center justify-center font-heading text-lg font-bold rounded-l-lg border-2 border-r-0"
@@ -381,7 +395,7 @@
             </button>
         </div>
 
-        <!-- Center: Info/Tie -->
+        <!-- Center Section -->
         <div class="flex flex-col items-center gap-1 shrink-0">
             <!-- Info Button -->
             <button
@@ -413,7 +427,7 @@
             {/if}
         </div>
 
-        <!-- Home Team Section (Team Button + Score) -->
+        <!-- Home Team Section -->
         <div class="flex-1 flex items-stretch">
             <!-- Home Team Button -->
             <button
@@ -451,7 +465,7 @@
                 </div>
             </button>
 
-            <!-- Home Score (Right) -->
+            <!-- Home Score -->
             <div class="w-10 shrink-0">
                 {#if isGameCompleted && (game.home_score !== null && game.home_score !== undefined) && !userMadePick}
                     <div class="h-full flex items-center justify-center font-heading text-lg font-bold rounded-r-lg border-2 border-l-0 text-white"
@@ -475,7 +489,7 @@
     </div>
 </div>
 
-<!-- Tooltips rendered outside parent (not affected by opacity) -->
+<!-- Game Info Tooltip -->
 {#if showInfo}
     <div 
         class="fixed z-50 w-48 bg-primary-950 border border-primary-600 rounded-lg p-3 text-sm text-neutral text-center shadow-xl pointer-events-none"
@@ -500,6 +514,7 @@
     </div>
 {/if}
 
+<!-- Away Team Tooltip -->
 {#if showAwayTeamName}
     <div 
         class="fixed z-50 px-3 py-1.5 bg-primary-950 border border-primary-600 rounded-lg shadow-xl whitespace-nowrap pointer-events-none"
@@ -511,6 +526,7 @@
     </div>
 {/if}
 
+<!-- Home Team Tooltip -->
 {#if showHomeTeamName}
     <div 
         class="fixed z-50 px-3 py-1.5 bg-primary-950 border border-primary-600 rounded-lg shadow-xl whitespace-nowrap pointer-events-none"
@@ -522,6 +538,7 @@
     </div>
 {/if}
 
+<!-- Confirmation Modal -->
 {#if showConfirmation}
     <ConfirmationModal
         title="Reset Playoff Matchups?"

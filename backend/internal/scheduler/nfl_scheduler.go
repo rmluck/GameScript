@@ -1,3 +1,5 @@
+// Updates NFL game schedules daily at midnight PST
+
 package scheduler
 
 import (
@@ -12,7 +14,6 @@ import (
 func (s *Scheduler) startNFLScheduler() {
 	log.Println("Starting NFL scheduler...")
 
-	// Calculate next midnight PST
 	ticker := s.getNextMidnightPSTTickerForNFL()
 
 	// Optional: Run immediately on startup
@@ -20,10 +21,11 @@ func (s *Scheduler) startNFLScheduler() {
 
 	for {
 		select {
+		// Daily update at midnight PST
 		case <-ticker.C:
 			s.updateNFLSchedule()
 
-			// Reset ticker for next midnight PST
+			// Reset ticker for next tick
 			ticker.Stop()
 			ticker = s.getNextMidnightPSTTickerForNFL()
 		
@@ -35,13 +37,16 @@ func (s *Scheduler) startNFLScheduler() {
 	}
 }
 
+// Calculate duration until next midnight PST
 func (s *Scheduler) getNextMidnightPSTTickerForNFL() *time.Ticker {
+	// Load PST timezone
 	pstLocation, err := time.LoadLocation("America/Los_Angeles")
 	if err != nil {
 		log.Printf("Error loading PST timezone: %v, using UTC", err)
 		pstLocation = time.UTC
 	}
 
+	// Calculate next midnight in PST
 	now := time.Now().In(pstLocation)
 	nextMidnight := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, pstLocation)
 	durationUntilMidnight := time.Until(nextMidnight)
@@ -55,6 +60,7 @@ func (s *Scheduler) updateNFLSchedule() {
 	log.Println("Starting NFL schedule update...")
 	startTime := time.Now()
 
+	// Initialize ESPN client
 	client := espn.NewClient()
 	
 	// Determine NFL season year
@@ -74,7 +80,6 @@ func (s *Scheduler) updateNFLSchedule() {
 	// Update games in database
 	updated := 0
 	errors := 0
-
 	for _, game := range games {
 		if err := s.updateNFLGame(game); err != nil {
 			log.Printf("Error updating NFL game %s: %v", game.ESPNID, err)
@@ -112,7 +117,7 @@ func (s *Scheduler) updateNFLGame(game models.Game) error {
             status = EXCLUDED.status
     `
 
-    // Only set scores if status is "final"
+    // Update scores only if game is final
     var homeScore, awayScore *int
     if game.Status != nil && *game.Status == "final" {
         homeScore = game.HomeScore
@@ -135,7 +140,6 @@ func (s *Scheduler) updateNFLGame(game models.Game) error {
         awayScore,   // Will be NULL for upcoming games
         game.Status,
     )
-
     if err != nil {
         return fmt.Errorf("database error: %w", err)
     }
@@ -144,7 +148,6 @@ func (s *Scheduler) updateNFLGame(game models.Game) error {
     if err != nil {
         return fmt.Errorf("error checking rows affected: %w", err)
     }
-
     if rowsAffected == 0 {
         return fmt.Errorf("no game found with espn_id %s", game.ESPNID)
     }

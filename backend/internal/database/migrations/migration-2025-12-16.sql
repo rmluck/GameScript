@@ -1,3 +1,4 @@
+-- Migration: Create playoff_states and playoff_matchups tables
 CREATE TABLE playoff_states (
     id SERIAL PRIMARY KEY,
     scenario_id INTEGER NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,

@@ -1,3 +1,5 @@
+// Fetches NFL schedule data from ESPN API and processes it into internal game models
+
 package espn
 
 import (
@@ -6,7 +8,6 @@ import (
 	"strconv"
 	"time"
 	"strings"
-
 	// "os"
 
 	"gamescript/internal/models"
@@ -16,7 +17,6 @@ const nflScheduleURL = "https://site.api.espn.com/apis/site/v2/sports/football/n
 
 func (c *Client) FetchNFLSchedule(year int, week int) ([]models.Game, error) {
 	url := fmt.Sprintf("%s?dates=%d&seasontype=2&week=%d", nflScheduleURL, year, week)
-
 	body, err := c.Get(url)
 	if err != nil {
 		return nil, err
@@ -27,7 +27,7 @@ func (c *Client) FetchNFLSchedule(year int, week int) ([]models.Game, error) {
 		return nil, fmt.Errorf("failed to unmarshal: %w", err)
 	}
 
-	// Throw raw response into file for further inspection
+	// // Throw raw response into file for further inspection
 	// err = os.WriteFile("nfl_full_schedule_response.json", body, 0644)
 	// if err != nil {
 	// 	return nil, fmt.Errorf("failed to write response to file: %w", err)
@@ -41,16 +41,16 @@ func (c *Client) FetchNFLSchedule(year int, week int) ([]models.Game, error) {
 
 	var games []models.Game
 	for _, event := range scheduleResp.Events {
+		// Ensure competition exists and has two competitors
 		if len(event.Competitions) == 0 {
 			continue
 		}
-
 		competition := event.Competitions[0]
 		if len(competition.Competitors) < 2 {
 			continue
 		}
 
-		// Parse the game time
+		// Parse gametime
 		gameTimeUTC, err := time.Parse("2006-01-02T15:04Z", competition.Date)
 		if err != nil {
 			continue
@@ -58,7 +58,7 @@ func (c *Client) FetchNFLSchedule(year int, week int) ([]models.Game, error) {
 		gameTimePST := gameTimeUTC.In(pst)
 		dayOfWeek := gameTimePST.Weekday().String()
 
-		// Parse the location
+		// Parse location
 		location := competition.Venue.FullName
 		if competition.Venue.Address.State == "" {
 			location +=  ", " + competition.Venue.Address.City + ", " + competition.Venue.Address.Country
@@ -69,7 +69,6 @@ func (c *Client) FetchNFLSchedule(year int, week int) ([]models.Game, error) {
 		// Find home and away teams
 		var homeTeamID, awayTeamID string
 		var homeScore, awayScore *int
-
 		for _, competitor := range competition.Competitors {
 			if competitor.HomeAway == "home" {
 				homeTeamID = competitor.Team.ID
@@ -124,7 +123,7 @@ func (c *Client) FetchNFLSchedule(year int, week int) ([]models.Game, error) {
 func (c *Client) FetchEntireNFLSeason(year int) ([]models.Game, error) {
 	var allGames []models.Game
 
-	// Regular season: weeks 1-18
+	// Fetch in weekly increments
 	for week := 1; week <= 18; week++ {
 		fmt.Printf("Fetching NFL week %d...\n", week)
 		weekGames, err := c.FetchNFLSchedule(year, week)
@@ -218,7 +217,6 @@ func determineNFLPrimetime(gameTime time.Time, location string) string {
 }
 
 func parseNFLBroadcast(broadcast []string) string {
-    // Define the contains logic as a closure
     contains := func(slice []string, item string) bool {
         for _, s := range slice {
             if s == item {

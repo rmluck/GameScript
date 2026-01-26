@@ -5,43 +5,56 @@
     import { gamesAPI } from '$lib/api/games';
     import type { PlayoffMatchup, PlayoffSeries, PlayoffState, NBAStandings, Game } from '$types';
     import { NBA_PLAYOFF_ROUND_NAMES, NBA_PLAYOFF_ROUNDS } from '$types';
-
     import WeekNavigator from '../scenarios/WeekNavigator.svelte';
     import PlayoffGameCard from './PlayoffGameCard.svelte';
 
+    // Props
     export let scenarioId: number;
     export let playoffState: PlayoffState;
     export let currentRound: number;
     export let seasonId: number;
 
+    // Event dispatcher
     const dispatch = createEventDispatcher();
 
+    // State variable for playoff matchups/series
     let items: (PlayoffMatchup | PlayoffSeries)[] = [];
+
+    // State variables for standings
     let standings: NBAStandings | null = null;
+
+    // State variable for all games
     let allGames: Game[] = [];
+
+    // Loading and error states
     let loading = true;
     let error = '';
 
-    // Convert round to week for WeekNavigator
+    // Convert round to week for week navigator
     $: currentWeek = 25 + currentRound;
 
-    // Determine if current round uses series or single games
+    // Determine if current round uses series or single matchups
     $: isSeries = currentRound >= NBA_PLAYOFF_ROUNDS.CONFERENCE_QUARTERFINALS;
 
-    $: isCurrentRoundComplete = items.length > 0 && items.every(m => m.picked_team_id != null);
-
+    // Filter items by conference
     $: eastItems = items.filter(m => m.conference === 'Eastern');
     $: westItems = items.filter(m => m.conference === 'Western');
     $: finalsItem = currentRound === NBA_PLAYOFF_ROUNDS.NBA_FINALS ? items[0] : null;
 
+    // Determine if all picks for current round are complete
+    $: isCurrentRoundComplete = items.length > 0 && items.every(m => m.picked_team_id != null);
+
+    // Load data on mount
     onMount(async () => {
         await loadData();
     });
 
+    // Reload matchups when current round changes
     $: if (currentRound) {
         loadMatchups();
     }
 
+    // Load all necessary data
     async function loadData() {
         await loadStandings();
         await loadGames();
@@ -82,12 +95,7 @@
         await loadMatchups();
     }
 
-    function handleWeekChange(event: CustomEvent<{ week: number }>) {
-        const newWeek = event.detail.week;
-        // Dispatch up to parent which will handle switching between regular season and playoffs
-        dispatch('weekChanged', { week: newWeek });
-    }
-
+    // Handle pick changes from child components
     async function handlePickChange(event: CustomEvent<{
         itemId?: number;
         matchupId?: number;
@@ -150,14 +158,20 @@
                 });
             }
 
-            // Only dispatch pickUpdated (DON'T auto-advance to next round)
+            // Only dispatch pickUpdated (do not reload matchups here)
             dispatch('pickUpdated');
         } catch (err: any) {
-            console.error('Error saving pick:', err);
             // Revert optimistic update on error
+            console.error('Error saving pick:', err);
             await loadMatchups();
             alert('Failed to save pick. Please try again.');
         }
+    }
+
+    function handleWeekChange(event: CustomEvent<{ week: number }>) {
+        const newWeek = event.detail.week;
+        // Dispatch up to parent which will handle switching between regular season and playoffs
+        dispatch('weekChanged', { week: newWeek });
     }
 </script>
 

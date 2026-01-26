@@ -1,3 +1,5 @@
+// API functions related to playoffs
+
 import { apiClient } from './client';
 import type { PlayoffState, PlayoffMatchup, PlayoffSeries } from '$types';
 

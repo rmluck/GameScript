@@ -3,8 +3,11 @@
     import { authAPI } from '$api/auth';
     import { goto } from '$app/navigation';
 
+    // State variables for account details
     let email = '';
     let password = '';
+
+    // Loading and error states
     let error = '';
     let loading = false;
 
@@ -39,7 +42,9 @@
                 </div>
             {/if}
 
+            <!-- Login Form -->
             <form on:submit|preventDefault={handleLogin} class="space-y-4 sm:space-y-6">
+                <!-- Email Input -->
                 <div>
                     <label for="email" class="block text-lg font-semibold font-sans text-neutral mb-2">Email</label>
                     <input
@@ -52,6 +57,7 @@
                     />
                 </div>
 
+                <!-- Password Input -->
                 <div>
                     <label for="password" class="block text-lg font-semibold font-sans text-neutral mb-2">Password</label>
                     <input
@@ -64,6 +70,7 @@
                     />
                 </div>
 
+                <!-- Submit Button -->
                 <button
                     type="submit"
                     disabled={loading}
@@ -73,6 +80,7 @@
                 </button>
             </form>
 
+            <!-- Registration Link -->
             <p class="mt-6 font-sans text-center text-lg text-neutral">
                 Don't have an account?
                 <a href="/auth/register" class="font-semibold text-primary-300 hover:text-primary-200 hover:underline transition-all duration-200">

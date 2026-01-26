@@ -1,8 +1,10 @@
 <script lang="ts">
     import type { Team } from '$types';
 
+    // Props
     export let teams: Team[];
 
+    // State variable for hovered team ID
     let hoveredTeamId: number | null = null;
 </script>
 

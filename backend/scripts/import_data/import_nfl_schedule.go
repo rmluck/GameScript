@@ -16,7 +16,6 @@ func main() {
     // Get year and week from command line args (optional)
     year := 2025
     week := 0 // 0 means import entire season
-
     if len(os.Args) > 1 {
         if y, err := strconv.Atoi(os.Args[1]); err == nil {
             year = y

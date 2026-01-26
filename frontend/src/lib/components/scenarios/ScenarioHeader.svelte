@@ -2,18 +2,22 @@
     import { createEventDispatcher } from 'svelte';
     import type { Scenario } from '$types';
 
+    // Props
     export let scenario: Scenario;
     export let saveStatus: 'idle' | 'saving' | 'saved' | 'error' = 'idle';
 
+    // Event dispatcher
     const dispatch = createEventDispatcher();
 
+    // State variables for copy
     let showCopiedMessage = false;
     let copiedTimeout: ReturnType<typeof setTimeout>;
 
+    // Share functionality
     async function handleShare() {
         const url = window.location.href;
 
-        // Trye native share API first (mobile devices)
+        // Try native share API first (mobile devices)
         if (navigator.share) {
             try {
                 await navigator.share({
@@ -23,7 +27,7 @@
                 });
                 return;
             } catch (err) {
-                // User cancelled or share failed, fall back to clipboard
+                // User cancelled or share failed
                 if ((err as Error).name !== 'AbortError') {
                     console.error('Native share failed:', err);
                 }
@@ -50,6 +54,7 @@
     }
 
     function fallbackCopyToClipboard(text: string) {
+        // Create a temporary textarea element
         const textArea = document.createElement('textarea');
         textArea.value = text;
         textArea.style.position = 'fixed';
@@ -61,8 +66,10 @@
             document.execCommand('copy');
             showCopiedMessage = true;
 
+            // Clear any existing timeout
             if (copiedTimeout) clearTimeout(copiedTimeout);
 
+            // Hide message after 2 seconds
             copiedTimeout = setTimeout(() => {
                 showCopiedMessage = false;
             }, 2000);

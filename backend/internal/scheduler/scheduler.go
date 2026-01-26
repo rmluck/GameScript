@@ -8,6 +8,7 @@ import (
 	"gamescript/internal/database"
 )
 
+
 type Scheduler struct {
 	db *database.DB
 	quit chan bool
@@ -26,7 +27,7 @@ func (s *Scheduler) Start() {
 	// Start NFL scheduler
 	go s.startNFLScheduler()
 
-	// TODO: NBA scheduler
+	// Start NBA scheduler
 	go s.startNBAScheduler()
 
 	// TODO: CFB scheduler

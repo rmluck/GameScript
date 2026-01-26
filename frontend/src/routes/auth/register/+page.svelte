@@ -4,17 +4,20 @@
     import { goto } from '$app/navigation';
     import { validatePassword, validateEmail, validateUsername } from '$lib/utils/validation';
 
+    // State variables for account details
     let email = '';
     let username = '';
     let password = '';
     let confirmPassword = '';
+
+    // Loading and error states
     let errors: string[] = [];
     let loading = false;
 
     async function handleRegister() {
         errors = [];
 
-        // Validation
+        // Validate inputs
         if (!email || !username || !password || !confirmPassword) {
             errors = ['All fields are required'];
             return;
@@ -73,8 +76,10 @@
                 </div>
             {/if}
 
+            <!-- Registration Form -->
             <form on:submit|preventDefault={handleRegister} class="space-y-4 sm:space-y-6">
                 <div>
+                    <!-- Email Input -->
                     <label for="email" class="block text-lg font-semibold font-sans text-neutral mb-2">
                         Email
                     </label>
@@ -88,6 +93,7 @@
                     />
                 </div>
 
+                <!-- Username Input -->
                 <div>
                     <label for="username" class="block text-lg font-semibold font-sans text-neutral mb-2">
                         Username
@@ -104,6 +110,7 @@
                     />
                 </div>
 
+                <!-- Password Input -->
                 <div>
                     <label for="password" class="block text-lg font-semibold font-sans text-neutral mb-2">
                         Password
@@ -120,6 +127,7 @@
                     <p class="mt-1 text-xs text-neutral/70 font-sans">Must be at least 8 characters</p>
                 </div>
 
+                <!-- Confirm Password Input -->
                 <div>
                     <label for="confirmPassword" class="block text-lg font-semibold font-sans text-neutral mb-2">
                         Confirm Password
@@ -135,6 +143,7 @@
                     />
                 </div>
 
+                <!-- Submit Button -->
                 <button
                     type="submit"
                     disabled={loading}
@@ -144,6 +153,7 @@
                 </button>
             </form>
 
+            <!-- Login Link -->
             <p class="mt-6 font-sans text-center text-lg text-neutral">
                 Already have an account?
                 <a href="/auth/login" class="font-semibold text-primary-300 hover:text-primary-200 hover:underline transition-all duration-200">

@@ -1,3 +1,5 @@
+// NBA standings logic
+
 package standings
 
 import (
@@ -6,6 +8,7 @@ import (
 
 	"gamescript/internal/database"
 )
+
 
 type NBATeamRecord struct {
 	TeamID int
@@ -192,12 +195,13 @@ func getNBAGameResults(db *database.DB, scenarioID int, seasonID int) ([]NBAGame
 
 		// Priority 1: User has made a pick
 		if pickedTeamID != nil {
+			// If user provided predicted scores, use those
 			if predictedHomeScore != nil && predictedAwayScore != nil {
 				game.HomeScore = *predictedHomeScore
 				game.AwayScore = *predictedAwayScore
 				game.HasRealScores = true
 			} else {
-				// No predicted scores, use dummy scores
+				// No predicted scores, use dummy scores based on picked winner
 				game.HasRealScores = false
 				if *pickedTeamID == game.HomeTeamID {
 					game.HomeScore = 1
@@ -206,6 +210,7 @@ func getNBAGameResults(db *database.DB, scenarioID int, seasonID int) ([]NBAGame
 					game.AwayScore = 1
 					game.HomeScore = 0
 				} else {
+					// Invalid picked team ID
 					continue
 				}
 			}
@@ -221,17 +226,22 @@ func getNBAGameResults(db *database.DB, scenarioID int, seasonID int) ([]NBAGame
 			games = append(games, game)
 			continue
 		}
+
+		// Priority 3: No pick and game not final - skip this game
+		// (don't add to games slice)
 	}
 
 	return games, nil
 }
 
 func calculateNBATeamRecords(teams []NBATeamRecord, games []NBAGameResult) []NBATeamRecord {
+	// Initialize record map for easy lookup
 	recordMap := make(map[int]*NBATeamRecord)
 	for i := range teams {
 		recordMap[teams[i].TeamID] = &teams[i]
 	}
 
+	// Process each game to update team records
 	for _, game := range games {
 		homeTeam := recordMap[game.HomeTeamID]
 		awayTeam := recordMap[game.AwayTeamID]
@@ -243,6 +253,7 @@ func calculateNBATeamRecords(teams []NBATeamRecord, games []NBAGameResult) []NBA
 		isDivisionGame := homeTeam.Division == awayTeam.Division
 		isConferenceGame := homeTeam.Conference == awayTeam.Conference
 
+		// Determine winner
 		if game.HomeScore > game.AwayScore {
 			// Home team wins
 			homeTeam.Wins++
@@ -278,6 +289,7 @@ func calculateNBATeamRecords(teams []NBATeamRecord, games []NBAGameResult) []NBA
 		}
 
 		if game.HasRealScores {
+			// Update points for/against
 			homeTeam.PointsFor += game.HomeScore
 			homeTeam.PointsAgainst += game.AwayScore
 			homeTeam.GamesWithScores++
@@ -287,6 +299,7 @@ func calculateNBATeamRecords(teams []NBATeamRecord, games []NBAGameResult) []NBA
 		}
 	}
 
+	// Calculate win percentages
 	for _, team := range recordMap {
 		team.WinPct = calculateNBAWinPct(team.Wins, team.Losses)
 	}
@@ -295,11 +308,13 @@ func calculateNBATeamRecords(teams []NBATeamRecord, games []NBAGameResult) []NBA
 }
 
 func calculateNBAStrengthMetrics(teams []NBATeamRecord, games []NBAGameResult) {
+	// Initialize team map for easy lookup
 	teamMap := make(map[int]*NBATeamRecord)
 	for i := range teams {
 		teamMap[teams[i].TeamID] = &teams[i]
 	}
 
+	// Calculate strength of schedule and strength of victory
 	for i := range teams {
 		team := &teams[i]
 
@@ -327,10 +342,12 @@ func calculateNBAStrengthMetrics(teams []NBATeamRecord, games []NBAGameResult) {
 				continue
 			}
 
+			// Strength of schedule: all opponents
 			opponentTotalWins += opponent.Wins
 			opponentTotalLosses += opponent.Losses
 			opponentCount++
 
+			// Strength of victory: only defeated opponents
 			if teamWon {
 				defeatedOpponentWins += opponent.Wins
 				defeatedOpponentLosses += opponent.Losses
@@ -338,6 +355,7 @@ func calculateNBAStrengthMetrics(teams []NBATeamRecord, games []NBAGameResult) {
 			}
 		}
 
+		// Calculate averages
 		if opponentCount > 0 {
 			team.StrengthOfSchedule = calculateNBAWinPct(opponentTotalWins, opponentTotalLosses)
 		}
@@ -359,18 +377,20 @@ func filterByNBAConference(teams []NBATeamRecord, conference string) []NBATeamRe
 }
 
 func calculateNBAConferenceStandings(teams []NBATeamRecord, games []NBAGameResult) NBAConferenceStandings {
-	// Group teams by division for display purposes
+	// Group teams by division
 	divisions := make(map[string][]NBATeamRecord)
 	for _, team := range teams {
 		divisions[team.Division] = append(divisions[team.Division], team)
 	}
 
+	// Initialize maps for tracking games back and division ranks
 	divisionGamesBackMap := make(map[int]float64)
 	divisionRankMap := make(map[int]int)
 
 	// Determine division winners first (must be broken before other ties)
 	divisionWinners := make(map[string]NBATeamRecord)
 	for divName, divTeams := range divisions {
+		// Sort division teams with tiebreakers
 		sortedDiv := applyNBADivisionTiebreakers(divTeams, games)
 		divisionWinners[divName] = sortedDiv[0]
 
@@ -398,7 +418,7 @@ func calculateNBAConferenceStandings(teams []NBATeamRecord, games []NBAGameResul
 		}
 	}
 
-	// Apply conference-wide tiebreakers to rank all teams 1-15
+	// Apply conference-wide tiebreakers to rank all teams (seeds 1-15)
 	rankedTeams := applyNBAConferenceTiebreakers(teams, games, divisionWinners)
 
 	// Calculate conference games back
@@ -434,7 +454,6 @@ func calculateNBAConferenceStandings(teams []NBATeamRecord, games []NBAGameResul
 		for i := range divTeams {
 			if updatedTeam, exists := teamRecordMap[divTeams[i].TeamID]; exists {
 				divTeams[i].ConferenceGamesBack = updatedTeam.ConferenceGamesBack
-				// divTeams[i].DivisionGamesBack = updatedTeam.DivisionGamesBack
 			}
 		}
 		divisions[divName] = divTeams
@@ -469,6 +488,7 @@ func applyNBADivisionTiebreakers(teams []NBATeamRecord, games []NBAGameResult) [
 		}
 	}
 
+	// Sort by win percentage
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].WinPct > result[j].WinPct
 	})
@@ -503,7 +523,6 @@ func applyNBAConferenceTiebreakers(teams []NBATeamRecord, games []NBAGameResult,
 	// Group by win percentage (rounded to avoid floating point issues)
 	pctGroups := make(map[string][]NBATeamRecord)
     groupOrder := []string{} // Track order of groups
-    
     for _, team := range teams {
         key := fmt.Sprintf("%.6f", team.WinPct)
         if _, exists := pctGroups[key]; !exists {
@@ -512,6 +531,7 @@ func applyNBAConferenceTiebreakers(teams []NBATeamRecord, games []NBAGameResult,
         pctGroups[key] = append(pctGroups[key], team)
     }
 
+	// Resolve ties within each win percentage group
 	var result []NBATeamRecord
 	sort.Slice(groupOrder, func(i, j int) bool {
         return groupOrder[i] > groupOrder[j]
@@ -584,13 +604,7 @@ func resolveNBATwoTeamTie(teams []NBATeamRecord, games []NBAGameResult, division
 		return []NBATeamRecord{b, a}
 	}
 
-	// Step 5: Win percentage vs playoff teams in own conference (top 10)
-	// TODO: Implement when we have playoff-eligible teams identified
-
-	// Step 6: Win percentage vs playoff teams in other conference (top 10)
-	// TODO: Implement when we have playoff-eligible teams identified
-
-	// Step 7: Point differential
+	// Step 5: Point differential
 	aPointDiff := a.PointsFor - a.PointsAgainst
 	bPointDiff := b.PointsFor - b.PointsAgainst
 	if aPointDiff != bPointDiff {
@@ -654,7 +668,7 @@ func resolveNBAMultiTeamTie(teams []NBATeamRecord, games []NBAGameResult, divisi
 		}
 	}
 
-	// Step 2: Head-to-head win percentage among tied teams
+	// Step 2: Head-to-head win percentage
 	h2hWinner := findNBAHeadToHeadWinner(teams, games)
 	if h2hWinner != nil {
 		remaining := removeNBATeam(teams, h2hWinner.TeamID)
@@ -674,7 +688,6 @@ func resolveNBAMultiTeamTie(teams []NBATeamRecord, games []NBAGameResult, divisi
 			break
 		}
 	}
-
 	if allSameDivision {
 		divWinner := findBestNBADivisionRecord(teams)
 		if divWinner != nil {
@@ -698,10 +711,7 @@ func resolveNBAMultiTeamTie(teams []NBATeamRecord, games []NBAGameResult, divisi
 		return result
 	}
 
-	// Step 5: Win percentage vs playoff teams in own conference (top 10)
-	// TODO: Implement when we have playoff-eligible teams identified
-
-	// Step 6: Point differential
+	// Step 5: Point differential
 	pointDiffWinner := findBestNBAPointDifferential(teams)
 	if pointDiffWinner != nil {
 		remaining := removeNBATeam(teams, pointDiffWinner.TeamID)

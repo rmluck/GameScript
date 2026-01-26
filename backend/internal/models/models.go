@@ -1,3 +1,5 @@
+// Models for the application
+
 package models
 
 import "time"

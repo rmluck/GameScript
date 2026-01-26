@@ -1,3 +1,5 @@
+// Route setup and handlers for API endpoints
+
 package handlers
 
 import (
@@ -10,10 +12,11 @@ import (
 	"gamescript/internal/scheduler"
 )
 
+
 func SetupRoutes(app *fiber.App, db *database.DB, scheduler *scheduler.Scheduler) {
 	api := app.Group("/api")
 
-	// Health check
+	// // Health check
 	// api.Get("/health", func(c *fiber.Ctx) error {
 	// 	return c.JSON(fiber.Map{
 	// 		"status": "ok",
@@ -37,12 +40,6 @@ func SetupRoutes(app *fiber.App, db *database.DB, scheduler *scheduler.Scheduler
 	api.Get("/seasons/:season_id/weeks/:week/games", getGamesByWeek(db))
 	api.Get("/teams/:team_id/games", getGamesByTeam(db))
 	api.Get("/games/:game_id", getGame(db))
-
-	// Authentication
-	// auth := api.Group("/auth")
-	// auth.Post("/register", middleware.RateLimitAuth(5, 15*time.Minute), registerUser(db))
-	// auth.Post("/login", middleware.RateLimitAuth(5, 15*time.Minute), loginUser(db))
-	// auth.Get("/me", middleware.AuthMiddleware, getCurrentUser(db))
 
 	// Scenarios (optional auth - guest or user)
 	scenarios := api.Group("/scenarios")

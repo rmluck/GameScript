@@ -1,11 +1,15 @@
+// NBA playoffs generation and management
+
 package playoffs
 
 import (
 	"database/sql"
 	"fmt"
+
 	"gamescript/internal/database"
 	"gamescript/internal/standings"
 )
+
 
 const (
 	RoundPlayInA = 1 // 7v8 and 9v10 games
@@ -36,10 +40,7 @@ func (pg *NBAPlayoffGenerator) CheckAndEnableNBAPlayoffs(scenarioID int, seasonI
 		return false, err
 	}
 
-	// DEBUG
-	fmt.Printf("[NBA Playoffs Check] Total regular season games for season %d: %d\n", seasonID, totalGames)
-
-	// Count games that are either picked or completed
+	// Count games that are either completed or picked
 	var completedOrPickedGames int
 	err = pg.db.Conn.QueryRow(`
 		SELECT COUNT(DISTINCT g.id)
@@ -55,14 +56,10 @@ func (pg *NBAPlayoffGenerator) CheckAndEnableNBAPlayoffs(scenarioID int, seasonI
 		return false, err
 	}
 
-	// DEBUG
-	fmt.Printf("[NBA Playoffs Check] Completed or picked games for scenario %d: %d\n", scenarioID, completedOrPickedGames)
-	fmt.Printf("[NBA Playoffs Check] Can enable playoffs: %v (need %d, have %d)\n", totalGames == completedOrPickedGames, totalGames, completedOrPickedGames)
-
+	// Check if all games are completed or picked
 	return totalGames == completedOrPickedGames, nil
 }
 
-// Generates the first play-in games (7v8 and 9v10)
 func (pg *NBAPlayoffGenerator) GenerateNBAPlayInRoundA(scenarioID int, seasonID int) error {
 	// Get current standings
 	nbaStandings, err := standings.CalculateNBAStandings(pg.db, scenarioID, seasonID)
@@ -70,7 +67,7 @@ func (pg *NBAPlayoffGenerator) GenerateNBAPlayInRoundA(scenarioID int, seasonID 
 		return fmt.Errorf("failed to calculate standings: %v", err)
 	}
 
-	// Create or get playoff state
+	// Get or create playoff state
 	playoffStateID, err := pg.getOrCreateNBAPlayoffState(scenarioID)
 	if err != nil {
 		return err
@@ -113,10 +110,9 @@ func (pg *NBAPlayoffGenerator) generateNBAConferencePlayInA(playoffStateID int, 
 		return fmt.Errorf("not enough playoff seeds for conference %s", conference)
 	}
 
-	// 7v8 matchup
+	// Create 7v8 matchup
 	seed7 := seeds[6]
 	seed8 := seeds[7]
-
 	_, err := pg.db.Conn.Exec(`
 		INSERT INTO playoff_matchups (
 			playoff_state_id, round, matchup_order, conference, higher_seed_team_id, lower_seed_team_id, higher_seed, lower_seed, status
@@ -126,10 +122,9 @@ func (pg *NBAPlayoffGenerator) generateNBAConferencePlayInA(playoffStateID int, 
 		return err
 	}
 
-	// 9v10 matchup
+	// Create 9v10 matchup
 	seed9 := seeds[8]
 	seed10 := seeds[9]
-
 	_, err = pg.db.Conn.Exec(`
 		INSERT INTO playoff_matchups (
 			playoff_state_id, round, matchup_order, conference, higher_seed_team_id, lower_seed_team_id, higher_seed, lower_seed, status
@@ -163,7 +158,6 @@ func (pg *NBAPlayoffGenerator) GenerateNBAPlayInRoundB(scenarioID int) error {
 
 	// Generate matchup for each conference
 	for conference, results := range playInResults {
-		// Winner of 9v10 vs Loser of 7v8
 		winner9v10 := results.Winner9v10
 		loser7v8 := results.Loser7v8
 
@@ -197,6 +191,7 @@ type PlayInRoundAResult struct {
 }
 
 func (pg *NBAPlayoffGenerator) getNBAPlayInRoundAResults(playoffStateID int) (map[string]PlayInRoundAResult, error) {
+	// Fetch all Round A matchups
 	query := `
 		SELECT
 			conference, matchup_order,
@@ -207,7 +202,6 @@ func (pg *NBAPlayoffGenerator) getNBAPlayInRoundAResults(playoffStateID int) (ma
 		WHERE playoff_state_id = $1 AND round = $2
 		ORDER BY conference, matchup_order
 	`
-
 	rows, err := pg.db.Query(query, playoffStateID, RoundPlayInA)
 	if err != nil {
 		return nil, err
@@ -215,7 +209,6 @@ func (pg *NBAPlayoffGenerator) getNBAPlayInRoundAResults(playoffStateID int) (ma
 	defer rows.Close()
 
 	results := make(map[string]PlayInRoundAResult)
-
 	for rows.Next() {
 		var conference string
 		var matchupOrder int
@@ -233,6 +226,7 @@ func (pg *NBAPlayoffGenerator) getNBAPlayInRoundAResults(playoffStateID int) (ma
 
 		result := results[conference]
 
+		// Determine winner and loser
 		var winner, loser TeamSeed
 		if *pickedTeamID == higherSeedTeamID {
 			winner = TeamSeed{TeamID: higherSeedTeamID, Seed: higherSeed}
@@ -256,7 +250,6 @@ func (pg *NBAPlayoffGenerator) getNBAPlayInRoundAResults(playoffStateID int) (ma
 	return results, nil
 }
 
-// Generates the first round playoff series
 func (pg *NBAPlayoffGenerator) GenerateNBAConferenceQuarterfinals(scenarioID int, seasonID int) error {
 	playoffStateID, err := pg.getNBAPlayoffStateID(scenarioID)
 	if err != nil {
@@ -308,9 +301,7 @@ func (pg *NBAPlayoffGenerator) GenerateNBAConferenceQuarterfinals(scenarioID int
 	return err
 }
 
-func (pg *NBAPlayoffGenerator) generateNBAConferenceQuarterfinalsForConference(
-	playoffStateID int, conference string, seeds []standings.NBAPlayoffSeed, playInSeeds PlayInFinalSeeds,
-) error {
+func (pg *NBAPlayoffGenerator) generateNBAConferenceQuarterfinalsForConference(playoffStateID int, conference string, seeds []standings.NBAPlayoffSeed, playInSeeds PlayInFinalSeeds) error {
 	// Build full playoff bracket
 	bracket := make([]TeamSeed, 8)
 
@@ -326,7 +317,7 @@ func (pg *NBAPlayoffGenerator) generateNBAConferenceQuarterfinalsForConference(
 	bracket[6] = playInSeeds.Seed7
 	bracket[7] = playInSeeds.Seed8
 
-	// Create matchups: 1v8, 2v7, 3v6, 4v5
+	// Create matchups
 	matchups := []struct {
 		higher int
 		lower int
@@ -365,6 +356,7 @@ type PlayInFinalSeeds struct {
 }
 
 func (pg *NBAPlayoffGenerator) getNBAPlayInFinalSeeds(playoffStateID int) (map[string]PlayInFinalSeeds, error) {
+	// Get Round A results
 	roundAResults, err := pg.getNBAPlayInRoundAResults(playoffStateID)
 	if err != nil {
 		return nil, err
@@ -377,7 +369,6 @@ func (pg *NBAPlayoffGenerator) getNBAPlayInFinalSeeds(playoffStateID int) (map[s
 		FROM playoff_matchups
 		WHERE playoff_state_id = $1 AND round = $2
 	`
-
 	rows, err := pg.db.Query(query, playoffStateID, RoundPlayInB)
 	if err != nil {
 		return nil, err
@@ -385,7 +376,6 @@ func (pg *NBAPlayoffGenerator) getNBAPlayInFinalSeeds(playoffStateID int) (map[s
 	defer rows.Close()
 
 	results := make(map[string]PlayInFinalSeeds)
-
 	for rows.Next() {
 		var conference string
 		var pickedTeamID *int
@@ -416,7 +406,6 @@ func (pg *NBAPlayoffGenerator) getNBAPlayInFinalSeeds(playoffStateID int) (map[s
 	return results, nil
 }
 
-// Generates the next round of playoffs based on series winners
 func (pg *NBAPlayoffGenerator) GenerateNBANextRound(scenarioID int, currentRound int) error {
 	playoffStateID, err := pg.getNBAPlayoffStateID(scenarioID)
 	if err != nil {
@@ -439,6 +428,7 @@ func (pg *NBAPlayoffGenerator) GenerateNBANextRound(scenarioID int, currentRound
 		return err
 	}
 
+	// Generate series for next round
 	var genErr error
 	switch nextRound {
 	case RoundConferenceSemifinals:
@@ -450,7 +440,6 @@ func (pg *NBAPlayoffGenerator) GenerateNBANextRound(scenarioID int, currentRound
 	default:
 		return fmt.Errorf("invalid next round: %d", nextRound)
 	}
-
 	if genErr != nil {
 		return genErr
 	}
@@ -466,13 +455,11 @@ func (pg *NBAPlayoffGenerator) GenerateNBANextRound(scenarioID int, currentRound
 }
 
 func (pg *NBAPlayoffGenerator) generateNBAConferenceSemifinals(playoffStateID int, conferenceQuarterfinalsWinners map[string][]TeamSeed) error {
+	// For each conference, match up the quarterfinal winners
 	for conference, winners := range conferenceQuarterfinalsWinners {
 		if len(winners) != 4 {
 			return fmt.Errorf("expected 4 quarterfinal winners for %s conference, got %d", conference, len(winners))
 		}
-
-		// Winner of 1v8 vs Winner of 4v5
-		// Winner of 2v7 vs Winner of 3v6
 
 		matchups := []struct {
 			team1 TeamSeed
@@ -512,6 +499,7 @@ func (pg *NBAPlayoffGenerator) generateNBAConferenceSemifinals(playoffStateID in
 }
 
 func (pg *NBAPlayoffGenerator) generateNBAConferenceFinals(playoffStateID int, conferenceSemifinalsWinners map[string][]TeamSeed) error {
+	// For each conference, match up the semifinal winners
 	for conference, winners := range conferenceSemifinalsWinners {
 		if len(winners) != 2 {
 			return fmt.Errorf("expected 2 semifinals winners for %s conference, got %d", conference, len(winners))
@@ -544,11 +532,12 @@ func (pg *NBAPlayoffGenerator) generateNBAConferenceFinals(playoffStateID int, c
 }
 
 func (pg *NBAPlayoffGenerator) generateNBAFinals(playoffStateID int, conferenceFinalsWinners map[string][]TeamSeed) error {
+	// Get Eastern and Western Conference champions
 	easternWinner := conferenceFinalsWinners["Eastern"][0]
 	westernWinner := conferenceFinalsWinners["Western"][0]
 
-	var higherSeed, lowerSeed TeamSeed
 	// TODO: Need to compare regular season wins to determine home field advantage
+	var higherSeed, lowerSeed TeamSeed
 	if easternWinner.Seed < westernWinner.Seed {
 		higherSeed = easternWinner
 		lowerSeed = westernWinner
@@ -589,7 +578,6 @@ func (pg *NBAPlayoffGenerator) getNBASeriesWinners(playoffStateID int, round int
 	defer rows.Close()
 
 	winners := make(map[string][]TeamSeed)
-
 	for rows.Next() {
 		var conference *string
 		var pickedTeamID, higherSeed, lowerSeed, higherSeedTeamID, lowerSeedTeamID int
@@ -617,13 +605,13 @@ func (pg *NBAPlayoffGenerator) getNBASeriesWinners(playoffStateID int, round int
 	return winners, nil
 }
 
-// Checks if all series for a round are complete
 func (pg *NBAPlayoffGenerator) CheckNBASeriesComplete(scenarioID int, round int) (bool, error) {
 	playoffStateID, err := pg.getNBAPlayoffStateID(scenarioID)
 	if err != nil {
 		return false, err
 	}
 
+	// Count total series and picked series for the round
 	var totalSeries, pickedSeries int
 	err = pg.db.Conn.QueryRow(`
 		SELECT
@@ -632,11 +620,11 @@ func (pg *NBAPlayoffGenerator) CheckNBASeriesComplete(scenarioID int, round int)
 		FROM playoff_series
 		WHERE playoff_state_id = $1 AND round = $2
 	`, playoffStateID, round).Scan(&totalSeries, &pickedSeries)
-
 	if err != nil {
 		return false, err
 	}
 
+	// Check if all series for a round have been picked
 	return totalSeries > 0 && totalSeries == pickedSeries, nil
 }
 
@@ -647,7 +635,7 @@ func (pg *NBAPlayoffGenerator) CheckNBARoundComplete(scenarioID int, round int) 
 		return false, err
 	}
 
-	// For play-in rounds (single elimination)
+	// Check if all play-in matchups are complete
 	if round == RoundPlayInA || round == RoundPlayInB {
 		var totalMatchups, pickedMatchups int
 		err = pg.db.Conn.QueryRow(`
@@ -665,13 +653,11 @@ func (pg *NBAPlayoffGenerator) CheckNBARoundComplete(scenarioID int, round int) 
 		return totalMatchups > 0 && totalMatchups == pickedMatchups, nil
 	}
 
-	// For series rounds
+	// For series rounds, delegate to CheckNBASeriesComplete
 	return pg.CheckNBASeriesComplete(scenarioID, round)
 }
 
-// Deletes all playoff matchups after the specified round
 func (pg *NBAPlayoffGenerator) DeleteNBASubsequentRounds(scenarioID int, round int) error {
-	// Get playoff state ID
 	var playoffStateID int
 	err := pg.db.Conn.QueryRow(`
 		SELECT id FROM playoff_states
@@ -681,7 +667,7 @@ func (pg *NBAPlayoffGenerator) DeleteNBASubsequentRounds(scenarioID int, round i
 		return err
 	}
 
-	// Delete all series from rounds greater than the specified round
+	// Delete all series from rounds after specified round
 	_, err = pg.db.Conn.Exec(`
 		DELETE FROM playoff_series
 		WHERE playoff_state_id = $1 AND round > $2
@@ -690,7 +676,7 @@ func (pg *NBAPlayoffGenerator) DeleteNBASubsequentRounds(scenarioID int, round i
 		return err
 	}
 
-	// Delete all matchups from rounds greater than the specified round
+	// Delete all matchups from rounds after specified round
 	_, err = pg.db.Conn.Exec(`
 		DELETE FROM playoff_matchups
 		WHERE playoff_state_id = $1 AND round > $2
@@ -699,7 +685,7 @@ func (pg *NBAPlayoffGenerator) DeleteNBASubsequentRounds(scenarioID int, round i
 		return err
 	}
 
-	// Update playoff state current round
+	// Update current round in playoff state
 	_, err = pg.db.Conn.Exec(`
 		UPDATE playoff_states
 		SET current_round = $1, updated_at = NOW()

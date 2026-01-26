@@ -1,5 +1,4 @@
--- Convert PST times to UTC (add 8 hours during PST, 7 during PDT)
--- This assumes all times are currently stored as PST
+-- Migration: Adjust game start times for DST in 2025
 UPDATE games 
 SET start_time = start_time AT TIME ZONE 'America/Los_Angeles' AT TIME ZONE 'UTC'
 WHERE start_time < '2025-03-09 02:00:00'  -- Before DST starts
@@ -10,4 +9,5 @@ SET start_time = start_time AT TIME ZONE 'America/Los_Angeles' AT TIME ZONE 'UTC
 WHERE start_time >= '2025-03-09 02:00:00' 
   AND start_time < '2025-11-02 02:00:00';
 
+-- Migration: Add alternate logo URL to teams
 ALTER TABLE teams ADD COLUMN alternate_logo_url VARCHAR(255);

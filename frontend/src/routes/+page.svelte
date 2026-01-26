@@ -4,6 +4,7 @@
     import CreateScenarioModal from '$lib/components/scenarios/CreateScenarioModal.svelte';
     import ComingSoonModal from '$lib/components/scenarios/ComingSoonModal.svelte';
 
+    // State variables for modals
     let showCreateModal = false;
     let showComingSoonModal = false;
 
@@ -34,6 +35,7 @@
 />
 
 <div class="text-center px-4 sm:px-6 md:px-8">
+    <!-- Main Header -->
     <h1 class="font-display font-bold text-neutral text-4xl sm:text-5xl md:text-6xl mt-16">
         Welcome to
         <span class="bg-linear-to-r from-primary-700 via-primary-600 to-primary-500 bg-clip-text text-transparent font-sans text-5xl sm:text-6xl md:text-7xl">GameScript</span>
@@ -42,7 +44,7 @@
         Create custom playoff scenarios and see how your picks affect the standings, playoff seeding, and draft order.
     </p>
 
-    <!-- CTA Buttons -->
+    <!-- Main Buttons -->
     <div class="mt-8 flex flex-col sm:flex-row justify-center gap-4 sm:gap-x-6">
         {#if $authStore.isAuthenticated}
             <button
@@ -51,6 +53,7 @@
             >
                 CREATE SCENARIO
             </button>
+
             <a
                 href="/profile"
                 class="bg-primary-900/60 hover:bg-primary-600 border-2 border-primary-900 hover:border-primary-500 rounded-lg shadow-lg transition-all hover:scale-105 px-6 py-3 font-sans font-semibold text-lg sm:text-xl text-neutral"
@@ -64,6 +67,7 @@
             >
                 GET STARTED
             </a>
+            
             <!-- <a
                 href="/scenarios"
                 class="bg-primary-900/60 hover:bg-primary-600 border-2 border-primary-900 hover:border-primary-500 rounded-lg shadow-lg transition-all hover:scale-105 px-6 py-3 font-sans font-semibold text-lg sm:text-xl text-neutral"

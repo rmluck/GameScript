@@ -1,3 +1,5 @@
+// Main application entry point
+
 package main
 
 import (
@@ -18,6 +20,7 @@ import (
     "gamescript/internal/middleware"
     "gamescript/internal/scheduler"
 )
+
 
 func main() {
     // Load environment variables
@@ -55,6 +58,7 @@ func main() {
         allowedOrigins = "http://localhost:5173,http://localhost:3000"
     }
 
+    // CORS middleware
     app.Use(cors.New(cors.Config{
         AllowOrigins:     allowedOrigins,
         AllowMethods:     "GET,POST,PUT,DELETE,PATCH,OPTIONS",
@@ -98,6 +102,7 @@ func main() {
         _ = app.Shutdown()
     }()
 
+    // Start server
     log.Printf("Server starting on http://localhost:%s", port)
     log.Fatal(app.Listen(":" + port))
 }

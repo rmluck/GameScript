@@ -5,6 +5,7 @@
     import { NFL_PLAYOFF_ROUND_NAMES, NBA_PLAYOFF_ROUND_NAMES } from '$types';
     import type { Game, PlayoffState } from '$types';
 
+    // Props
     export let currentWeek: number;
     export let allGames: Game[] = [];
     export let playoffState: PlayoffState | null = null;
@@ -12,24 +13,31 @@
     export let sportId: number | null = null;
     export let isCurrentRoundComplete: boolean = false;
 
+    // Event dispatcher
     const dispatch = createEventDispatcher();
     
+    // State variables for dropdown and week calculations
     let weekDropdownOpen = false;
     let weekDateRanges: Map<number, NFLWeekDateRange | NBAWeekDateRange> = new Map();
 
+    // Constants based on sport
+    $: NUM_WEEKS = sportId === 1 ? 18 : sportId === 2 ? 25 : 0;
+    $: FINAL_PLAYOFF_ROUND = sportId === 1 ? 4 : sportId === 2 ? 6 : 0;
+
+    // Calculate max available week based on playoff state
+    $: maxAvailableWeek = getMaxAvailableWeek(sportId, playoffState, isCurrentRoundComplete, currentWeek);
+
+    // Calculate playoff round if applicable
+    $: playoffRound = currentWeek > NUM_WEEKS ? currentWeek - NUM_WEEKS : 0;
+
+    // Get week date ranges based on sport
     $: if (sportId && allGames.length > 0) {
         weekDateRanges = sportId === 1
             ? getNFLWeekDateRangesFromGames(allGames)
             : getNBAWeekDateRangesFromGames(allGames);
     }
 
-    $: NUM_WEEKS = sportId === 1 ? 18 : sportId === 2 ? 25 : 0;
-    $: FINAL_PLAYOFF_ROUND = sportId === 1 ? 4 : sportId === 2 ? 6 : 0;
-
-    $: maxAvailableWeek = getMaxAvailableWeek(sportId, playoffState, isCurrentRoundComplete, currentWeek);
-
-    $: playoffRound = currentWeek > NUM_WEEKS ? currentWeek - NUM_WEEKS : 0;
-
+    // Current label for the button
     $: currentLabel = playoffRound > 0
         ? (sportId === 1 ? NFL_PLAYOFF_ROUND_NAMES[playoffRound] : NBA_PLAYOFF_ROUND_NAMES[playoffRound]) || `Playoff Round ${playoffRound}`
         : `Week ${currentWeek}`;
@@ -37,6 +45,7 @@
     function getMaxAvailableWeek(sport: number | null, playoffs: PlayoffState | null, roundComplete: boolean, week: number): number {
         if (!sport) return 1000;
         
+        // If playoffs are not enabled, max week is end of regular season
         if (!playoffs?.is_enabled) {
             return NUM_WEEKS;
         }
@@ -46,11 +55,13 @@
             return NUM_WEEKS + FINAL_PLAYOFF_ROUND;
         }
 
+        // If current round is complete, enable next round
         if (roundComplete && week === NUM_WEEKS + playoffs.current_round) {
             console.log('Round complete! Enabling next round: ', NUM_WEEKS + playoffs.current_round + 1);
             return NUM_WEEKS + playoffs.current_round + 1;
         }
 
+        // Otherwise, max week is current playoff round
         return NUM_WEEKS + playoffs.current_round;
     }
 
@@ -77,11 +88,13 @@
         const round = week > NUM_WEEKS ? week - NUM_WEEKS : 0;
 
         if (round > 0) {
+            // Playoff round labels
             return sportId === 1
                 ? NFL_PLAYOFF_ROUND_NAMES[round] || `Playoff Round ${round}`
                 : NBA_PLAYOFF_ROUND_NAMES[round] || `Playoff Round ${round}`;
         }
 
+        // Regular season week labels with date ranges
         const dateRange = weekDateRanges.get(week);
         if (!dateRange) return `WEEK ${week}`;
         return `WEEK ${week} (${sportId === 1 ? formatNFLDateRange(dateRange.startDate, dateRange.endDate) : formatNBADateRange(dateRange.startDate, dateRange.endDate)})`;
@@ -110,17 +123,19 @@
         }
     }
 
+    // Setup global keydown listener
     onMount(() => {
         window.addEventListener('keydown', handleKeydown);
     });
 
+    // Cleanup listener on destroy
     onDestroy(() => {
         window.removeEventListener('keydown', handleKeydown);
     });
 </script>
 
-<!-- Rest of template stays the same -->
 <div class="flex items-center justify-between gap-4 pb-4 border-b-2 border-primary-700">
+    <!-- Previous Week Button -->
     <button
         on:click={previousWeek}
         disabled={currentWeek === 1}
@@ -132,7 +147,9 @@
         </svg>
     </button>
 
+    <!-- Week Selector -->
     <div class="flex-1 relative">
+        <!-- Week Dropdown Button -->
         <button
             type="button"
             on:click={() => weekDropdownOpen = !weekDropdownOpen}
@@ -177,7 +194,7 @@
                     {/each}
                 {/if}
 
-                <!-- Show locked playoff rounds if all regular season is done but playoffs not enabled -->
+                <!-- Message for enabling playoffs -->
                 {#if canEnablePlayoffs && !playoffState?.is_enabled}
                     <div class="border-t-2 border-primary-600 my-1"></div>
                     <div class="px-4 py-3 text-center text-neutral/50 font-sans text-sm">
@@ -188,6 +205,7 @@
         {/if}
     </div>
 
+    <!-- Next Week Button -->
     <button
         on:click={nextWeek}
         disabled={sportId !== null && currentWeek >= maxAvailableWeek}

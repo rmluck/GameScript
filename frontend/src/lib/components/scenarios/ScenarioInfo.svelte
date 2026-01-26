@@ -1,11 +1,11 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
 
+    // Props
     export let isOpen = false;
     export let sport: string | undefined = undefined;
 
-    console.log('sport in ScenarioInfo:', sport);
-
+    // Event dispatcher
     const dispatch = createEventDispatcher();
 
     function close() {
@@ -13,6 +13,7 @@
         dispatch('close');
     }
 
+    // Close modal when clicking outside content
     function handleClickOutside(event: MouseEvent) {
         if (event.target === event.currentTarget) {
             close();

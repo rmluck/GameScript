@@ -1,3 +1,5 @@
+-- Migration: Create playoff_series table and modify playoff_matchups
+
 CREATE TABLE IF NOT EXISTS playoff_series (
     id SERIAL PRIMARY KEY,
     playoff_state_id INTEGER NOT NULL REFERENCES playoff_states(id) ON DELETE CASCADE,

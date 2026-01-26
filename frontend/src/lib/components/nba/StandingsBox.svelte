@@ -2,14 +2,16 @@
     import { createEventDispatcher } from 'svelte';
     import type { NBAConferenceStandings, NBAPlayoffSeed } from '$types';
 
+    // Props
     export let standings: NBAConferenceStandings;
     export let conference: 'East' | 'West';
-
     type ViewMode = 'conference' | 'division';
     export let viewMode: ViewMode = 'conference';
 
+    // Event dispatcher
     const dispatch = createEventDispatcher();
 
+    // Sort teams into groups
     $: playoffTeams = standings.playoff_seeds.slice(0, 6);
     $: playInTeams = standings.playoff_seeds.slice(6, 10);
     $: nonPlayoffTeams = standings.playoff_seeds.slice(10);
@@ -18,6 +20,7 @@
         ? ['Atlantic', 'Central', 'Southeast'].filter(div => standings.divisions[`${div}`])
         : ['Northwest', 'Pacific', 'Southwest'].filter(div => standings.divisions[`${div}`]);
 
+    // Map for quick seed lookup
     $: teamSeedMap = new Map(
         standings.playoff_seeds.map(seed => [seed.team_id, seed.seed])
     );
@@ -31,18 +34,18 @@
     }
 
     function handleMouseEnter(e: MouseEvent, primaryColor: string) {
+        // Set background and text colors on hover
         const target = e.currentTarget as HTMLElement;
         target.style.backgroundColor = `#${primaryColor}90`;
-        // Change all text elements to white
         target.querySelectorAll('span, div').forEach(el => {
             (el as HTMLElement).style.color = 'white';
         });
     }
 
     function handleMouseLeave(e: MouseEvent) {
+        // Reset background and text colors on hover leave
         const target = e.currentTarget as HTMLElement;
         target.style.backgroundColor = 'transparent';
-        // Reset all text colors
         target.querySelectorAll('span, div').forEach(el => {
             (el as HTMLElement).style.color = '';
         });
@@ -117,11 +120,12 @@
     <!-- Conference View -->
     {#if viewMode === 'conference'}
         <div class="space-y-4">
-            <!-- Playoff Teams -->
+            <!-- Playoff Teams (Seeds 1-6) -->
             <div>
                 <h3 class="text-lg font-sans font-bold text-primary-700 uppercase tracking-wide mb-2 px-2">
                     Playoff Teams
                 </h3>
+
                 <div class="space-y-1">
                     {#each playoffTeams as seed}
                         <button class="w-full flex items-center gap-1 px-1 py-2 rounded transition-colors cursor-pointer"
@@ -150,12 +154,13 @@
                 </div>
             </div>
 
-            <!-- Play-In Teams -->
+            <!-- Play-In Teams (Seeds 7-10) -->
             {#if playInTeams.length > 0}
                 <div class="border-t border-primary-700/50 pt-4">
                     <h3 class="text-lg font-sans font-bold text-primary-700 uppercase tracking-wide mb-2 px-2">
                         Play-In Teams
                     </h3>
+
                     <div class="space-y-1">
                         {#each playInTeams as seed}
                             <button class="w-full flex items-center gap-1 px-1 py-2 rounded transition-colors cursor-pointer"
@@ -185,12 +190,13 @@
                 </div>
             {/if}
 
-            <!-- Non-Playoff Teams -->
+            <!-- Non-Playoff Teams (Seeds 11-15) -->
             {#if nonPlayoffTeams.length > 0}
                 <div class="border-t border-primary-700/50 pt-4 opacity-60">
                     <h3 class="text-lg font-sans font-bold text-primary-700 uppercase tracking-wide mb-2 px-2">
                         Out of Playoffs
                     </h3>
+
                     <div class="space-y-1">
                         {#each nonPlayoffTeams as seed}
                             <button class="w-full flex items-center gap-1 px-1 py-2 rounded transition-colors cursor-pointer"
@@ -231,6 +237,7 @@
                     <h3 class="text-lg font-sans font-bold text-primary-700 uppercase tracking-wide mb-2 px-2">
                         {divisionName}
                     </h3>
+
                     <div class="space-y-1">
                         {#each divisionTeams as team, index}
                             <button class="w-full flex items-center gap-2 px-2 py-2 rounded transition-colors cursor-pointer"

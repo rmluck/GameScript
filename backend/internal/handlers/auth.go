@@ -1,3 +1,5 @@
+// User registration, login, and profile management handlers
+
 package handlers
 
 import (
@@ -13,13 +15,16 @@ import (
     "gamescript/internal/database"
 )
 
+
 func validatePassword(password string) []string {
     var errors []string
     
+    // Check length of password
     if len(password) < 8 {
         errors = append(errors, "Password must be at least 8 characters")
     }
 
+    // Check for character types
 	var hasUpper, hasLower, hasNumber, hasSpecial bool
     for _, char := range password {
         switch {
@@ -33,7 +38,6 @@ func validatePassword(password string) []string {
 				hasSpecial = true
         }
     }
-    
     if !hasUpper {
         errors = append(errors, "Password must contain at least one uppercase letter")
     }
@@ -88,18 +92,14 @@ func RegisterUser(db *database.DB) fiber.Handler {
 
         // Validate all fields
         var errors []string
-        
         if req.Email == "" || req.Username == "" || req.Password == "" {
             return c.Status(400).JSON(fiber.Map{"error": "Missing required fields"})
         }
-        
         if !validateEmail(req.Email) {
             errors = append(errors, "Invalid email format")
         }
-        
         errors = append(errors, validateUsername(req.Username)...)
         errors = append(errors, validatePassword(req.Password)...)
-        
         if len(errors) > 0 {
             return c.Status(400).JSON(fiber.Map{"error": errors[0], "errors": errors})
         }
@@ -161,6 +161,7 @@ func LoginUser(db *database.DB) fiber.Handler {
 			return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
 		}
 
+        // Validate input
 		if req.Email == "" || req.Password == "" {
 			return c.Status(400).JSON(fiber.Map{"error": "Email and password are required"})
 		}
@@ -176,7 +177,6 @@ func LoginUser(db *database.DB) fiber.Handler {
 		`
 		err := db.Conn.QueryRow(lockCheckQuery, req.Email).Scan(&userID, &failedAttempts, &lockedUntil)
 
-		// If user exists, check lockout status
 		if err == nil && lockedUntil != nil && time.Now().Before(*lockedUntil) {
             remainingTime := time.Until(*lockedUntil).Minutes()
             return c.Status(423).JSON(fiber.Map{
@@ -386,7 +386,6 @@ func UpdateProfile(db *database.DB) fiber.Handler {
             FROM users
             WHERE id = $1
         `, userID).Scan(&id, &email, &username, &isAdmin, &avatarURL, &createdAt, &updatedAt)
-        
         if err != nil {
             return c.Status(500).JSON(fiber.Map{"error": "Failed to retrieve user"})
         }
@@ -403,12 +402,15 @@ func UpdateProfile(db *database.DB) fiber.Handler {
     }
 }
 
+// Helper function to generate JWT token
 func generateJWT(userID int, email, username string) string {
+    // Get JWT secret from environment variables
     jwtSecret := os.Getenv("JWT_SECRET")
     if jwtSecret == "" {
         jwtSecret = "jwt_dev_secret_key"
     }
 
+    // Set token claims
     claims := jwt.MapClaims{
         "user_id":  userID,
         "email":    email,
@@ -416,6 +418,7 @@ func generateJWT(userID int, email, username string) string {
         "exp":      time.Now().Add(time.Hour * 24 * 7).Unix(), // 7 days
     }
 
+    // Create token
     token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
     tokenString, _ := token.SignedString([]byte(jwtSecret))
 

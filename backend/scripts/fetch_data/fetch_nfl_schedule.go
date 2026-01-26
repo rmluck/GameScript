@@ -1,3 +1,5 @@
+// Fetches NFL schedule data
+
 package main
 
 import (
@@ -11,12 +13,12 @@ import (
 )
 
 func main() {
+    // Initialize ESPN client
     client := espn.NewClient()
 
     // Get year and week from command line args
     year := 2025
     week := 0 // 0 means fetch entire season
-
     if len(os.Args) > 1 {
         if y, err := strconv.Atoi(os.Args[1]); err == nil {
             year = y
@@ -61,6 +63,7 @@ func main() {
     }
     defer file.Close()
 
+    // Encode games to JSON with indentation
     encoder := json.NewEncoder(file)
     encoder.SetIndent("", "  ")
     if err := encoder.Encode(games); err != nil {

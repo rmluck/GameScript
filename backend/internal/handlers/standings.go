@@ -1,3 +1,5 @@
+// Standings handlers
+
 package handlers
 
 import (
@@ -10,17 +12,15 @@ import (
 	"gamescript/internal/standings"
 )
 
+
 func getStandings(db *database.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		scenarioID := c.Params("scenario_id")
-
-		// Convert scenarioID to int
 		sID, err := strconv.Atoi(scenarioID)
 		if err != nil {
 			return c.Status(400).JSON(fiber.Map{"error": "Invalid scenario ID"})
 		}
 
-		// Get scenario to find season
 		var seasonID int
 		var sportID int
 		query := `SELECT season_id, sport_id FROM scenarios WHERE id = $1`

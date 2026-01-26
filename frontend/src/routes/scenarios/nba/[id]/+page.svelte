@@ -5,8 +5,8 @@
     import { standingsAPI } from '$lib/api/standings';
     import { gamesAPI } from '$lib/api/games';
     import { playoffsAPI } from '$lib/api/playoffs';
-    import type { Scenario, NBAStandings, PlayoffState, Game } from '$types';
-
+    import { getCurrentNBAWeekFromGames } from '$lib/utils/nba/dates';
+    import type { Scenario, NBAStandings, NBAPlayoffSeed, PlayoffState, Game } from '$types';
     import ScenarioHeader from '$lib/components/scenarios/ScenarioHeader.svelte';
     import ScenarioSettings from '$lib/components/scenarios/ScenarioSettings.svelte';
     import ScenarioInfo from '$lib/components/scenarios/ScenarioInfo.svelte';
@@ -16,40 +16,53 @@
     import DraftOrderBox from '$lib/components/scenarios/DraftOrderBox.svelte';
     import PlayoffPicksBox from '$lib/components/nba/PlayoffPicksBox.svelte';
     import TeamModal from '$lib/components/nba/TeamModal.svelte';
-    import { getCurrentNBAWeekFromGames } from '$lib/utils/nba/dates';
-    import type { NBAPlayoffSeed } from '$types';
 
+    // State variables for scenario
     let scenarioId: number;
     let scenario: Scenario | null = null;
+
+    // State variable for standings
     let standings: NBAStandings | null = null;
+
+    // State variables for playoffs
     let playoffState: PlayoffState | null = null;
     let canEnablePlayoffs: boolean = false;
-    let loading = true;
-    let error = '';
 
+    // State variables for modals
     let showSettings = false;
     let showInfo = false;
 
+    // State variables for current week/round
     let currentWeek = 1;
-    let allGames: Game[] = [];
     let currentPlayoffRound = 1;
 
+    // State variable for games
+    let allGames: Game[] = [];
+    
+    // Loading and error states
+    let loading = true;
+    let error = '';
+
+    // State variables for view modes
     // Single source of truth for view mode
     let viewKey = 'regular-1'; // Format: 'regular-{week}' or 'playoff-{round}'
-
     type ViewMode = 'conference' | 'division';
     let standingsViewMode: ViewMode = 'conference';
 
+    // State variable for selected team in modal
     let selectedTeam: NBAPlayoffSeed | null = null;
 
+    // State variable for save status
     let saveStatus: 'idle' | 'saving' | 'saved' | 'error' = 'idle';
 
-    // Add references to PicksBox components
+    // State variables for picks box references
     let desktopPicksBox: PicksBox | PlayoffPicksBox;
     let mobilePicksBox: PicksBox | PlayoffPicksBox;
 
+    // Get scenario ID from URL params
     $: scenarioId = parseInt($page.params.id ?? '0');
 
+    // Load data on mount
     onMount(async () => {
         await loadScenario();
         await loadStandings();
@@ -61,6 +74,7 @@
             loading = true;
             scenario = await scenariosAPI.getById(scenarioId);
 
+            // Load all games for the scenario's season to determine current week
             if (scenario.season_id) {
                 allGames = await gamesAPI.getBySeason(scenario.season_id);
                 currentWeek = getCurrentNBAWeekFromGames(allGames);
@@ -121,7 +135,7 @@
     async function handleWeekChange(event: CustomEvent<{ week: number }>) {
         const newWeek = event.detail.week;
         
-        // Week 26+ are playoff rounds
+        // If week is greater than 25, it's a playoff round
         if (newWeek > 25) {
             const newRound = newWeek - 25;
             
@@ -136,9 +150,11 @@
                 }
             }
             
+            // Update current playoff round and view key
             currentPlayoffRound = newRound;
             viewKey = `playoff-${currentPlayoffRound}`;
         } else {
+            // Update current week and view key
             currentWeek = newWeek;
             viewKey = `regular-${currentWeek}`;
         }
@@ -222,11 +238,11 @@
         </div>
     {/if}
 
-    <!-- Main Content - Responsive Grid -->
+    <!-- Main Content -->
     <div class="mt-6 space-y-6 lg:space-y-0">
         <!-- Desktop: 3-column layout with fixed-width standings -->
         <div class="hidden lg:grid lg:grid-cols-[200px_1fr_200px] lg:gap-6">
-            <!-- Left: East Standings (Fixed width) -->
+            <!-- Left: East Standings -->
             <div class="w-[200px]">
                 {#if standings && scenario.season_id}
                     <StandingsBox 
@@ -238,7 +254,7 @@
                 {/if}
             </div>
 
-            <!-- Center: Picks (Flexible, shrinks as needed) -->
+            <!-- Center: Picks -->
             <div class="min-w-[500px]">
                 {#key viewKey}
                     {#if viewKey.startsWith('playoff-') && playoffState?.is_enabled && scenario.season_id}
@@ -265,7 +281,7 @@
                 {/key}
             </div>
 
-            <!-- Right: West Standings (Fixed width) -->
+            <!-- Right: West Standings -->
             <div class="w-[200px]">
                 {#if standings && scenario.season_id}
                     <StandingsBox 

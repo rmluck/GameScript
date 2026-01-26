@@ -1,3 +1,5 @@
+// API client for making requests to the backend
+
 import axios, { type AxiosInstance, type AxiosError } from 'axios';
 import { browser } from '$app/environment';
 
@@ -7,6 +9,7 @@ class APIClient {
     private client: AxiosInstance;
 
     constructor() {
+        // Create Axios instance
         this.client = axios.create({
             baseURL: BASE_URL,
             headers: {

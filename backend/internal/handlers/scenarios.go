@@ -1,3 +1,5 @@
+// Scenarios handlers
+
 package handlers
 
 import (
@@ -10,18 +12,20 @@ import (
 	"gamescript/internal/database"
 )
 
+
 func getScenarios(db *database.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		// Determine authentication status
 		isAuthenticated := false
 		if val, ok := c.Locals("is_authenticated").(bool); ok {
 			isAuthenticated = val
 		}
 
+		// Get user ID or session token
 		userID := 0
 		if val, ok := c.Locals("user_id").(int); ok {
 			userID = val
 		}
-
 		sessionToken := ""
 		if val, ok := c.Locals("session_token").(string); ok {
 			sessionToken = val
@@ -31,6 +35,7 @@ func getScenarios(db *database.DB) fiber.Handler {
 		var query string
 		var args []interface{}
 
+		// Build query based on authentication status
 		if isAuthenticated && userID > 0 {
 			query = `
 				SELECT
@@ -111,16 +116,17 @@ func getScenario(db *database.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		scenarioID := c.Params("scenario_id")
 
+		// Determine authentication status
 		isAuthenticated := false
 		if val, ok := c.Locals("is_authenticated").(bool); ok {
 			isAuthenticated = val
 		}
 
+		// Get user ID or session token
 		userID := 0
 		if val, ok := c.Locals("user_id").(int); ok {
 			userID = val
 		}
-
 		sessionToken := ""
 		if val, ok := c.Locals("session_token").(string); ok {
 			sessionToken = val
@@ -201,6 +207,7 @@ func createScenario(db *database.DB) fiber.Handler {
 			return c.Status(400).JSON(fiber.Map{"error": "Missing required fields"})
 		}
 
+		// Determine authentication status
 		isAuthenticated := false
 		if val, ok := c.Locals("is_authenticated").(bool); ok {
 			isAuthenticated = val
@@ -209,6 +216,7 @@ func createScenario(db *database.DB) fiber.Handler {
 		var query string
 		var args []interface{}
 
+		// Build query based on authentication status
 		if isAuthenticated {
 			userID := c.Locals("user_id").(int)
 			query = `
@@ -328,6 +336,7 @@ func updateScenario(db *database.DB) fiber.Handler {
 			return c.Status(404).JSON(fiber.Map{"error": "Scenario not found"})
 		}
 
+		// Check if user is authenticated
 		if isAuthenticated {
 			currentUserID := c.Locals("user_id").(int)
 			if ownerUserID == nil || *ownerUserID != currentUserID {
@@ -350,17 +359,14 @@ func updateScenario(db *database.DB) fiber.Handler {
 			args = append(args, *req.Name)
 			argCount++
 		}
-
 		if req.IsPublic != nil {
 			updateFields = append(updateFields, "is_public = $"+string(rune('0'+argCount)))
 			args = append(args, *req.IsPublic)
 			argCount++
 		}
-
 		if len(updateFields) == 0 {
 			return c.Status(400).JSON(fiber.Map{"error": "No fields to update"})
 		}
-
 		updateFields = append(updateFields, "updated_at = NOW()")
 		args = append(args, scenarioID)
 
@@ -410,6 +416,7 @@ func deleteScenario(db *database.DB) fiber.Handler {
 			return c.Status(404).JSON(fiber.Map{"error": "Scenario not found"})
 		}
 
+		// Check if user is authenticated
 		if isAuthenticated {
 			currentUserID := c.Locals("user_id").(int)
 			if ownerUserID == nil || *ownerUserID != currentUserID {
@@ -445,6 +452,7 @@ func claimScenario(db *database.DB) fiber.Handler {
 			return c.Status(400).JSON(fiber.Map{"error": "Session token required to claim scenario"})
 		}
 
+		// Update scenario to assign to user and clear session token
 		updateQuery := `
 			UPDATE scenarios
 			SET user_id = $1, session_token = NULL, updated_at = NOW()

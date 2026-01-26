@@ -5,34 +5,40 @@
     import { teamsAPI } from '$lib/api/teams';
     import { scenariosAPI } from '$lib/api/scenarios';
     import type { Game, Pick, Team, PlayoffState } from '$types';
-    
     import WeekNavigator from './WeekNavigator.svelte';
     import GameCard from './GameCard.svelte';
     import ByeTeams from './ByeTeams.svelte';
 
+    // Props
     export let scenarioId: number;
-    export let currentWeek: number;
     export let playoffState: PlayoffState | null = null;
+    export let currentWeek: number;
     export let canEnablePlayoffs: boolean = false;
 
+    // Event dispatcher
     const dispatch = createEventDispatcher();
 
-    let games: Game[] = [];
-    let allGames: Game[] = [];
-    let picks: Map<number, Pick> = new Map();
-    let allTeams: Team[] = [];
-    let byeTeams: Team[] = [];
+    // State variables for scenario
     let seasonId: number | null = null;
     let sportId: number | null = null;
+
+    // State variable for games
+    let games: Game[] = [];
+    let allGames: Game[] = [];
+
+    // State variable for picks
+    let picks: Map<number, Pick> = new Map();
+
+    // State variable for teams
+    let allTeams: Team[] = [];
+    let byeTeams: Team[] = [];
+
+    // Loading and error states
     let loading = true;
     let error = '';
 
     // Group games by day
     $: gamesByDay = groupGamesByDay(games);
-
-    onMount(async () => {
-        await loadData();
-    });
 
     // Filter games when week changes
     $: if (currentWeek && allGames.length > 0) {
@@ -42,6 +48,15 @@
         }
     }
 
+    // Update box height based on sport
+    $: boxHeight = sportId === 1 ? '119.5vh' : sportId === 2 ? '114vh' : '100vh';
+
+    // Load data on mount
+    onMount(async () => {
+        await loadData();
+    });
+
+    // Load all necessary data
     async function loadData() {
         try {
             loading = true;
@@ -54,16 +69,18 @@
             // Load all teams
             allTeams = await teamsAPI.getBySeason(seasonId);
 
-            // Load ALL games for the season once
+            // Load all games for the season once
             allGames = await gamesAPI.getBySeason(seasonId);
             
             // Filter to current week
             games = allGames.filter(game => game.week === currentWeek);
             
-            await loadPicks();
+            // Calculate bye teams for NFL
             if (sportId === 1) {
                 calculateByeTeams();
             }
+
+            await loadPicks();
         } catch (err: any) {
             error = err.response?.data?.error || 'Failed to load games';
             console.error('Error loading data:', err);
@@ -99,6 +116,7 @@
     function groupGamesByDay(games: Game[]): Map<string, Game[]> {
         const grouped = new Map<string, Game[]>();
         
+        // Group games by day of week
         games.forEach(game => {
             const day = game.day_of_week || 'Unknown';
             if (!grouped.has(day)) {
@@ -107,14 +125,15 @@
             grouped.get(day)!.push(game);
         });
 
+        // Sort days according to sport-specific order
         let dayOrder: string[] = [];
         if (sportId === 1) {
             dayOrder = ['Thursday', 'Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday'];
         } else if (sportId === 2) {
             dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         }
+
         const sortedMap = new Map<string, Game[]>();
-        
         dayOrder.forEach((day: string) => {
             if (grouped.has(day)) {
                 sortedMap.set(day, grouped.get(day)!);
@@ -124,13 +143,7 @@
         return sortedMap;
     }
 
-    $: boxHeight = sportId === 1 ? '119.5vh' : sportId === 2 ? '114vh' : '100vh';
-
-    function handleWeekChange(event: CustomEvent<{ week: number }>) {
-        currentWeek = event.detail.week;
-        dispatch('weekChanged', { week: currentWeek });
-    }
-
+    // Handle pick changes from child components
     async function handlePickChange(event: CustomEvent<{
         gameId: number;
         pickedTeamId?: number | null;
@@ -144,11 +157,11 @@
             const existingPick = picks.get(gameId);
 
             if (deletePick && existingPick) {
-                // DELETE the pick entirely
+                // Delete existing pick
                 await picksAPI.delete(scenarioId, gameId);
                 picks.delete(gameId);
             } else if (existingPick) {
-                // UPDATE existing pick
+                // Update existing pick
                 const updated = await picksAPI.update(scenarioId, gameId, {
                     picked_team_id: pickedTeamId === undefined ? null : pickedTeamId,
                     predicted_home_score: predictedHomeScore,
@@ -156,7 +169,7 @@
                 });
                 picks.set(gameId, updated);
             } else {
-                // CREATE new pick
+                // Create new pick
                 const updated = await picksAPI.create(scenarioId, gameId, {
                     picked_team_id: pickedTeamId === undefined ? null : pickedTeamId,
                     predicted_home_score: predictedHomeScore,
@@ -171,6 +184,12 @@
             console.error('Error saving pick:', err);
             alert('Failed to save pick. Please try again.');
         }
+    }
+
+    function handleWeekChange(event: CustomEvent<{ week: number }>) {
+        currentWeek = event.detail.week;
+        // Dispatch up to parent
+        dispatch('weekChanged', { week: currentWeek });
     }
 </script>
 
@@ -199,7 +218,7 @@
             <p class="text-neutral/70 text-lg">No games scheduled for Week {currentWeek}</p>
         </div>
     {:else}
-        <!-- Games List -->
+        <!-- Games -->
         <div class="mt-4 md:mt-6 space-y-4 overflow-y-auto flex-1 pr-2">
             {#each [...gamesByDay.entries()] as [day, dayGames]}
                 <div>
@@ -222,6 +241,7 @@
             {/each}
         </div>
 
+        <!-- Bye Teams (for NFL) -->
         {#if byeTeams.length > 0}
             <ByeTeams teams={byeTeams} />
         {/if}

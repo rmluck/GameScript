@@ -1,31 +1,35 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
 
+    // Props
     export let isOpen = false;
     export let feature = '';
 
+    // Event dispatcher
     const dispatch = createEventDispatcher();
 
-    function close() {
+    function closeModal() {
         isOpen = false;
         dispatch('close');
     }
 
+    // Close modal when clicking outside the content
     function handleBackdropClick(event: MouseEvent) {
         if (event.target === event.currentTarget) {
-            close();
+            closeModal();
         }
     }
 
+    // Close modal on Escape key press
     function handleKeydown(event: KeyboardEvent) {
         if (event.key === 'Escape' && isOpen) {
-            close();
+            closeModal();
         }
     }
 </script>
 
 {#if isOpen}
-    <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+    <!-- Modal Overlay -->
     <div 
         class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" 
         on:click={handleBackdropClick} 
@@ -38,7 +42,7 @@
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-heading font-bold text-neutral">COMING SOON</h2>
                 <button 
-                    on:click={close} 
+                    on:click={closeModal} 
                     class="text-neutral hover:text-primary-400 transition-colors cursor-pointer" 
                     aria-label="Close modal"
                 >
@@ -59,7 +63,7 @@
             </div>
 
             <button
-                on:click={close}
+                on:click={closeModal}
                 class="w-full bg-primary-600 hover:bg-primary-500 border-2 border-primary-500 hover:border-primary-400 rounded-lg py-3 font-sans font-semibold text-xl text-neutral transition-all hover:scale-105 cursor-pointer"
             >
                 GOT IT

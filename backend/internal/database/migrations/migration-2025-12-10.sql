@@ -1,4 +1,4 @@
--- Remove the foreign key constraint on picked_team_id
+-- Migration: Remove the foreign key constraint on picked_team_id
 ALTER TABLE picks DROP CONSTRAINT IF EXISTS picks_picked_team_id_fkey;
 
 -- picked_team_id can now be:

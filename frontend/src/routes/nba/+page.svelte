@@ -3,20 +3,11 @@
     import { goto } from '$app/navigation';
     import { scenariosAPI } from '$lib/api/scenarios';
 
-    function formatDate() {
-        const today = new Date();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        const year = today.getFullYear();
-        return `${month}/${day}/${year}`;
-    }
-
+    // Create NBA scenario on mount
     onMount(async () => {
         try {
-            // Get NBA sport (id: 2) and find active season
             const sports = await fetch('/api/sports').then(r => r.json());
             const nbaSport = sports.find((s: any) => s.short_name === 'NBA');
-            
             if (!nbaSport) {
                 throw new Error('NBA sport not found');
             }
@@ -24,7 +15,6 @@
             // Get active season for NBA
             const seasons = await fetch(`/api/sports/${nbaSport.id}/seasons`).then(r => r.json());
             const activeSeason = seasons.find((s: any) => s.is_active);
-
             if (!activeSeason) {
                 throw new Error('No active NBA season found');
             }
@@ -43,9 +33,16 @@
             goto(`/scenarios/nba/${scenario.id}`);
         } catch (error) {
             console.error('Failed to create NBA scenario:', error);
-            // Could redirect to error page or show error message
         }
     });
+
+    function formatDate() {
+        const today = new Date();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const year = today.getFullYear();
+        return `${month}/${day}/${year}`;
+    }
 </script>
 
 <div class="flex items-center justify-center min-h-full">

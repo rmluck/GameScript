@@ -1,11 +1,15 @@
+// NFL playoffs generation and management
+
 package playoffs
 
 import (
 	"database/sql"
 	"fmt"
+
 	"gamescript/internal/database"
 	"gamescript/internal/standings"
 )
+
 
 const (
 	RoundWildCard               = 1
@@ -22,7 +26,6 @@ func NewNFLPlayoffGenerator(db *database.DB) *NFLPlayoffGenerator {
 	return &NFLPlayoffGenerator{db: db}
 }
 
-// Checks if all regular season games are complete/picked
 func (pg *NFLPlayoffGenerator) CheckAndEnableNFLPlayoffs(scenarioID int, seasonID int) (bool, error) {
 	// Count total regular season games
 	var totalGames int
@@ -35,9 +38,7 @@ func (pg *NFLPlayoffGenerator) CheckAndEnableNFLPlayoffs(scenarioID int, seasonI
 		return false, err
 	}
 
-	// Count games that are either:
-	// 1. Picked by the user (has a pick with picked_team_id)
-	// 2. Already completed (status = 'final')
+	// Count games that are either completed or picked
 	var completedOrPickedGames int
 	err = pg.db.Conn.QueryRow(`
         SELECT COUNT(DISTINCT g.id)
@@ -53,10 +54,10 @@ func (pg *NFLPlayoffGenerator) CheckAndEnableNFLPlayoffs(scenarioID int, seasonI
 		return false, err
 	}
 
+	// Check if all games are completed or picked
 	return totalGames == completedOrPickedGames, nil
 }
 
-// Generates the wild card matchups based on standings
 func (pg *NFLPlayoffGenerator) GenerateNFLWildCardRound(scenarioID int, seasonID int, sportID int) error {
 	// Get current standings
 	nflStandings, err := standings.CalculateNFLStandings(pg.db, scenarioID, seasonID)
@@ -64,13 +65,13 @@ func (pg *NFLPlayoffGenerator) GenerateNFLWildCardRound(scenarioID int, seasonID
 		return fmt.Errorf("failed to calculate standings: %w", err)
 	}
 
-	// Create or get playoff state
+	// Get or create playoff state
 	playoffStateID, err := pg.getOrCreateNFLPlayoffState(scenarioID)
 	if err != nil {
 		return err
 	}
 
-	// Clear existing wild card matchups (in case of regeneration)
+	// Clear existing wild card matchups
 	_, err = pg.db.Conn.Exec(`
         DELETE FROM playoff_matchups 
         WHERE playoff_state_id = $1 AND round = $2
@@ -102,9 +103,6 @@ func (pg *NFLPlayoffGenerator) GenerateNFLWildCardRound(scenarioID int, seasonID
 }
 
 func (pg *NFLPlayoffGenerator) generateNFLConferenceWildCard(playoffStateID int, conference string, seeds []standings.NFLPlayoffSeed) error {
-	// Wild Card matchups: (2 vs 7), (3 vs 6), (4 vs 5)
-	// Seed 1 gets a bye
-
 	matchups := []struct {
 		higher int
 		lower  int
@@ -115,6 +113,7 @@ func (pg *NFLPlayoffGenerator) generateNFLConferenceWildCard(playoffStateID int,
 		{4, 5, 3},
 	}
 
+	// Create matchups
 	for _, m := range matchups {
 		if m.higher > len(seeds) || m.lower > len(seeds) {
 			continue
@@ -141,7 +140,6 @@ func (pg *NFLPlayoffGenerator) generateNFLConferenceWildCard(playoffStateID int,
 	return nil
 }
 
-// Generates matchups for the next playoff round
 func (pg *NFLPlayoffGenerator) GenerateNFLNextRound(scenarioID int, seasonID int, currentRound int) error {
 	playoffStateID, err := pg.getNFLPlayoffStateID(scenarioID)
 	if err != nil {
@@ -165,6 +163,7 @@ func (pg *NFLPlayoffGenerator) GenerateNFLNextRound(scenarioID int, seasonID int
 		return err
 	}
 
+	// Generate matchups for next round
 	var genErr error
 	switch nextRound {
 	case RoundDivisional:
@@ -174,12 +173,11 @@ func (pg *NFLPlayoffGenerator) GenerateNFLNextRound(scenarioID int, seasonID int
 	case RoundSuperBowl:
 		genErr = pg.generateNFLSuperBowl(playoffStateID, winners)
 	}
-
 	if genErr != nil {
 		return genErr
 	}
 
-	// Update playoff state to reflect that new round is available
+	// Update playoff state
 	_, err = pg.db.Conn.Exec(`
         UPDATE playoff_states
         SET current_round = $1, updated_at = NOW()
@@ -195,25 +193,22 @@ func (pg *NFLPlayoffGenerator) generateNFLDivisionalRound(playoffStateID int, sc
 	if err != nil {
 		return fmt.Errorf("failed to calculate standings: %w", err)
 	}
-
-	// Map conference to their 1 seed team ID
 	oneSeeds := map[string]int{
 		"AFC": nflStandings.AFC.PlayoffSeeds[0].Team.TeamID,
 		"NFC": nflStandings.NFC.PlayoffSeeds[0].Team.TeamID,
 	}
 
+	// Generate matchups for each conference
 	for conference, winners := range wildCardWinners {
 		if len(winners) != 3 {
 			return fmt.Errorf("expected 3 wild card winners for %s, got %d", conference, len(winners))
 		}
 
-		// Sort winners by seed (already sorted from query)
-		// Matchups: 1 seed vs lowest remaining, higher remaining vs lower remaining
+		// Sort winners by seed
 		lowestSeed := winners[len(winners)-1] // Highest seed number
 		middleSeed := winners[len(winners)-2] // Middle seed number
 		highestSeed := winners[0]             // Lowest seed number (best team)
 
-		// Get the 1 seed team ID for this conference
 		oneSeedTeamID, exists := oneSeeds[conference]
 		if !exists {
 			return fmt.Errorf("no 1 seed found for conference %s", conference)
@@ -241,7 +236,6 @@ func (pg *NFLPlayoffGenerator) generateNFLDivisionalRound(playoffStateID int, sc
 			higherTeam = middleSeed
 			lowerTeam = highestSeed
 		}
-
 		_, err = pg.db.Conn.Exec(`
             INSERT INTO playoff_matchups (
                 playoff_state_id, round, matchup_order, conference,
@@ -260,11 +254,13 @@ func (pg *NFLPlayoffGenerator) generateNFLDivisionalRound(playoffStateID int, sc
 }
 
 func (pg *NFLPlayoffGenerator) generateNFLConferenceChampionships(playoffStateID int, divisionalWinners map[string][]TeamSeed) error {
+	// Generate matchups for each conference
 	for conference, winners := range divisionalWinners {
 		if len(winners) != 2 {
 			return fmt.Errorf("expected 2 divisional winners for %s, got %d", conference, len(winners))
 		}
 
+		// Sort winners by seed
 		higherSeed := winners[0]
 		lowerSeed := winners[1]
 
@@ -277,7 +273,6 @@ func (pg *NFLPlayoffGenerator) generateNFLConferenceChampionships(playoffStateID
         `, playoffStateID, RoundConferenceChampionship, 1, conference,
 			higherSeed.TeamID, lowerSeed.TeamID,
 			higherSeed.Seed, lowerSeed.Seed)
-
 		if err != nil {
 			return err
 		}
@@ -287,6 +282,7 @@ func (pg *NFLPlayoffGenerator) generateNFLConferenceChampionships(playoffStateID
 }
 
 func (pg *NFLPlayoffGenerator) generateNFLSuperBowl(playoffStateID int, conferenceWinners map[string][]TeamSeed) error {
+	// Get AFC and NFC winners
 	afcWinner := conferenceWinners["AFC"][0]
 	nfcWinner := conferenceWinners["NFC"][0]
 
@@ -350,17 +346,14 @@ func (pg *NFLPlayoffGenerator) getNFLRoundWinners(playoffStateID int, round int)
 		}
 
 		// Determine winner's seed
-		var winnerSeed int
+		var winner TeamSeed
 		if pickedTeamID == higherTeamID {
-			winnerSeed = higherSeed
+			winner = TeamSeed{TeamID: higherTeamID, Seed: higherSeed}
 		} else {
-			winnerSeed = lowerSeed
+			winner = TeamSeed{TeamID: lowerTeamID, Seed: lowerSeed}
 		}
 
-		winners[conf] = append(winners[conf], TeamSeed{
-			TeamID: pickedTeamID,
-			Seed:   winnerSeed,
-		})
+		winners[conf] = append(winners[conf], winner)
 	}
 
 	// Sort each conference's winners by seed
@@ -408,7 +401,7 @@ func (pg *NFLPlayoffGenerator) getNFLPlayoffStateID(scenarioID int) (int, error)
 	return id, err
 }
 
-// CheckNFLRoundComplete checks if all picks for a round are complete
+// Checks if all picks for round are complete
 func (pg *NFLPlayoffGenerator) CheckNFLRoundComplete(scenarioID int, round int) (bool, error) {
 	playoffStateID, err := pg.getNFLPlayoffStateID(scenarioID)
 	if err != nil {
@@ -431,9 +424,7 @@ func (pg *NFLPlayoffGenerator) CheckNFLRoundComplete(scenarioID int, round int) 
 	return totalMatchups > 0 && totalMatchups == pickedMatchups, nil
 }
 
-// DeleteSubsequentNFLRounds deletes all playoff matchups after the specified round
 func (pg *NFLPlayoffGenerator) DeleteSubsequentNFLRounds(scenarioID int, round int) error {
-	// Get playoff state ID
 	var playoffStateID int
 	err := pg.db.Conn.QueryRow(`
         SELECT id FROM playoff_states WHERE scenario_id = $1
@@ -442,7 +433,7 @@ func (pg *NFLPlayoffGenerator) DeleteSubsequentNFLRounds(scenarioID int, round i
 		return err
 	}
 
-	// Delete all matchups from rounds greater than the specified round
+	// Delete all matchups from rounds after specified round
 	_, err = pg.db.Conn.Exec(`
         DELETE FROM playoff_matchups
         WHERE playoff_state_id = $1 AND round > $2
@@ -451,7 +442,7 @@ func (pg *NFLPlayoffGenerator) DeleteSubsequentNFLRounds(scenarioID int, round i
 		return err
 	}
 
-	// Update playoff state current_round
+	// Update current round in playoff state
 	_, err = pg.db.Conn.Exec(`
         UPDATE playoff_states
         SET current_round = $1, updated_at = NOW()

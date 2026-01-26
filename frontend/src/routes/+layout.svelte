@@ -3,20 +3,21 @@
     import { authStore } from '$stores/auth';
     import { onMount } from 'svelte';
     import { authAPI } from '$lib/api/auth';
-    import ComingSoonModal from "$lib/components/scenarios/ComingSoonModal.svelte";
 	import { goto } from '$app/navigation';
+    import ComingSoonModal from "$lib/components/scenarios/ComingSoonModal.svelte";
 
+    // State variables for mobile menu and modals
     let mobileMenuOpen = false;
     let showComingSoonModal=false;
 
     onMount(async () => {
-        // Validate token on mount
         if ($authStore.isAuthenticated) {
+            // Validate token by fetching current user
             try {
                 const user = await authAPI.getCurrentUser();
                 authStore.updateUser(user);
             } catch (error) {
-                // Token is invalid
+                // If token is invalid or expired, log out the user
                 authStore.logout();
             }
         }
@@ -49,6 +50,7 @@
 
 <div class="min-h-screen bg-linear-to-br from-primary-975 to-primary-950 flex flex-col">
     <nav class="bg-primary-900/30 shadow-md">
+        <!-- Navbar -->
         <div class="px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex">
@@ -76,17 +78,21 @@
                         </button>
                     </div>
                 </div>
+
                 <div class="flex items-center">
                     {#if $authStore.isAuthenticated}
-                        <!-- Username visible on all screen sizes -->
+                        <!-- Username -->
                         <span class="text-xs sm:text-sm text-neutral-300 truncate max-w-20 sm:max-w-none mr-2 sm:mr-4">
                             {$authStore.user?.is_admin ? 'ADMIN:' : ''}
                             {$authStore.user?.username}
                         </span>
-                        <!-- Desktop auth buttons -->
+
+                        <!-- Profile Button -->
                         <a href="/profile" class="hidden md:block font-sans font-semibold text-sm lg:text-base bg-primary-800/60 hover:bg-primary-600 text-neutral transition-colors duration-200 px-3 py-2 rounded-md mr-2 sm:mr-4">
                             PROFILE
                         </a>
+
+                        <!-- Logout Button -->
                         <button
                             on:click={handleLogout}
                             class="hidden md:block font-sans font-semibold text-sm lg:text-base bg-primary-800/60 hover:bg-primary-600 text-neutral transition-colors duration-200 px-3 py-2 rounded-md"
@@ -94,10 +100,12 @@
                             LOGOUT
                         </button>
                     {:else}
-                        <!-- Desktop auth buttons when not logged in -->
+                        <!-- Login Button -->
                         <a href="/auth/login" class="hidden md:block font-sans font-semibold text-sm lg:text-base bg-primary-800/60 hover:bg-primary-600 text-neutral transition-colors duration-200 px-3 py-2 rounded-md mr-2 sm:mr-4">
                             LOGIN
                         </a>
+
+                        <!-- Sign Up Button -->
                         <a
                             href="/auth/register"
                             class="hidden md:block font-sans font-semibold text-sm lg:text-base bg-primary-800/60 hover:bg-primary-600 text-neutral transition-colors duration-200 px-3 py-2 rounded-md"
@@ -106,7 +114,7 @@
                         </a>
                     {/if}
 
-                    <!-- Mobile menu button -->
+                    <!-- Mobile Menu Button -->
                     <div class="md:hidden">
                         <button
                             on:click={toggleMobileMenu}
@@ -115,12 +123,12 @@
                             aria-label="Main menu"
                         >
                             {#if mobileMenuOpen}
-                                <!-- Close icon -->
+                                <!-- Close Icon -->
                                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             {:else}
-                                <!-- Hamburger icon -->
+                                <!-- Hamburger Icon -->
                                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
                                 </svg>
@@ -131,14 +139,14 @@
             </div>
         </div>
 
-        <!-- Mobile menu -->
+        <!-- Mobile Menu -->
         <div
             class="md:hidden fixed inset-y-0 right-0 w-64 bg-primary-900 shadow-xl transform transition-transform duration-300 ease-in-out z-50"
             class:translate-x-0={mobileMenuOpen}
             class:translate-x-full={!mobileMenuOpen}
         >
             <div class="flex flex-col h-full">
-                <!-- Close button -->
+                <!-- Close Button -->
                 <div class="flex justify-end p-4">
                     <button
                         on:click={closeMobileMenu}
@@ -152,7 +160,7 @@
                     </button>
                 </div>
 
-                <!-- Sports Links -->
+                <!-- Page Links -->
                 <div class="px-4 py-2 space-y-1">
                     <a
                         href="/nfl"
@@ -179,9 +187,10 @@
                 <!-- Divider -->
                 <div class="border-t border-primary-700 my-4"></div>
 
-                <!-- Auth Section (buttons only, no username) -->
+                <!-- Auth Section -->
                 <div class="px-4 py-2 space-y-2">
                     {#if $authStore.isAuthenticated}
+                        <!-- Profile Button -->
                         <a
                             href="/profile"
                             on:click={closeMobileMenu}
@@ -189,6 +198,8 @@
                         >
                             Profile
                         </a>
+
+                        <!-- Logout Button -->
                         <button
                             on:click={() => { authStore.logout(); closeMobileMenu(); }}
                             class="block w-full text-center px-3 py-2 rounded-md font-sans font-semibold text-sm bg-primary-800/60 hover:bg-primary-600 text-neutral transition-colors duration-200"                        
@@ -196,6 +207,7 @@
                             Logout
                         </button>
                     {:else}
+                        <!-- Login Button -->
                         <a
                             href="/auth/login"
                             on:click={closeMobileMenu}
@@ -203,6 +215,8 @@
                         >
                             Login
                         </a>
+
+                        <!-- Sign Up Button -->
                         <a
                             href="/auth/register"
                             on:click={closeMobileMenu}
@@ -228,10 +242,12 @@
         {/if}
     </nav>
 
+    <!-- Main Content -->
     <main class="flex flex-1 flex-col max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <slot />
     </main>
 
+    <!-- Footer -->
     <footer class="bg-primary-900/30 text-center text-neutral py-6 mt-12 shadow-md">
         <p>&copy; {new Date().getFullYear()} GameScript. All rights reserved.</p>
     </footer>

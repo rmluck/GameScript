@@ -1,3 +1,5 @@
+// API functions related to scenarios
+
 import { apiClient } from './client';
 import type { Scenario } from '$types';
 

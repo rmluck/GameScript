@@ -1,3 +1,5 @@
+// API functions related to standings
+
 import { apiClient } from './client';
 import type { NFLStandings, NBAStandings } from '$types';
 
