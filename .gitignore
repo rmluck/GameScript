@@ -16,9 +16,6 @@ backend/*.test
 # Output of the go coverage tool
 backend/*.out
 
-# Dependencies
-backend/go.sum
-
 # Frontend
 frontend/node_modules/
 frontend/.svelte-kit/
