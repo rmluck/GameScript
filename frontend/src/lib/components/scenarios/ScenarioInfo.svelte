@@ -109,7 +109,7 @@
                                     <li>Strength of victory</li>
                                     <li>Strength of schedule</li>
                                     <li>Point differential</li>
-                                    <li>Points for</li>
+                                    <li>Points scored</li>
                                     <li>Points allowed</li>
                                     <li>Coin toss (random choice)</li>
                                 </ol>
@@ -136,7 +136,7 @@
                                 <li>Strength of victory</li>
                                 <li>Strength of schedule</li>
                                 <li>Point differential</li>
-                                <li>Points for</li>
+                                <li>Points scored</li>
                                 <li>Points allowed</li>
                                 <li>Coin toss (random choice)</li>
                             </ol>
@@ -224,16 +224,18 @@
                                 </ol>
                             </div>
 
-                            <h5 class="text-md font-sans font-semibold text-neutral mb-1">Multi-Way Tiebreakers</h5>
-                            <p class="text-neutral">In the case of a tie in regular season records involving more than two teams, the following criteria will be utilized in the following order:</p>
-                            <ol class="list-decimal list-inside space-y-1 text-neutral/95 ml-5">
-                                <li>Division winner (this criterion is applied regardless of whether the tied teams are in the same division)</li>
-                                <li>Head-to-head record among tied teams</li>
-                                <li>Division record (only if all tied teams are in same division)</li>
-                                <li>Conference record</li>
-                                <li>Win percentage vs. teams eligible for postseason in own conference</li>
-                                <li>Point differential</li>
-                            </ol>
+                            <div>
+                                <h5 class="text-md font-sans font-semibold text-neutral mb-1">Multi-Way Tiebreakers</h5>
+                                <p class="text-neutral">In the case of a tie in regular season records involving more than two teams, the following criteria will be utilized in the following order:</p>
+                                <ol class="list-decimal list-inside space-y-1 text-neutral/95 ml-5">
+                                    <li>Division winner (this criterion is applied regardless of whether the tied teams are in the same division)</li>
+                                    <li>Head-to-head record among tied teams</li>
+                                    <li>Division record (only if all tied teams are in same division)</li>
+                                    <li>Conference record</li>
+                                    <li>Win percentage vs. teams eligible for postseason in own conference</li>
+                                    <li>Point differential</li>
+                                </ol>
+                            </div>
                         </div>
                     </div>
                 {:else}
