@@ -17,20 +17,26 @@ type DB struct {
 }
 
 func NewConnection() (*DB, error) {
-	// Load database configuration from environment variables
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-	dbUser := os.Getenv("DB_USER")
-	dbName := os.Getenv("DB_NAME")
-	dbSSLMode := os.Getenv("DB_SSL_MODE")
+	// Try to get database url first (for production)
+	databaseURL := os.Getenv("DATABASE_URL")
 
-	// Construct the connection string
-	dsn := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=%s",
-		dbHost, dbPort, dbUser, dbName, dbSSLMode)
+	// If database URL not set, build database configuration from individual environment variables (for local development)
+	if databaseURL == "" {
+		dbHost := os.Getenv("DB_HOST")
+		dbPort := os.Getenv("DB_PORT")
+		dbUser := os.Getenv("DB_USER")
+		dbName := os.Getenv("DB_NAME")
+		dbSSLMode := os.Getenv("DB_SSL_MODE")
+
+		// Construct the connection string
+		databaseURL = fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=%s",
+			dbHost, dbPort, dbUser, dbName, dbSSLMode)
+	}
+	
 	
 	// Log the DSN for debugging purposes (avoid logging sensitive info in production)
-	log.Printf("DSN: %s", dsn)
-	db, err := sql.Open("postgres", dsn)
+	log.Printf("Connecting to database...")
+	db, err := sql.Open("postgres", databaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database connection: %v", err)
 	}
