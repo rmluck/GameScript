@@ -55,7 +55,7 @@ func main() {
     // CORS configuration
     allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
     if allowedOrigins == "" {
-        allowedOrigins = "http://localhost:5173,http://localhost:3000,https://gamescript-sigma.vercel.app"
+        allowedOrigins = "http://localhost:5173,http://localhost:3000,https://gamescript.live,https://www.gamescript.live"
     }
 
     // CORS middleware
