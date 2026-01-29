@@ -2,11 +2,12 @@
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import { scenariosAPI } from '$lib/api/scenarios';
+    import { apiClient } from '$lib/api/client';
 
     // Create NBA scenario on mount
     onMount(async () => {
         try {
-            const sports = await fetch('/api/sports').then(r => r.json());
+            const sports = await apiClient.get('/sports').then(r => r.data);
             const nbaSport = sports.find((s: any) => s.short_name === 'NBA');
             if (!nbaSport) {
                 throw new Error('NBA sport not found');

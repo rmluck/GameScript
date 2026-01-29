@@ -1,6 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher, onMount } from 'svelte';
     import { scenariosAPI } from '$lib/api/scenarios';
+    import { apiClient } from '$lib/api/client';
     import type { Sport, Season } from '$types';
 
     // Props
@@ -35,8 +36,8 @@
 
     // Load data on mount
     onMount(async () => {
-        const response = await fetch('/api/sports');
-        const allSports = await response.json();
+        const response = await apiClient.get('/sports');
+        const allSports = response.data;
         sports = allSports.filter((sport: Sport) => sport.short_name !== 'CFB'); // Filter out 'CFB' sport for now
         console.log('Loaded sports:', sports);
     });
@@ -57,8 +58,12 @@
     async function loadSeasons() {
         if (!selectedSportId) return;
         
-        const response = await fetch(`/api/sports/${selectedSportId}/seasons`);
-        seasons = await response.json();
+        try {
+            const response = await apiClient.get(`/sports/${selectedSportId}/seasons`);
+            seasons = response.data;
+        } catch (error) {
+            console.error('Failed to load seasons:', error);
+        }
         
         // Auto-select active season
         const activeSeason = seasons.find(s => s.is_active);
