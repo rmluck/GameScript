@@ -2,10 +2,9 @@
 
 import axios, { type AxiosInstance, type AxiosError } from 'axios';
 import { browser } from '$app/environment';
-import { env } from '$env/dynamic/public';
 
 // Use environment variable for API URL
-const BASE_URL = env.PUBLIC_API_URL || import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 class APIClient {
     private client: AxiosInstance;
