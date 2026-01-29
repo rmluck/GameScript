@@ -22,6 +22,7 @@ func NewConnection() (*DB, error) {
 
 	// If database URL not set, build database configuration from individual environment variables (for local development)
 	if databaseURL == "" {
+		log.Println("Using local database configuration for connection")
 		dbHost := os.Getenv("DB_HOST")
 		dbPort := os.Getenv("DB_PORT")
 		dbUser := os.Getenv("DB_USER")
@@ -31,6 +32,8 @@ func NewConnection() (*DB, error) {
 		// Construct the connection string
 		databaseURL = fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=%s",
 			dbHost, dbPort, dbUser, dbName, dbSSLMode)
+	} else {
+		log.Println("Using DATABASE_URL (Supabase/production) for database connection")
 	}
 	
 	
