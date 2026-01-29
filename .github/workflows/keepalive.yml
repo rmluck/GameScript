@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Ping backend health endpoint
         run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" https://gamescript.onrender.com/health)
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://gamescript.onrender.com/api/health)
           if [ $response -eq 200 ]; then
             echo "✅ Backend is alive (HTTP $response)"
           else
