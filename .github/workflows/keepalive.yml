@@ -1,0 +1,20 @@
+name: Keep Backend Alive
+
+on:
+  schedule:
+    - cron: "*/14 * * * *"  # Runs every 14 minutes (just before 15-min timeout)
+  workflow_dispatch: # Manual trigger option
+
+jobs:
+  ping-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping backend health endpoint
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://gamescript.onrender.com/health)
+          if [ $response -eq 200 ]; then
+            echo "✅ Backend is alive (HTTP $response)"
+          else
+            echo "❌ Backend returned HTTP $response"
+            exit 1
+          fi
