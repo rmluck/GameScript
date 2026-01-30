@@ -455,6 +455,7 @@ Playoff Predictions:
 ### Deployment
 * **Vercel**: Frontend hosting with CDN
 * **Render**: Backend hosting with auto-scaling
+* **Squarespace**: Custom domain name registration
 
 ## 📊 Project Statistics
 * **Total Lines of Code**: ~15,000+
