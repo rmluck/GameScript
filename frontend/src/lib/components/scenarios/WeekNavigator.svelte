@@ -28,7 +28,7 @@
     $: maxAvailableWeek = getMaxAvailableWeek(sportId, playoffState, isCurrentRoundComplete, currentWeek);
 
     // Calculate playoff round if applicable
-    $: playoffRound = currentWeek > NUM_WEEKS ? currentWeek - NUM_WEEKS : 0;
+    $: playoffRound = (NUM_WEEKS > 0 && currentWeek > NUM_WEEKS) ? currentWeek - NUM_WEEKS : 0;
 
     // Get week date ranges based on sport
     $: if (sportId && allGames.length > 0) {
@@ -38,8 +38,9 @@
     }
 
     // Current label for the button
-    $: currentLabel = playoffRound === 0
-        ? `Week ${currentWeek}` : (sportId === 1 ? NFL_PLAYOFF_ROUND_NAMES[playoffRound] : NBA_PLAYOFF_ROUND_NAMES[playoffRound]) || `Playoff Round ${playoffRound}`;
+    $: currentLabel = (sportId && playoffRound > 0)
+        ? (sportId === 1 ? NFL_PLAYOFF_ROUND_NAMES[playoffRound] : NBA_PLAYOFF_ROUND_NAMES[playoffRound]) || `Playoff Round ${playoffRound}`
+        : `Week ${currentWeek}`;
 
     function getMaxAvailableWeek(sport: number | null, playoffs: PlayoffState | null, roundComplete: boolean, week: number): number {
         if (!sport) return 1000;
