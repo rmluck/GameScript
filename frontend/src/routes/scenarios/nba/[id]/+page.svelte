@@ -185,7 +185,7 @@
 </script>
 
 <svelte:head>
-    <title>{scenario?.name || 'Scenario'} - GameScript</title>
+    <title>GameScript</title>
 </svelte:head>
 
 {#if loading}

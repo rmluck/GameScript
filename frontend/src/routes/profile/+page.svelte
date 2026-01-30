@@ -424,12 +424,6 @@
         {:else if scenarios.length === 0}
             <div class="text-center py-12">
                 <p class="text-neutral/70 text-base sm:text-lg mb-4">You haven't created any scenarios yet.</p>
-                <a 
-                    href="/scenarios/create"
-                    class="inline-block px-6 py-3 bg-primary-600 hover:bg-primary-500 text-neutral font-sans font-semibold rounded-lg transition-colors"
-                >
-                    Create Your First Scenario
-                </a>
             </div>
         {:else}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
