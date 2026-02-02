@@ -1,20 +1,33 @@
-name: Keep Backend Alive
+name: Keep Backend Alive (Backup)
 
 on:
   schedule:
-    - cron: "*/14 * * * *"  # Runs every 14 minutes (just before 15-min timeout)
+    # Run every 6 hours as backup to UptimeRobot
+    - cron: "0 */6 * * *"  # 12am, 6am, 12pm, 6pm UTC
   workflow_dispatch: # Manual trigger option
 
 jobs:
   ping-backend:
     runs-on: ubuntu-latest
+    timeout-minutes: 5  # Prevent hanging
+    continue-on-error: true  # Don't mark as failed if busy
+    
     steps:
       - name: Ping backend health endpoint
+        timeout-minutes: 2
         run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" https://gamescript.onrender.com/api/health)
+          echo "🔍 Backup health check at $(date)"
+          
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            --connect-timeout 10 \
+            --max-time 30 \
+            --retry 2 \
+            --retry-delay 5 \
+            https://gamescript.onrender.com/api/health)
+          
           if [ $response -eq 200 ]; then
             echo "✅ Backend is alive (HTTP $response)"
           else
-            echo "❌ Backend returned HTTP $response"
-            exit 1
+            echo "⚠️ Backend returned HTTP $response"
+            echo "Note: UptimeRobot is the primary monitor"
           fi
