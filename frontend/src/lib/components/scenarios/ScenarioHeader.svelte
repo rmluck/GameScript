@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte';
+    import { createEventDispatcher, onMount } from 'svelte';
     import type { Scenario } from '$types';
 
     // Props
@@ -12,6 +12,28 @@
     // State variables for copy
     let showCopiedMessage = false;
     let copiedTimeout: ReturnType<typeof setTimeout>;
+
+    // State variable for screen size
+    let isMobile = false;
+
+    // Check screen size on mount
+    onMount(() => {
+        const checkScreenSize = () => {
+            isMobile = window.innerWidth < 640;
+        };
+
+        checkScreenSize();
+        window.addEventListener('resize', checkScreenSize);
+
+        return () => {
+            window.removeEventListener('resize', checkScreenSize);
+        };
+    });
+
+    // Truncate scenario name if too long
+    $: displayName = (isMobile && scenario.name.length > 30)
+        ? scenario.name.slice(0, 27) + '...'
+        : scenario.name;
 
     // Share functionality
     async function handleShare() {
@@ -81,7 +103,7 @@
     }
 </script>
 
-<div class="flex items-center justify-between gap-2 sm:gap-4 lg:gap-8 mb-6">
+<div class="flex items-center justify-between gap-2 sm:gap-4 lg:gap-8 mb-6 w-full">
     <!-- Left: Scenario Name & Breadcrumb -->
     <div class="flex-1 min-w-0">
         <!-- <nav class="text-sm mb-2">
@@ -89,10 +111,10 @@
                 ← Scenarios
             </a>
         </nav> -->
-        <h1 class="text-xl sm:text-2xl lg:text-3xl font-heading font-bold text-neutral truncate">
-            {scenario.name}
+        <h1 class="text-xl sm:text-2xl lg:text-3xl font-heading font-bold text-neutral" title={scenario.name}>
+            {displayName}
         </h1>
-        <p class="text-neutral/70 text-xs sm:text-sm mt-1">
+        <p class="text-neutral/70 text-xs sm:text-sm mt-1 truncate">
             {scenario.sport_short_name} - {scenario.season_start_year}{scenario.season_end_year ? `-${scenario.season_end_year}` : ''} Season
         </p>
     </div>
