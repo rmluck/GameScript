@@ -74,6 +74,9 @@ func main() {
     api.Get("/health", func(c *fiber.Ctx) error {
         return c.JSON(fiber.Map{"status": "ok"})
     })
+    api.Head("/health", func(c *fiber.Ctx) error {
+        return c.SendStatus(fiber.StatusOK)
+    }
 
     // Auth routes with rate limiting
     auth := api.Group("/auth")
