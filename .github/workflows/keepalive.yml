@@ -23,7 +23,7 @@ jobs:
             --max-time 30 \
             --retry 2 \
             --retry-delay 5 \
-            https://gamescript.onrender.com/api/health)
+            https://gamescript.up.railway.app/api/health)
           
           if [ $response -eq 200 ]; then
             echo "✅ Backend is alive (HTTP $response)"

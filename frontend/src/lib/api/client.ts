@@ -5,7 +5,7 @@ import { browser } from '$app/environment';
 import { env } from '$env/dynamic/public';
 
 // Use environment variable for API URL
-const BASE_URL = env.PUBLIC_API_URL || 'https://gamescript.onrender.com/api';
+const BASE_URL = env.PUBLIC_API_URL || 'https://gamescript.up.railway.app/api';
 
 class APIClient {
     private client: AxiosInstance;

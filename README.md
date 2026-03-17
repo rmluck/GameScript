@@ -10,7 +10,7 @@
 
 GameScript is a comprehensive full-stack web application that enables users to create custom NFL and NBA playoff scenarios by simulating game outcomes and exploring their impact on standings, playoff seeding, and draft order. Built with a SvelteKit frontend and Go backend, the platform combines real-time sports data from ESPN's API with sophisticated standings calculation algorithms that account for complex tiebreaker rules specific to each league. Users can pick winners for individual games or entire playoff series, watch standings update in real-time, view team profiles, and save their scenarios to account profiles after registering with an email and password.
 
-The platform demonstrates advanced full-stack development capabilities through its PostgreSQL database architecture, RESTful API design built with Fiber, and responsive user interface that handles complex state management across multiple sports leagues. Key technical achievements include implementing NFL and NBA playoff bracket generation systems, automated daily schedule updates via background schedulers, comprehensive tiebreaker logic following official league rules, and seamless deployment across cloud platforms (Vercel, Render, Supabase). The application processes 280+ NFL games and 1,230+ NBA games per season while managing intricate relational data structures and maintaining optimal performance through connection pooling and efficient query optimization.
+The platform demonstrates advanced full-stack development capabilities through its PostgreSQL database architecture, RESTful API design built with Fiber, and responsive user interface that handles complex state management across multiple sports leagues. Key technical achievements include implementing NFL and NBA playoff bracket generation systems, automated daily schedule updates via background schedulers, comprehensive tiebreaker logic following official league rules, and seamless deployment across cloud platforms (Vercel, Railway, Supabase). The application processes 280+ NFL games and 1,230+ NBA games per season while managing intricate relational data structures and maintaining optimal performance through connection pooling and efficient query optimization.
 
 **Target Users** are sports fans and analysts who want to explore hypothetical playoff scenarios and understand how game outcomes affect postseason positioning.
 
@@ -454,7 +454,7 @@ Playoff Predictions:
 
 ### Deployment
 * **Vercel**: Frontend hosting with CDN
-* **Render**: Backend hosting with auto-scaling
+* **Railway**: Backend hosting with auto-scaling
 * **Squarespace**: Custom domain name registration
 
 ## 📊 Project Statistics
